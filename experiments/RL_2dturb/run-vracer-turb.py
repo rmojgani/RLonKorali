@@ -21,9 +21,9 @@ e = korali.Experiment()
 ### Defining results folder and loading previous results, if any
 
 resultFolder = '_result_vracer/'
-#found = e.loadState(resultFolder + '/latest')
-#if found == True:
-#	print("[Korali] Continuing execution from previous run...\n");
+found = e.loadState(resultFolder + '/latest')
+if found == True:
+	print("[Korali] Continuing execution from previous run...\n");
 
 ### Defining Problem Configuration
 e["Problem"]["Type"] = "Reinforcement Learning / Continuous"
@@ -34,7 +34,7 @@ e["Problem"]["Agents Per Environment"] = 1
 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
-e["Solver"]["Episodes Per Generation"] = 10
+e["Solver"]["Episodes Per Generation"] = 20
 e["Solver"]["Experiences Between Policy Updates"] = 1
 e["Solver"]["Learning Rate"] = 0.0001
 e["Solver"]["Discount Factor"] = 0.995
@@ -42,7 +42,7 @@ e["Solver"]["Mini Batch"]["Size"] = 256
 
 ### Defining Variables
 
-statesize = 33# For spectrum as state: N/2+1; 9 , 33
+statesize = 33 # For spectrum as state: N/2+1; 9 , 33
 # States (flow at sensor locations)
 for i in range(statesize):
 	e["Variables"][i]["Name"] = "Sensor " + str(i)
@@ -93,7 +93,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 ### Setting file output configuration
 
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 30
+e["Solver"]["Termination Criteria"]["Max Generations"] = 100
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True

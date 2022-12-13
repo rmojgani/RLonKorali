@@ -5,17 +5,17 @@ from turb import *
 import numpy as np
 def environment( args, s ):
     L    = 2*np.pi
-    N    = 64
+    N    = 64#128
     dt   = 1.0e-5
-    case = args["case"]
-    #sim = KS()
-    #sim  = QG()#L=L, N=N, dt=dt, tend=tEnd, RL=True, case=case)
-    #sim  = turb(RL=True)
+    case = '1'#'4'#args["case"]
+    IF_RL = True #False
     # simulate up to T=20
     tInit = 0
     tEnd = tInit + 10e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tInit/dt)
-    sim  = turb(RL=True, case=case)
+    sim  = turb(RL=IF_RL, 
+                NX=N, NY=N,
+                case=case)
     sim.simulate( nsteps=nInitialSteps )
 
     #print(vars(sim))

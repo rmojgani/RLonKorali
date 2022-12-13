@@ -14,18 +14,12 @@ np.seterr(over='raise', invalid='raise')
 # ---------------------- Forced turb
 import math
 # ---------------------- QG
-from QGlib import case_select
 
 #ts = int(SPIN_UP*2) # Total timesteps
 #tot_time = dt*ts    # Length of run
 #lim = int(SPIN_UP ) # Start saving
 #st = int( 1. / dt ) # How often to save data
 NNSAVE = 10 
-from QGlib import QGinitialize, QGinitialize2, QGinitialize3
-from QGlib import my_load
-from QGlib import initialize_psi_to_param
-from QGloop import QGloop
-from QGlib import QGfun
 #
 def gaussian( x, mean, sigma ):
     return 1/np.sqrt(2*np.pi*sigma**2)*np.exp(-1/2*( (x-mean)/sigma )**2)
@@ -46,8 +40,13 @@ class turb:
     # Spatial  discretization: Spectral (Fourier)
     # Temporal discretization: 
     #
-    def __init__(self, Lx=2.0*math.pi, Ly=2.0*math.pi, NX=64, NY=64, dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, 
-					nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, RL=False, nActions=1, sigma=0.4, case=None ):
+    def __init__(self, 
+                Lx=2.0*math.pi, Ly=2.0*math.pi, 
+                NX=128, NY=128, 
+                dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, 
+				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
+                RL=False, 
+                nActions=1, sigma=0.4, case=1 ):
         #
         print('INIT ')
         self.tic = time.time()
@@ -59,6 +58,8 @@ class turb:
             nsteps = int(nsteps)
             # override tend
             tend = dt*nsteps
+
+        self.case=case
         #
         # save to self
         self.Lx     = Lx
@@ -167,8 +168,8 @@ class turb:
         if (action is not None):
             assert len(action) == self.nActions, print("Wrong number of actions. provided {}/{}".format(len(action), self.nActions))
             for i, a in enumerate(action):
-                forcing += a*self.gaussians[i,:]
-                Fforcing = fft( forcing )
+                forcing += a #*self.gaussians[i,:]
+                #Fforcing = fft( forcing )
             #print('forcing',forcing)
             #stop
         #
@@ -180,15 +181,15 @@ class turb:
         if (action is not None):
             #print('Write Action!!!!!!!!!!!!!')
             #print(forcing.shape)
-            self.veRL = forcing[0]#self.E*v + (Nv + Fforcing)*self.f1 + 2.*(Na + Nb + 2*Fforcing)*self.f2 + (Nc + Fforcing)*self.f3
+            self.veRL = forcing[0]
             #print(self.veRL)
             #stop_veRL
 #        else:
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
             self.myplot()
-            #savemat('N'+str(self.NX)+'_t='+str(self.stepnum)+'.mat',dict([('psi_hat', self.psi_hat),('w_hat', self.w1_hat)]))
-            #print('time:', (time.time()-self.tic)/60.0,' min.')
+            savemat('N'+str(self.NX)+'_t='+str(self.stepnum)+'.mat',dict([('psi_hat', self.psi_hat),('w_hat', self.w1_hat)]))
+            print('time:', (time.time()-self.tic)/60.0,' min.')
         #self.v = self.E*v + Nv*self.f1 + 2.*(Na + Nb)*self.f2 + Nc*self.f3
         self.stepturb(action)
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
@@ -384,7 +385,9 @@ class turb:
        
         # Calculate SGS diffusion 
         ve = self.leith_cs(w1_hat, action)
-
+#        ve2 = self.smag_cs(w1_hat, action)
+#        print(ve1, ve2)
+#        ve = ve2
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
        	RHS[0,0] = 0
     
@@ -444,12 +447,16 @@ class turb:
         psiPrevious_hat = psi_hat.astype(np.complex128)
         psiCurrent_hat  = psi_hat.astype(np.complex128)
         # Forcing
-        n = 4
+        if self.case=='1':
+            n = 4
+        elif self.case=='4':
+            n = 25
+
         Xi = 1
         Fk = -n*Xi*np.cos(n*Y)-n*Xi*np.cos(n*X)
         Fk = np.fft.fft2(Fk)
         #
-        time   = 0.0
+        time = 0.0
         slnW = []
         
         if NX==128:
@@ -460,12 +467,24 @@ class turb:
             data_Poi = loadmat('iniWor_64x64.mat')
             w1 = data_Poi['w1']
             ref_tke = np.loadtxt("tke.dat")
+            ref_ens = np.loadtxt("ens.dat")
         
+        if NX==128:
+            data_Poi = loadmat('iniWor_Re20kf25_128_1.mat')
+            w1 = data_Poi['w1']
+            ref_tke = np.loadtxt("tke.dat")
+            ref_ens = np.loadtxt("ens.dat")
+
         if NX==16:
             data_Poi = loadmat('iniWor_16_5.mat')
             w1 = data_Poi['w1']
             ref_tke = np.loadtxt("tke.dat")
+            ref_ens = np.loadtxt("ens.dat")
         
+        if self.case =='4':
+             ref_tke = np.loadtxt("tke_case04.dat")
+             ref_ens = np.loadtxt("ens_case04.dat")
+ 
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
@@ -491,6 +510,7 @@ class turb:
         self.ve = 0
         # Reference files 
         self.ref_tke = ref_tke
+        self.ref_ens = ref_ens
         print('init: omega, psi')
         #print(w1_hat.shape)
         #print(psi_hat.shape)
@@ -582,14 +602,14 @@ class turb:
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
         '''
         #print('action is:', action_leith)
-        #if action_leith != None:
-        if self.veRL !=0:
-            CL3 = self.veRL#action_leith[0]
-        #    print('CL3', self.veRL, action_leith)
-        #    print('CL3:',CL3)
+        if action_leith != None:
+            if self.veRL !=0:
+                CL3 = self.veRL#action_leith[0]
+        #       print('CL3', self.veRL, action_leith)
+        #     with open("test.txt", "a") as myfile:
+        #        myfile.write(str(CL3)+"\n")
         else:
-            CL3 = 0.2346**3# (EKI)
-
+            CL3 = 0.17**3# (EKI)
         #else:
         Kx = self.Kx
         Ky = self.Ky
@@ -606,7 +626,25 @@ class turb:
         delta3 = (2*math.pi/self.NX)**3
         ve = CL3*delta3*abs_grad_omega
         return ve
-        
+
+    def smag_cs(self, w1_hat, action=None):
+        Kx = self.Kx
+        Ky = self.Ky
+        NX = self.NX
+        psiCurrent_hat = self.psiCurrent_hat
+        S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
+        S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
+        S  = 2.0*(S1*S1 + S2*S2)**0.5
+        cs = (0.17 * 1/NX )**2  # for LX = 2 pi
+#        print(S**2.0.shape)
+#        print(S1.shape)
+#        print(S.shape)
+        S = (np.mean(S**2.0))**0.5;
+        ve = cs*S
+#        print(cs, ve)
+#        stop
+        return ve
+
     def enstrophy_spectrum(self):
         omega=np.real(np.fft.ifft2(self.w1_hat))
         NX = self.NX
@@ -672,7 +710,7 @@ class turb:
         plt.contourf(np.real(np.fft.ifft2(self.sol[1])),levels);plt.colorbar()
         plt.title(r'$\psi$')
         
-        ref_tke = np.loadtxt("tke.dat")
+        ref_tke = self.ref_tke#np.loadtxt("tke.dat")
         # Energy 
         plt.subplot(3,2,3)
         energy = self.energy_spectrum()
@@ -684,7 +722,7 @@ class turb:
         plt.xlim([1,1e3])
         plt.ylim([1e-4,1e2])
         
-        ref_ens = np.loadtxt("ens.dat")
+        ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
         plt.subplot(3,2,4)
         enstrophy = self.enstrophy_spectrum()
@@ -722,8 +760,19 @@ class turb:
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
 
-        plt.savefig('2Dturb_N'+str(NX)+'_'+str(stepnum)+'.png', bbox_inches='tight', dpi=450)
-       
+        filename = '2Dturb_N'+str(NX)+'_'+str(stepnum)
+        plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
+        
+#        print(filename)
+#        print(Kplot[0:kmax,0].shape)
+#        print( energy[0:kmax].shape)
+#        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
+        
+        np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T )
+
+        np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T )
+
+ 
     def KDEof(self, u):
         from PDE_KDE import myKDE
         Vecpoints, exp_log_kde, logkde, kde = myKDE(u)
