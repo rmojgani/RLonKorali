@@ -5,17 +5,21 @@ from turb import *
 import numpy as np
 def environment( args, s ):
     L    = 2*np.pi
-    N    = 64#128
-    dt   = 1.0e-5
-    case = '1'#'4'#args["case"]
+    N    = 128# 64
+    dt   = 5.0e-4
+    case = '4'#'4'#args["case"]
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + 10e-3  #0.025*(2500*4+1000
-    nInitialSteps = int(tInit/dt)
+    tEnd = tInit + 10000*dt# 30e-3  #0.025*(2500*4+1000
+    nInitialSteps = int(tEnd/dt)
+    print('Initlize sim.')
     sim  = turb(RL=IF_RL, 
                 NX=N, NY=N,
-                case=case)
+                case=case,
+                nsteps=nInitialSteps)
+    print('================================')
+    print('Simulate, nsteps=', nInitialSteps)
     sim.simulate( nsteps=nInitialSteps )
 
     #print(vars(sim))
@@ -33,7 +37,6 @@ def environment( args, s ):
     #print(sim.psi_hat.shape)
     #print('------------------')
     sim.myplot()    
-
     print('file saved')
     #print(sim.state())
     #print(sim.state().tolist())
@@ -45,6 +48,7 @@ def environment( args, s ):
 
     ## run controlled simulation
     nContolledSteps = int((tEnd-tInit)/dt)
+    print('run controlled simulation with nControlledSteps=', nContolledSteps)
     step = 0
     while step < nContolledSteps:
         # Getting new action
@@ -56,7 +60,7 @@ def environment( args, s ):
 
         # get reward
         s["Reward"] = sim.reward()
-        # print("state:", sim.reward())
+        #print("Reward", s["Reward"])
 
         # get new state
         s["State"] = sim.state().tolist()
@@ -66,5 +70,8 @@ def environment( args, s ):
         #print(sim.veRL)    
         step += 1
 
+        #print( "Reward sum", np.sum(np.array(s["Reward"])) )
+
+    sim.myplot('_controlled')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

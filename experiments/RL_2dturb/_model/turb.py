@@ -47,17 +47,24 @@ class turb:
 				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
                 RL=False, 
                 nActions=1, sigma=0.4, case=1 ):
+
         #
-        print('INIT ')
+        print('__init__')
+
         self.tic = time.time()
+        
         # Initialize
         L  = float(Lx); dt = float(dt); tend = float(tend)
+
         if (nsteps is None):
             nsteps = int(tend/dt)
+            nsteps = 10
         else:
             nsteps = int(nsteps)
             # override tend
             tend = dt*nsteps
+
+        print('> tend=',tend,', nsteps=', nsteps, 'NxN',str(NX),'x',str(NY))
 
         self.case=case
         #
@@ -75,13 +82,20 @@ class turb:
         self.nout   = int(nsteps/iout)
         self.RL     = RL
         #
-        self.stepsave = 50000
-        print('---->', nsteps)
+        self.stepsave = 15000
+        print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
         self.operatorgen()
 	#
         # Grid gen
         self.v=0
+
+        # set initial condition
+#        if (u0 is None) or (v0 is None):
+#			# turb:
+#			# Initial condition
+        self.IC()
+
 
         # get targets for control:
         if self.RL:
@@ -91,12 +105,6 @@ class turb:
             self.case = case
             self.setup_targets()
             self.setup_gaussians()
-        
-        # set initial condition
-        if (u0 is None) or (v0 is None):
-			# turb:
-			# Initial condition
-            self.IC()
 	
 	    # SAVE SIZE
         slnU = np.zeros([NX,NNSAVE])
@@ -156,8 +164,8 @@ class turb:
         NX = self.NX
         kmax = int(NX/2)+1
         self.targets = np.zeros((2,kmax))
-        self.targets[0,:] = np.loadtxt("_model/tke.dat")[0:kmax,1]
-        self.targets[1,:] = np.loadtxt("_model/ens.dat")[0:kmax,1]
+        self.targets[0,:] = self.ref_tke[0:kmax,1] #np.loadtxt("_model/tke.dat")[0:kmax,1]
+        self.targets[1,:] = self.ref_ens[0:kmax,1] #np.loadtxt("_model/ens.dat")[0:kmax,1]
     
     def step( self, action=None ):
         '''
@@ -179,7 +187,6 @@ class turb:
         #
         # Action
         if (action is not None):
-            #print('Write Action!!!!!!!!!!!!!')
             #print(forcing.shape)
             self.veRL = forcing[0]
             #print(self.veRL)
@@ -187,10 +194,10 @@ class turb:
 #        else:
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
-            self.myplot()
-            savemat('N'+str(self.NX)+'_t='+str(self.stepnum)+'.mat',dict([('psi_hat', self.psi_hat),('w_hat', self.w1_hat)]))
-            print('time:', (time.time()-self.tic)/60.0,' min.')
-        #self.v = self.E*v + Nv*self.f1 + 2.*(Na + Nb)*self.f2 + Nc*self.f3
+            #self.myplot()
+            #savemat('N'+str(self.NX)+'_t='+str(self.stepnum)+'.mat',dict([('psi_hat', self.psi_hat),('w_hat', self.w1_hat)]))
+            print('time:', np.round((time.time()-self.tic)/60.0,4),' min.')
+
         self.stepturb(action)
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
         self.stepnum += 1
@@ -256,47 +263,36 @@ class turb:
 
 
     def fou2real(self):
-        #
         # Convert from spectral to physical space
         self.uu = np.real(ifft(self.vv))
 
-#    def state(self):
-#        NX = int(self.NX)
-#        NY = int(self.NY)
-#        #u = np.real(np.fft.ifft2(self.v))
-#        state = np.full((8,NX,NY),fill_value=np.inf)
-#        for i in range(0,4,1):
-#            indexState = int( i)
-#            print('----i', i, self.NX)#, self.v[indexState])
-#            u = np.real(np.fft.ifft2(self.v[indexState]))
-#            #print('\n')
-#            #print(u.shape)
-#            #print(state[indexState].shape)
-#            state[indexState,:,:] = u#[indexState]
-#        return state
-#
-    
     def state(self):
         NX = int(self.NX)
         kmax = int(NX/2)+1
 
-        energy = self.energy_spectrum() 
+        energy = self.energy_spectrum()
+
         return np.log(energy[0:kmax])
     
-#        u = np.real(ifft(self.v))
-#        state = np.full(8,fill_value=np.inf)
-#        for i in range(1,17,2):
-#            indexState = int( i/2 )
-#            indexField = int( i*self.N/16 )
-#            state[indexState] = u[indexState]
-#        return state
-
     def reward(self):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
         kmax = int(NX/2)+1
-        energy = self.energy_spectrum()
-        return 1/np.linalg.norm( (energy[0:kmax] - self.ref_tke[0:kmax,1]) / self.ref_tke[0:kmax,1] )
+        #energy = self.energy_spectrum()
+        #energy_ref = self.ref_tke[0:kmax,1] 
+        #return 1/( np.linalg.norm( (energy[0:kmax] - energy_ref)  )**2 )
+        
+        
+        enstrophy = self.enstrophy_spectrum()
+        enstrophy_ref = self.ref_ens[0:kmax,1] 
+        myreward0 = 1/( np.linalg.norm( (enstrophy[0:kmax] - enstrophy_ref)  )**2 ) # working 
+
+        kmin = int(kmax/2)
+        enstrophy_ref = enstrophy_ref[kmin:kmax]
+        myreward1 = 1/( np.linalg.norm( (enstrophy[kmin:kmax] - enstrophy_ref)  )**2 )
+
+        return myreward0 + 10*myreward1
+
         #omega=np.real(np.fft.ifft2(self.w1_hat))
         #enstrophy_spectrum = self.myspectrum2(omega)
         #return -np.linalg.norm( (enstrophy_spectrum[0:kmax] - self.targets[1,:]) / self.targets[1,:] )
@@ -385,9 +381,9 @@ class turb:
        
         # Calculate SGS diffusion 
         ve = self.leith_cs(w1_hat, action)
-#        ve2 = self.smag_cs(w1_hat, action)
+#        ve = self.smag_cs(w1_hat, action)
 #        print(ve1, ve2)
-#        ve = ve2
+#        ve = 0
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
        	RHS[0,0] = 0
     
@@ -460,30 +456,31 @@ class turb:
         slnW = []
         
         if NX==128:
-            data_Poi = loadmat('iniWor_128x128.mat')
-            w1 = data_Poi['w1']
+            if self.case =='1':
+                data_Poi = loadmat('iniWor_128x128.mat')
+            elif self.case == '4':
+                data_Poi = loadmat('iniWor_Re20kf25_128_1.mat')
+
 
         if NX==64:
-            data_Poi = loadmat('iniWor_64x64.mat')
-            w1 = data_Poi['w1']
-            ref_tke = np.loadtxt("tke.dat")
-            ref_ens = np.loadtxt("ens.dat")
-        
-        if NX==128:
-            data_Poi = loadmat('iniWor_Re20kf25_128_1.mat')
-            w1 = data_Poi['w1']
-            ref_tke = np.loadtxt("tke.dat")
-            ref_ens = np.loadtxt("ens.dat")
+            if self.case == '1':
+                data_Poi = loadmat('iniWor_64x64.mat')
+            elif self.case == '4':
+                data_Poi = loadmat('iniWor_Re20kf25_64_1.mat')
 
         if NX==16:
-            data_Poi = loadmat('iniWor_16_5.mat')
-            w1 = data_Poi['w1']
-            ref_tke = np.loadtxt("tke.dat")
-            ref_ens = np.loadtxt("ens.dat")
+#            if self.case == '1':
+           data_Poi = loadmat('iniWor_16_5.mat')
+
+        w1 = data_Poi['w1']
         
         if self.case =='4':
              ref_tke = np.loadtxt("tke_case04.dat")
              ref_ens = np.loadtxt("ens_case04.dat")
+        if self.case == '1':
+            ref_tke = np.loadtxt("tke.dat")
+            ref_ens = np.loadtxt("ens.dat")
+        
  
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
@@ -520,6 +517,7 @@ class turb:
         self.L = 2*np.pi
         #
         # Set initial condition
+        '''
         if (v0 is None):
             if (u0 is None):
                 # set u0
@@ -569,6 +567,7 @@ class turb:
         self.u0  = u0
         self.v0  = v0
         self.v   = v0
+        '''
 
     def operatorgen(self):
         Lx = self.Lx
@@ -635,7 +634,7 @@ class turb:
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
         S  = 2.0*(S1*S1 + S2*S2)**0.5
-        cs = (0.17 * 1/NX )**2  # for LX = 2 pi
+        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
 #        print(S**2.0.shape)
 #        print(S1.shape)
 #        print(S.shape)
@@ -685,7 +684,7 @@ class turb:
         return tke
 
 
-    def myplot(self):
+    def myplot(self, append_str=''):
         NX = int(self.NX)
         Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = int(NX/2)+1
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
@@ -760,7 +759,7 @@ class turb:
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
 
-        filename = '2Dturb_N'+str(NX)+'_'+str(stepnum)
+        filename = '2Dturb_N'+str(NX)+'_'+str(stepnum)+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
         
 #        print(filename)
@@ -768,9 +767,8 @@ class turb:
 #        print( energy[0:kmax].shape)
 #        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
         
-        np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T )
-
-        np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T )
+        np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
+        np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
 
  
     def KDEof(self, u):
