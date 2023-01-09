@@ -28,11 +28,6 @@ def environment( args, s ):
     print('Simulate, nsteps=', nInitialSteps)
     sim.simulate( nsteps=nInitialSteps )
 
-    #print(vars(sim))
-
-    #for var in vars(sim):
-    #    print(getattr(sim, var))
-
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt 

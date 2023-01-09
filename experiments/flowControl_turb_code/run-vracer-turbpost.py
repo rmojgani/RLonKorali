@@ -3,19 +3,34 @@ import sys
 sys.path.append('_model')
 from environmentpost import environmentpost as environment
 import math
+
 ## Parameters
-state_size = int(128**1) # For spectrum as state: N/2+1; 9 , 33, 65
-action_size = 1
 
 ### Parsing arguments
-
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--case', 
-                    help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', 
-                    required=True, type=str)
+parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
+parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
+parser.add_argument('--statetype', help='State type [enstrophy,energy,psidiag,psiomegadiag,] ', type=str, default='psiomegadiag')
+parser.add_argument('--actiontype', help='Action type [CL,CLxyt,nuxyt,] ', type=str, default='CL')
+parser.add_argument('--NLES', help='', type=int, default=128)
+parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 
 args = vars(parser.parse_args())
+
+NLES = args['NLES']
+casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(NLES)+'_'
+
+print ('case:', casestr)
+if args['statetype'] == 'enstrophy' or args['statetype'] == 'energy':
+    state_size = int(NLES/2)
+elif args['statetype'] == 'psiomegadiag':
+    state_size = int(NLES*2)
+
+if args['actiontype'] == 'CL':
+    action_size=1
+else:
+    action_size=8**2
 
 ### Defining Korali Problem
 
@@ -25,7 +40,7 @@ e = korali.Experiment()
 
 ### Defining results folder and loading previous results, if any
 
-resultFolder = '_result_vracer/'
+resultFolder = '_result_vracer'+casestr+'/'
 found = e.loadState(resultFolder + '/latest')
 if found == True:
 	print("[Korali] Continuing execution from previous run...\n");

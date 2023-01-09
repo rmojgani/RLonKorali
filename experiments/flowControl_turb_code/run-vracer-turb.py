@@ -4,7 +4,6 @@ sys.path.append('_model')
 from environment import *
 import math
 ## Parameters
-#NLES =  int(128) # For spectrum as state: N/2+1; 9 , 33, 65
 
 ### Parsing arguments
 parser = argparse.ArgumentParser()
@@ -32,6 +31,13 @@ if args['actiontype'] == 'CL':
 else:
     action_size=8**2
 
+#if args['solver']=='training':
+#    print('Enviroment loaded')
+#    from environment import *
+#else:
+#print('Postprocess enviroment loaded')
+#from environmentpost import environmentpost as environment
+
 ### Defining Korali Problem
 import korali
 k = korali.Engine()
@@ -53,7 +59,7 @@ e["Problem"]["Agents Per Environment"] = 1
 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
-e["Solver"]["Episodes Per Generation"] = 10 
+e["Solver"]["Episodes Per Generation"] = 25 #--> 10, 25, 50
 e["Solver"]["Experiences Between Policy Updates"] = 1
 e["Solver"]["Learning Rate"] = 0.0001
 e["Solver"]["Discount Factor"] = 0.995
@@ -73,7 +79,7 @@ for i in range(action_size): # size of action
 	e["Variables"][statesize+i]["Type"] = "Action"
 	e["Variables"][statesize+i]["Lower Bound"] = -0.5**3
 	e["Variables"][statesize+i]["Upper Bound"] = 0.5**3
-	e["Variables"][statesize+i]["Initial Exploration Noise"] = 0.15**3
+	e["Variables"][statesize+i]["Initial Exploration Noise"] = 0.3**3 #0.15**3
 
 ### Setting Experience Replay and REFER settings
 
@@ -122,8 +128,11 @@ e["File Output"]["Path"] = resultFolder
 
 
 ### Over ride the settings for post process
-if args['solver'] == 'postprocess':
-    e["Solver"]["Episodes Per Generation"] = 1
+#if args['solver'] == 'postprocess':
+#    print('Generation ........... ')
+#    e["Solver"]["Episodes Per Generation"] = 1
+#    e["Solver"]["Mode"] = "Training" #"Training / Testing"
+
 ### Running Experiment
 
 k.run(e)

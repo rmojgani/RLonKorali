@@ -1,31 +1,32 @@
-#from KS import *
-#from QGr import *
 from turb import *
 
 import numpy as np
 def environmentpost( args, s ):
     L    = 2*np.pi
-    N    = 128 #128# 64
+    N    = args['NLES'] #128# 64
     dt   = 5.0e-4
-    case = '4'#'4'#args["case"]
+    case = args["case"]
+    rewardtype = args["rewardtype"]
+    statetype = args['statetype']
+    actiontype = args['actiontype']
+    casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(args['NLES'])+'_'
+
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
     tEnd = tInit + int(50000/5e4)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
     print('Initlize sim.')
-    sim  = turb(RL=IF_RL, 
+    sim  = turb(RL=IF_RL,
                 NX=N, NY=N,
                 case=case,
+                rewardtype=rewardtype,
+                statetype=statetype,
+                actiontype=actiontype,
                 nsteps=nInitialSteps)
     print('================================')
     print('Simulate, nsteps=', nInitialSteps)
     sim.simulate( nsteps=nInitialSteps )
-
-    #print(vars(sim))
-
-    #for var in vars(sim):
-    #    print(getattr(sim, var))
 
     import matplotlib
     matplotlib.use('Agg')
