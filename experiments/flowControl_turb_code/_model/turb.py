@@ -49,18 +49,15 @@ class turb:
                 nActions=1, sigma=0.4, case='1', rewardtype='k1' ):
         #
         print('__init__')
-        print('rewardtype', rewardtype)
+        print('rewardtype', rewardtype[0:2])
         self.tic = time.time()
         
 
         # Choose reward type function
-        if rewardtype =='k1':
-            self.reward = lambda :self.rewardk1()
-        elif rewardtype == 'k2':
-            self.reward = lambda :self.rewardk2()
-        elif rewardtype == 'k3':
-            self.reward = lambda :self.rewardk3()
-        elif rewardtype == 'log':
+        if rewardtype[0] =='k':
+            order = int(rewardtype[1])
+            self.reward = lambda :self.xxreward(self.mykrange(order), rewardtype[-1] )
+        elif rewardtype[0:2] == 'log':
             self.reward = lambda :self.rewardlog()
 
         # Initialize
@@ -142,17 +139,12 @@ class turb:
             self.setup_gaussians()
             self.veRL = 0
             #print('RL to run:', nActions)
-    
-    def rewardk1(self):
-        return stop_r1
-    def rewardk2(self):
-        return stop_r2
-    def rewardk3(self):
+   
+    def mykrange(self, order):
         NX = int(self.NX)
         kmax = int(NX/2)+1
-        mykrange = krange**3
-        return mykrange
-
+        krange = np.array(range(0, kmax))
+        return krange**order
     
     def setup_timeseries(self, nout=None):
         if (nout != None):
@@ -299,65 +291,40 @@ class turb:
 
         #return np.log(energy[0:kmax])
 
-    def xxreward(self):
+    def xxreward(self, krange, rewardtype):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
         kmax = int(NX/2)+1
-        #energy = self.energy_spectrum()
-        #energy_ref = self.ref_tke[0:kmax,1] 
-        #return 1/( np.linalg.norm( (energy[0:kmax] - energy_ref)  )**2 )
-        #stop
-
-        # v3 
-        #enstrophy = self.enstrophy_spectrum()
-        #enstrophy_ref = self.ref_ens[0:kmax,1] 
-        #myreward0 = 1/( np.linalg.norm( (enstrophy[0:kmax] - enstrophy_ref)  )**2 ) # working for Nx=128 
-
-        #kmin = 26#int(kmax/2)
-        #enstrophy_ref = enstrophy_ref[kmin:kmax]
-        #myreward1 = 1/( np.linalg.norm( (enstrophy[kmin:kmax] - enstrophy_ref)  )**2 )
-
-        krange = np.array(range(0, kmax))
-        krange2 = krange**2
-        enstrophy = self.enstrophy_spectrum()
-        enstrophy_ref = self.ref_ens[0:kmax,1]
-        myreward = 1/( np.linalg.norm( krange*(enstrophy[0:kmax] - enstrophy_ref)  )**2 )
-        return myreward
-
-        #return myreward0 + 10*myreward1
-        # v4
-        #krange = np.array(range(0, kmax))
-        #krange2 = krange**2
-        enstrophy = self.enstrophy_spectrum()
-        enstrophy_ref = self.ref_ens[0:kmax,1] 
-        myreward = -np.linalg.norm( (enstrophy[0:kmax] - enstrophy_ref)  / np.linalg.norm( enstrophy_ref)  )
-        #if myreward > 1e5:
-        #    myreward = 1e5
-        #    print(myreward)
-        return myreward
-
-
-        stop
-        kmidm = 25
-        kmidp = 26 #kmax 
-
-        enstrophy = self.enstrophy_spectrum()
-        enstrophy = np.hstack((enstrophy[0:kmidm],enstrophy[kmidp:kmax]))
-
-        enstrophy_ref = self.ref_ens[0:kmax,1]
-        enstrophy_ref = np.hstack((enstrophy_ref[0:kmidm], enstrophy_ref[kmidp:kmax]))
-
-        myreward0 = 1/( np.linalg.norm( (enstrophy - enstrophy_ref)  )**2 ) 
-
-        energy = self.energy_spectrum()
-        energy = np.hstack((energy[0:kmidm],energy[kmidp:kmax]))
-
-        energy_ref = self.ref_tke[0:kmax,1]
-        energy_ref = np.hstack((energy_ref[0:kmidm], energy_ref[kmidp:kmax]))
-
-        myreward1 = 1/( np.linalg.norm( (energy - energy_ref)  )**2 ) 
         
-        #np.savetxt('zz_tke.out', np.stack(
+        if rewardtype == 'z':
+            #print('enssssssssssssssssssss')
+            spec_now = self.enstrophy_spectrum()[0:kmax]
+            spec_ref = self.ref_ens[0:kmax,1]
+        elif rewardtype == 'e':
+            #print('energyyyyyyyyyyyyyyyy')
+            spec_now = self.energy_spectrum()[0:kmax]
+            spec_ref = self.ref_ens[0:kmax,1]
+
+        myreward = 1/( np.linalg.norm( krange*(spec_now - spec_ref)  )**2 )
+        return myreward
+
+    def logreward(self,rewardtype):
+        # use some self.variable to calculate the reward
+        NX = int(self.NX)
+        kmax = int(NX/2)+1
+
+        if rewardtype == 'z':
+            #print('enssssssssssssssssssss')
+            spec_now = self.enstrophy_spectrum()[0:kmax]
+            spec_ref = self.ref_ens[0:kmax,1]
+        elif rewardtype == 'e':
+            #print('energyyyyyyyyyyyyyyyy')
+            spec_now = self.energy_spectrum()[0:kmax]
+            spec_ref = self.ref_ens[0:kmax,1]
+
+        myreward = -np.linalg.norm( (spec_now - spec_ref)  / np.linalg.norm( spec_ref)  )
+        return myreward
+
         #                                    (energy, energy_ref, enstrophy, enstrophy_ref),
         #                                    axis=0).T, delimiter='\t')        
         return myreward0 + myreward1
