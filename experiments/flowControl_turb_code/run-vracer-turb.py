@@ -4,27 +4,40 @@ sys.path.append('_model')
 from environment import *
 import math
 ## Parameters
-state_size = int(128*2) # For spectrum as state: N/2+1; 9 , 33, 65
-action_size = 1
+NLES =  int(128) # For spectrum as state: N/2+1; 9 , 33, 65
 
 ### Parsing arguments
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
+parser.add_argument('--statetype', help='State type [enstropy,energy,psidiag,psiomegadiag,] ', type=str, default='psiomegadiag')
+parser.add_argument('--actiontype', help='Action type [CL,CLxyt,nuxyt,] ', type=str, default='CL')
+parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 
 args = vars(parser.parse_args())
 
-### Defining Korali Problem
+casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(NLES)+'_'
 
+print ('case:', casestr)
+if args['statetype'] == 'enstrophy' or args['statetype'] == 'energy':
+    state_size = int(NLES/2)
+elif args['statetype'] == 'psiomegadiag':
+    state_size = int(NLES*2)
+
+if args['actiontype'] == 'CL':
+    action_size=1
+else:
+    action_size=8**2
+
+### Defining Korali Problem
 import korali
 k = korali.Engine()
 e = korali.Experiment()
 
 ### Defining results folder and loading previous results, if any
 
-resultFolder = '_result_vracer/'
+resultFolder = '_result_vracer'+casestr+'/'
 found = e.loadState(resultFolder + '/latest')
 if found == True:
 	print("[Korali] Continuing execution from previous run...\n");
@@ -46,9 +59,9 @@ e["Solver"]["Mini Batch"]["Size"] = 256
 
 ### Defining Variables
 
-statesize = state_size # For spectrum as state: N/2+1; 9 , 33, 65
+statesize = state_size
 # States (flow at sensor locations)
-for i in range(statesize):
+for i in range(state_size):
 	e["Variables"][i]["Name"] = "Sensor " + str(i)
 	e["Variables"][i]["Type"] = "State"
 
@@ -104,6 +117,11 @@ e["File Output"]["Enabled"] = True
 e["File Output"]["Frequency"] = 1
 e["File Output"]["Path"] = resultFolder
 
+
+
+### Over ride the settings for post process
+if args['solver'] == 'postprocess':
+    e["Solver"]["Episodes Per Generation"] = 1
 ### Running Experiment
 
 k.run(e)

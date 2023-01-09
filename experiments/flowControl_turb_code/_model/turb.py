@@ -56,9 +56,9 @@ class turb:
         # Choose reward type function
         if rewardtype[0] =='k':
             order = int(rewardtype[1])
-            self.reward = lambda :self.xxreward(self.mykrange(order), rewardtype[-1] )
-        elif rewardtype[0:2] == 'log':
-            self.reward = lambda :self.rewardlog()
+            self.reward = lambda :self.rewardk(self.mykrange(order), rewardtype[-1] )
+        elif rewardtype[0:2] == 'ratio':
+            self.reward = lambda :self.rewardratio()
 
         # Initialize
         L  = float(Lx); dt = float(dt); tend = float(tend)
@@ -291,7 +291,7 @@ class turb:
 
         #return np.log(energy[0:kmax])
 
-    def xxreward(self, krange, rewardtype):
+    def rewardk(self, krange, rewardtype):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
         kmax = int(NX/2)+1
@@ -308,7 +308,7 @@ class turb:
         myreward = 1/( np.linalg.norm( krange*(spec_now - spec_ref)  )**2 )
         return myreward
 
-    def logreward(self,rewardtype):
+    def rewardratio(self,rewardtype):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
         kmax = int(NX/2)+1
@@ -324,31 +324,6 @@ class turb:
 
         myreward = -np.linalg.norm( (spec_now - spec_ref)  / np.linalg.norm( spec_ref)  )
         return myreward
-
-        #                                    (energy, energy_ref, enstrophy, enstrophy_ref),
-        #                                    axis=0).T, delimiter='\t')        
-        return myreward0 + myreward1
-        stop
-        #krange = np.array(range(0, kmax))
-        return myreward0 # + 10*myreward1
-        #krange = np.array(range(0, kmax))
-        enstrophy = self.enstrophy_spectrum()
-        enstrophy_ref = self.ref_ens[0:kmax,1] 
-#        myreward = 1/( np.linalg.norm( krange*(enstrophy[0:kmax] - enstrophy_ref)  )**2 )
-        myreward = 1/( np.linalg.norm( (enstrophy[0:kmax] - enstrophy_ref)  )**2 )
-
-        return myreward 
-
-        #omega=np.real(np.fft.ifft2(self.w1_hat))
-        #enstrophy_spectrum = self.myspectrum2(omega)
-        #return -np.linalg.norm( (enstrophy_spectrum[0:kmax] - self.targets[1,:]) / self.targets[1,:] )
-        
-        #elif self.case == "E12":
-        #    enstrophy = self.enstrophy_spectrum()
-        #    return np.linalg.norm( u - self.targets[1,:] )
-        #elif self.case == "E23":
-        #    return np.linalg.norm( u - self.targets[2,:] )
-
 
     def compute_Ek(self):
         #
