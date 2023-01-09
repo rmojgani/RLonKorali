@@ -4,19 +4,21 @@ sys.path.append('_model')
 from environment import *
 import math
 ## Parameters
-NLES =  int(128) # For spectrum as state: N/2+1; 9 , 33, 65
+#NLES =  int(128) # For spectrum as state: N/2+1; 9 , 33, 65
 
 ### Parsing arguments
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
-parser.add_argument('--statetype', help='State type [enstropy,energy,psidiag,psiomegadiag,] ', type=str, default='psiomegadiag')
+parser.add_argument('--statetype', help='State type [enstrophy,energy,psidiag,psiomegadiag,] ', type=str, default='psiomegadiag')
 parser.add_argument('--actiontype', help='Action type [CL,CLxyt,nuxyt,] ', type=str, default='CL')
+parser.add_argument('--NLES', help='', type=int, default=128)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 
 args = vars(parser.parse_args())
 
+NLES = args['NLES']
 casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(NLES)+'_'
 
 print ('case:', casestr)
@@ -85,8 +87,8 @@ e["Solver"]["Experience Replay"]["Maximum Size"] = 100000
 e["Solver"]["Policy"]["Distribution"] = "Squashed Normal"
 e["Solver"]["State Rescaling"]["Enabled"] = True
 e["Solver"]["Reward"]["Rescaling"]["Enabled"] = True
-#e["Solver"]["Reward"]["Outbound Penalization"]["Enabled"] = True
-#e["Solver"]["Reward"]["Outbound Penalization"]["Factor"] = 0.5
+e["Solver"]["Reward"]["Outbound Penalization"]["Enabled"] = True
+e["Solver"]["Reward"]["Outbound Penalization"]["Factor"] = 0.5
   
 ### Configuring the neural network and its hidden layers
 
@@ -110,7 +112,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 ### Setting file output configuration
 
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 100
+e["Solver"]["Termination Criteria"]["Max Generations"] = 50
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True

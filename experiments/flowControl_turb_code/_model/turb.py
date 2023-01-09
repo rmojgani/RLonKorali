@@ -46,19 +46,22 @@ class turb:
                 dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, 
 				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
                 RL=False, 
-                nActions=1, sigma=0.4, case='1', rewardtype='k1' ):
+                nActions=1, sigma=0.4,
+                case='1', rewardtype='k1', statetype='psiomegadiag',
+                actiontype='CL'):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
         self.tic = time.time()
-        
-
+        self.rewardtype = rewardtype 
         # Choose reward type function
-        if rewardtype[0] =='k':
-            order = int(rewardtype[1])
-            self.reward = lambda :self.rewardk(self.mykrange(order), rewardtype[-1] )
-        elif rewardtype[0:2] == 'ratio':
-            self.reward = lambda :self.rewardratio()
+        #if rewardtype[0] =='k':
+        #    order = int(rewardtype[1])
+        #    def myreward(self):
+        #        return self.rewardk(self.mykrange(order), rewardtype[-1] )
+        #elif rewardtype[0:2] == 'ratio':
+        #    def mreward(self):
+        #        return self.rewardratio()
 
         # Initialize
         L  = float(Lx); dt = float(dt); tend = float(tend)
@@ -295,7 +298,7 @@ class turb:
         # use some self.variable to calculate the reward
         NX = int(self.NX)
         kmax = int(NX/2)+1
-        
+        #print('ezzzzzzzzzzz',rewardtype) 
         if rewardtype == 'z':
             #print('enssssssssssssssssssss')
             spec_now = self.enstrophy_spectrum()[0:kmax]
@@ -324,6 +327,16 @@ class turb:
 
         myreward = -np.linalg.norm( (spec_now - spec_ref)  / np.linalg.norm( spec_ref)  )
         return myreward
+    
+    def reward(self):
+        rewardtype = self.rewardtype
+        # Choose reward type function
+        #if rewardtype[0] =='k':
+        order = int(rewardtype[1])
+        reward = self.rewardk(self.mykrange(order), 'z')# rewardtype[0] )
+        #elif rewardtype[0:2] == 'ratio':
+        #    reward = self.rewardratio()
+        return reward
 
     def compute_Ek(self):
         #

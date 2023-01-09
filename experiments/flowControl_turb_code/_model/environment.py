@@ -3,10 +3,14 @@ from turb import *
 import numpy as np
 def environment( args, s ):
     L    = 2*np.pi
-    N    = 128 #128# 64
+    N    = args['NLES'] #128# 64
     dt   = 5.0e-4
     case = args["case"]
     rewardtype = args["rewardtype"]
+    statetype = args['statetype']
+    actiontype = args['actiontype']
+    casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(args['NLES'])+'_'
+
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
@@ -17,6 +21,8 @@ def environment( args, s ):
                 NX=N, NY=N,
                 case=case,
                 rewardtype=rewardtype,
+                statetype=statetype,
+                actiontype=actiontype,
                 nsteps=nInitialSteps)
     print('================================')
     print('Simulate, nsteps=', nInitialSteps)
@@ -36,7 +42,7 @@ def environment( args, s ):
     #print(sim.psiPrevious_hat.shape)
     #print(sim.psi_hat.shape)
     #print('------------------')
-    sim.myplot()    
+    sim.myplot(casestr)    
     print('file saved')
     #print(sim.state())
     #print(sim.state().tolist())
