@@ -1,6 +1,8 @@
 # Git ignore for python
-
-
+#Mat files
+iniWor*.mat
+#
+gen*.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
