@@ -269,7 +269,7 @@ class turb:
         myreward = -np.linalg.norm( (spec_now - spec_ref)  / np.linalg.norm( spec_ref)  )
         return myreward
     
-    def reward(self):
+    def rewardreserve(self):
         rewardtype = self.rewardtype
         # Choose reward type function
         #if rewardtype[0] =='k':
@@ -280,6 +280,17 @@ class turb:
         if reward==np.infty or reward==-np.infty:
             reward = np.sign(reward)*1e24
         return reward
+
+    def reward(self):
+        # use some self.variable to calculate the reward
+        NX = int(self.NX)
+        kmax = int(NX/2)+1
+        
+        krange = np.array(range(0, kmax))
+        enstrophy = self.enstrophy_spectrum()
+        enstrophy_ref = self.ref_ens[0:kmax,1]
+        myreward = 1/( np.linalg.norm( krange*(enstrophy[0:kmax] - enstrophy_ref)  )**2 )
+        return myreward
 
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
         Kx = self.Kx
@@ -370,6 +381,17 @@ class turb:
         kp = 10.0
         A  = 4*np.power(kp,(-5))/(3*np.pi)  
         absK = np.sqrt(Kx*Kx+Ky*Ky)
+        #
+        Ek = A*np.power(absK,4)*np.exp(-np.power(absK/kp,2))
+        coef1 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
+        coef2 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
+        #
+        perturb = np.zeros([NX,NX])
+        perturb[0:NX//2+1, 0:NX//2+1] = coef1[0:NX//2+1, 0:NX//2+1]+coef2[0:NX//2+1, 0:NX//2+1]
+        perturb[NX//2+1:, 0:NX//2+1] = coef2[NX//2-1:0:-1, 0:NX//2+1] - coef1[NX//2-1:0:-1, 0:NX//2+1]
+        perturb[0:NX//2+1, NX//2+1:] = coef1[0:NX//2+1, NX//2-1:0:-1] - coef2[0:NX//2+1, NX//2-1:0:-1]
+        perturb[NX//2+1:, NX//2+1:] = -(coef1[NX//2-1:0:-1, NX//2-1:0:-1] + coef2[NX//2-1:0:-1, NX//2-1:0:-1])
+        perturb = np.exp(1j*perturb)
 	    # omega
         w1_hat = np.sqrt(absK/np.pi*Ek)*perturb*np.power(NX,2)
         # psi
