@@ -159,10 +159,6 @@ class turb:
             #print('forcing',forcing)
             #stop
         #
-        # Computation is based on v = fft(u), so linear term is diagonal.
-        # The time-discretization is done via ETDRK4
-        # (exponential time differencing - 4th order Runge Kutta)
-        #
         # Action
         if (action is not None):
             #print(forcing.shape)
@@ -206,20 +202,7 @@ class turb:
         # advance in time for nsteps steps
         if (correction==[]):
             for n in range(1,self.nsteps+1):
-                #try:
                 self.step()
-                #except FloatingPointError:
-                ##
-                ## something exploded
-                ## cut time series to last saved solution and return
-                #    self.nout = self.ioutnum
-                #    self.vv.resize((self.nout+1,self.N)) # nout+1 because the IC is in [0]
-                #    self.tt.resize(self.nout+1)      # nout+1 because the IC is in [0]
-                #return -1
-        #    if ( (self.iout>0) and (n%self.iout==0) ):
-        #        self.ioutnum += 1
-        #        self.vv[self.ioutnum,:] = self.v
-        #        self.tt[self.ioutnum]   = self.t
         else:
             # lots of code duplication here, but should improve speed instead of having the 'if correction' at every time step
             for n in range(1,self.nsteps+1):
@@ -238,7 +221,6 @@ class turb:
                 self.ioutnum += 1
                 self.vv[self.ioutnum,:] = self.v
                 self.tt[self.ioutnum]   = self.t
-
 
     def state(self):
         s1 = np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
