@@ -21,9 +21,6 @@ import math
 #st = int( 1. / dt ) # How often to save data
 NNSAVE = 10 
 #
-def gaussian( x, mean, sigma ):
-    return 1/np.sqrt(2*np.pi*sigma**2)*np.exp(-1/2*( (x-mean)/sigma )**2)
-
 class turb:
     #
     # Solution of the 2D tub
@@ -36,9 +33,6 @@ class turb:
     # The nature of the solution depends on the Re=1/nu
     # condition u(x,0).  Energy enters the system
 
-    #
-    # Spatial  discretization: Spectral (Fourier)
-    # Temporal discretization: 
     #
     def __init__(self, 
                 Lx=2.0*math.pi, Ly=2.0*math.pi, 
@@ -113,8 +107,6 @@ class turb:
             self.sigma = sigma
             self.x = np.arange(self.NX)*self.Lx/(self.NX-1)
             self.case = case
-            self.setup_targets()
-            self.setup_gaussians()
 	
 	    # SAVE SIZE
         slnU = np.zeros([NX,NNSAVE])
@@ -413,14 +405,14 @@ class turb:
         
         if NX==128:
             if self.case =='1':
-                data_Poi = loadmat('iniWor_128x128.mat')
+                data_Poi = loadmat('iniWor_Re20kf4_128_1.mat')
             elif self.case == '4':
                 data_Poi = loadmat('iniWor_Re20kf25_128_1.mat')
 
 
         if NX==64:
             if self.case == '1':
-                data_Poi = loadmat('iniWor_64x64.mat')
+                data_Poi = loadmat('iniWor_Re20kf4_64_1.mat')
             elif self.case == '4':
                 data_Poi = loadmat('iniWor_Re20kf25_64_1.mat')
 
