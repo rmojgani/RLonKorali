@@ -124,22 +124,11 @@ class turb:
         Enstrophy = np.zeros([NNSAVE])
         onePython = np.zeros([NNSAVE])
 	
-        #
-        # initialize simulation arrays
-        # self.setup_timeseries()
-        #
-        # precompute Fourier-related quantities
-        #KS: self.setup_fourier()
-        #
-        # precompute ETDRK4 scalar quantities:
-        #KS: self.setup_etdrk4()
-        #
         # precompute Gaussians for control:
         if self.RL:
             self.nActions = nActions
             self.sigma = sigma
             self.x = np.arange(self.N)*self.L/(self.N-1)
-            self.setup_gaussians()
             self.veRL = 0
             #print('RL to run:', nActions)
    
@@ -149,33 +138,6 @@ class turb:
         krange = np.array(range(0, kmax))
         return krange**order
     
-    def setup_timeseries(self, nout=None):
-        if (nout != None):
-            self.nout = int(nout)
-        # nout+1 so we store the IC as well
-        self.vv = np.zeros([self.nout+1, self.N], dtype=np.complex64)
-        self.tt = np.zeros(self.nout+1)
-        #
-        # store the IC in [0]
-        self.vv[0,:] = self.v0
-        self.tt[0]   = 0.
-
-
-        #KS:def setup_fourier(self, coeffs=None):
-        
-        #KS: def setup_etdrk4(self):
-
-    def setup_gaussians(self):
-        print('setup_gaussian')
-        self.gaussians = np.zeros((self.nActions, self.NX))
-        #self.gaussians = np.zeros((self.nActions, 1))
-        for i in range(self.nActions):
-            mean = i*self.Lx/4
-            #self.gaussians[i,:] = gaussian( self.x, mean, self.sigma )
-            self.gaussians[i,:] = gaussian( mean, mean, self.sigma )
-        #print(self.gaussians)
-        #stop
-
     def setup_targets(self):
         NX = self.NX
         kmax = int(NX/2)+1
@@ -337,40 +299,6 @@ class turb:
             reward = np.sign(reward)*1e24
         return reward
 
-    def compute_Ek(self):
-        #
-        # compute all forms of kinetic energy
-        #
-        # Kinetic energy as a function of wavenumber and time
-        self.compute_Ek_kt()
-        # Time-averaged energy spectrum as a function of wavenumber
-        self.Ek_k = np.sum(self.Ek_kt, 0)/(self.ioutnum+1) # not self.nout because we might not be at the end; ioutnum+1 because the IC is in [0]
-        # Total kinetic energy as a function of time
-        self.Ek_t = np.sum(self.Ek_kt, 1)
-        # Time-cumulative average as a function of wavenumber and time
-        self.Ek_ktt = np.cumsum(self.Ek_kt, 0) / np.arange(1,self.ioutnum+2)[:,None] # not self.nout because we might not be at the end; ioutnum+1 because the IC is in [0] +1 more because we divide starting from 1, not zero
-        # Time-cumulative average as a function of time
-        self.Ek_tt = np.cumsum(self.Ek_t, 0) / np.arange(1,self.ioutnum+2)[:,None] # not self.nout because we might not be at the end; ioutnum+1 because the IC is in [0] +1 more because we divide starting from 1, not zero
-
-    def compute_Ek_kt(self):
-        try:
-            self.Ek_kt = 1./2.*np.real( self.vv.conj()*self.vv / self.N ) * self.dx
-        except FloatingPointError:
-            #
-            # probable overflow because the simulation exploded, try removing the last solution
-            problem=True
-            remove=1
-            self.Ek_kt = np.zeros([self.nout+1, self.N]) + 1e-313
-            while problem:
-                try:
-                    self.Ek_kt[0:self.nout+1-remove,:] = 1./2.*np.real( self.vv[0:self.nout+1-remove].conj()*self.vv[0:self.nout+1-remove] / self.N ) * self.dx
-                    problem=False
-                except FloatingPointError:
-                    remove+=1
-                    problem=True
-            return self.Ek_kt
-
-
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
         Kx = self.Kx
         Ky = self.Ky
@@ -460,16 +388,6 @@ class turb:
         kp = 10.0
         A  = 4*np.power(kp,(-5))/(3*np.pi)  
         absK = np.sqrt(Kx*Kx+Ky*Ky)
-        Ek = A*np.power(absK,4)*np.exp(-np.power(absK/kp,2))
-        coef1 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2    
-        coef2 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
-        # 	
-        perturb = np.zeros([NX,NX])
-        perturb[0:NX//2+1, 0:NX//2+1] = coef1[0:NX//2+1, 0:NX//2+1]+coef2[0:NX//2+1, 0:NX//2+1]
-        perturb[NX//2+1:, 0:NX//2+1] = coef2[NX//2-1:0:-1, 0:NX//2+1] - coef1[NX//2-1:0:-1, 0:NX//2+1]
-        perturb[0:NX//2+1, NX//2+1:] = coef1[0:NX//2+1, NX//2-1:0:-1] - coef2[0:NX//2+1, NX//2-1:0:-1]
-        perturb[NX//2+1:, NX//2+1:] = -(coef1[NX//2-1:0:-1, NX//2-1:0:-1] + coef2[NX//2-1:0:-1, NX//2-1:0:-1])
-        perturb = np.exp(1j*perturb)
 	    # omega
         w1_hat = np.sqrt(absK/np.pi*Ek)*perturb*np.power(NX,2)
         # psi
@@ -553,59 +471,6 @@ class turb:
         # temporary
         self.N = NX
         self.L = 2*np.pi
-        #
-        # Set initial condition
-        '''
-        if (v0 is None):
-            if (u0 is None):
-                # set u0
-                if self.RL:
-                    # initial condition for chosen RL case
-                    #if self.case == "E31":
-                    #    u0 = self.targets[2,:]
-                    #elif self.case == "E12":
-                    #    u0 = self.targets[0,:]
-                    #elif self.case == "E23":
-                    #    u0 = self.targets[1,:]
-                    #else:
-                    #    assert False, print("RL case {} unknown...".format(self.case))
-                    u0 = self.targets[1,:]
-                else:
-                    print("Using random initial condition...")
-                    # uniform noise
-                    # u0 = (np.random.rand(self.N) -0.5)*0.01
-                    # Gaussian noise (according to https://arxiv.org/pdf/1906.07672.pdf)
-                    np.random.seed( SEED )
-                    u0 = np.random.normal(0., 1e-4, self.N)
-            else:
-                # check the input size
-                if (np.size(u0,0) != self.N):
-                    print('Error: wrong IC array size')
-                    return -1
-                else:
-                    print("Using given (real) flow field...")
-                    # if ok cast to np.array
-                    u0 = np.array(u0)
-            # in any case, set v0:
-            v0 = fft(u0)
-        else:
-            # the initial condition is provided in v0
-            # check the input size
-            if (np.size(v0,0) != self.N):
-                print('Error: wrong IC array size')
-                return -1
-            else:
-                print("Using given (Fourier) flow field...")
-                # if ok cast to np.array
-                v0 = np.array(v0)
-                # and transform to physical space
-                u0 = ifft(v0)
-        #
-        # and save to self
-        self.u0  = u0
-        self.v0  = v0
-        self.v   = v0
-        '''
 
     def operatorgen(self):
         Lx = self.Lx
