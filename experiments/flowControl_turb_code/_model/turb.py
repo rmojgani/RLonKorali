@@ -278,21 +278,18 @@ class turb:
                 self.tt[self.ioutnum]   = self.t
 
 
-    def fou2real(self):
-        # Convert from spectral to physical space
-        self.uu = np.real(ifft(self.vv))
-
     def state(self):
         s1 = np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
         s2 = np.diag(np.real(np.fft.ifft2(self.psiCurrent_hat))).reshape(-1,)
         return np.hstack((s1,s2))
-    
-        #NX = int(self.NX)
-        #kmax = int(NX/2)+1
-
-        #energy = self.energy_spectrum()
-
-        #return np.log(energy[0:kmax])
+   
+#    def state(self):
+#        NX = int(self.NX)
+#        kmax = int(NX/2)+1
+#
+#        energy = self.energy_spectrum()
+#
+#        return np.log(energy[0:kmax])
 
     def rewardk(self, krange, rewardtype):
         # use some self.variable to calculate the reward
@@ -336,6 +333,8 @@ class turb:
         reward = self.rewardk(self.mykrange(order), 'z')# rewardtype[0] )
         #elif rewardtype[0:2] == 'ratio':
         #    reward = self.rewardratio()
+        if reward==np.infty or reward==-np.infty:
+            reward = np.sign(reward)*1e24
         return reward
 
     def compute_Ek(self):

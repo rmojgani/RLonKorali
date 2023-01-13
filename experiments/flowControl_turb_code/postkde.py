@@ -177,4 +177,44 @@ np.savetxt(filename_save+"tkedns.txt", ens_ave_,delimiter='\t')
 
 ens_ave_=np.stack((Kplot,ens_dns)).T
 np.savetxt(filename_save+"_ensdns.txt", ens_ave_,delimiter='\t')
+## Plot loss types
+plt.figure(figsize=(10,14))
+
+# Enstrophy
+plt.subplot(3,2,1)
+plt.plot( Kplot    * ens_dns , 'k')
+plt.plot((Kplot**2)*(ens_dns),'--r')
+plt.plot((Kplot**3)*(ens_dns),'.-b')
+plt.plot((np.log(ens_dns)),'--*k')
+plt.title(rf'$\varepsilon({kplot_str})$')
+
+plt.subplot(3,2,2)
+plt.plot(Kplot*(ens_dns-ens_ave), 'k')
+plt.plot((Kplot**2)*(ens_dns-ens_ave),'--r')
+plt.plot((Kplot**3)*(ens_dns-ens_ave),'.-b')
+plt.plot((np.log(ens_dns)-np.log(ens_ave)),'--*k')
+plt.title(rf'$\varepsilon({kplot_str})$')
+
+# Energy
+plt.subplot(3,2,3)
+plt.plot( Kplot    * tke_dns , 'k')
+plt.plot((Kplot**2)*(tke_dns),'--r')
+plt.plot((Kplot**3)*(tke_dns),'.-b')
+plt.plot((np.log(tke_dns)),'--*k')
+plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
+
+plt.subplot(3,2,4)
+plt.plot(Kplot*(tke_dns-tke_ave), 'k')
+plt.plot((Kplot**2)*(tke_dns-tke_ave),'--r')
+plt.plot((Kplot**3)*(tke_dns-tke_ave),'.-b')
+plt.plot((np.log(tke_dns)-np.log(tke_ave)),'--*k')
+plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
+
+for i in [1,2,3,4]:
+    plt.subplot(3,2,i)
+
+    plt.grid(which='major', linestyle='--',
+             linewidth='1.0', color='black', alpha=0.25)
+    plt.grid(which='minor', linestyle='-',
+             linewidth='0.5', color='red', alpha=0.25)
 

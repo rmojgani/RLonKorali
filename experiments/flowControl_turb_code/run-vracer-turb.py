@@ -13,6 +13,7 @@ parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=st
 parser.add_argument('--statetype', help='State type [enstrophy,energy,psidiag,psiomegadiag,] ', type=str, default='psiomegadiag')
 parser.add_argument('--actiontype', help='Action type [CL,CLxyt,nuxyt,] ', type=str, default='CL')
 parser.add_argument('--NLES', help='', type=int, default=128)
+parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 
 args = vars(parser.parse_args())
@@ -22,7 +23,7 @@ casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype
 
 print ('case:', casestr)
 if args['statetype'] == 'enstrophy' or args['statetype'] == 'energy':
-    state_size = int(NLES/2)
+    state_size = int(NLES/2)+1
 elif args['statetype'] == 'psiomegadiag':
     state_size = int(NLES*2)
 
@@ -59,7 +60,7 @@ e["Problem"]["Agents Per Environment"] = 1
 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
-e["Solver"]["Episodes Per Generation"] = 25 #--> 10, 25, 50
+e["Solver"]["Episodes Per Generation"] = args['gensize'] #--> 10, 25, 50
 e["Solver"]["Experiences Between Policy Updates"] = 1
 e["Solver"]["Learning Rate"] = 0.0001
 e["Solver"]["Discount Factor"] = 0.995
