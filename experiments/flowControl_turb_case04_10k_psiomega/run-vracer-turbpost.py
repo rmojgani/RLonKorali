@@ -4,7 +4,7 @@ sys.path.append('_model')
 from environmentpost import environmentpost as environment
 import math
 ## Parameters
-state_size = int(128**1) # For spectrum as state: N/2+1; 9 , 33, 65
+state_size = int(128*2) # For spectrum as state: N/2+1; 9 , 33, 65
 action_size = 1
 
 ### Parsing arguments

@@ -1,6 +1,10 @@
 import argparse
 import sys
 sys.path.append('_model')
+sys.path.append('_init')
+sys.path.append('_init/Re20kf25')
+sys.path.append('_init/Re20kf4')
+
 from environment import *
 import math
 ## Parameters
@@ -119,7 +123,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 ### Setting file output configuration
 
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 50
+e["Solver"]["Termination Criteria"]["Max Generations"] = 10
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True

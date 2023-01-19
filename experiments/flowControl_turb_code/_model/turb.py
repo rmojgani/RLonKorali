@@ -127,7 +127,7 @@ class turb:
     def mykrange(self, order):
         NX = int(self.NX)
         kmax = int(NX/2)+1
-        krange = np.array(range(0, kmax))
+        krange = 1+np.array(range(0, kmax))
         return krange**order
     
     def setup_targets(self):
@@ -405,9 +405,9 @@ class turb:
         
         if NX==128:
             if self.case =='1':
-                data_Poi = loadmat('iniWor_Re20kf4_128_1.mat')
+                data_Poi = loadmat('_init/Re20kf4/iniWor_Re20kf4_128_1.mat')
             elif self.case == '4':
-                data_Poi = loadmat('iniWor_Re20kf25_128_1.mat')
+                data_Poi = loadmat('_init/Re20kf25/iniWor_Re20kf25_128_4.mat')
 
 
         if NX==64:
