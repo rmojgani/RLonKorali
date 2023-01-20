@@ -9,7 +9,7 @@ def environment( args, s ):
     rewardtype = args["rewardtype"]
     statetype = args['statetype']
     actiontype = args['actiontype']
-    casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(args['NLES'])+'_'
+    casestr = 'C'+args['case']+'_N'+str(N)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
 
     IF_RL = True #False
     # simulate up to T=20
@@ -38,7 +38,7 @@ def environment( args, s ):
     #print(sim.psi_hat.shape)
     #print('------------------')
     sim.myplot(casestr)    
-    print('file saved')
+    print('PNG file saved')
     #print(sim.state())
     #print(sim.state().tolist())
     #print('xxxx       \n')
@@ -73,6 +73,6 @@ def environment( args, s ):
 
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    sim.myplot('_controlled')
+    sim.myplot('_ctr')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

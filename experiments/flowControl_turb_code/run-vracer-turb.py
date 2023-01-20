@@ -1,10 +1,7 @@
 import argparse
 import sys
 sys.path.append('_model')
-sys.path.append('_init')
-sys.path.append('_init/Re20kf25')
-sys.path.append('_init/Re20kf4')
-
+#sys.path.append('_init')
 from environment import *
 import math
 ## Parameters
@@ -23,14 +20,24 @@ parser.add_argument('--solver', help='training/postprocess ', type=str, default=
 args = vars(parser.parse_args())
 
 NLES = args['NLES']
-casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(NLES)+'_'
+casestr = 'C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
 
+print(args)
 print ('case:', casestr)
+
+# Case selection
+if args['case']=='1':
+    sys.path.append('_init/Re20kf4')
+elif args['case']=='4':
+    sys.path.append('_init/Re20kf25')
+
+# State type
 if args['statetype'] == 'enstrophy' or args['statetype'] == 'energy':
     state_size = int(NLES/2)+1
 elif args['statetype'] == 'psiomegadiag':
     state_size = int(NLES*2)
 
+# Type of the action
 if args['actiontype'] == 'CL':
     action_size=1
 else:
@@ -49,7 +56,6 @@ k = korali.Engine()
 e = korali.Experiment()
 
 ### Defining results folder and loading previous results, if any
-
 resultFolder = '_result_vracer'+casestr+'/'
 found = e.loadState(resultFolder + '/latest')
 if found == True:
@@ -61,7 +67,6 @@ e["Problem"]["Environment Function"] = lambda x : environment( args, x )
 e["Problem"]["Agents Per Environment"] = 1
 
 ### Defining Agent Configuration 
-
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
 e["Solver"]["Episodes Per Generation"] = args['gensize'] #--> 10, 25, 50
@@ -71,23 +76,20 @@ e["Solver"]["Discount Factor"] = 0.995
 e["Solver"]["Mini Batch"]["Size"] = 256
 
 ### Defining Variables
-
-statesize = state_size
-# States (flow at sensor locations)
+# States
 for i in range(state_size):
 	e["Variables"][i]["Name"] = "Sensor " + str(i)
 	e["Variables"][i]["Type"] = "State"
 
-# Actions (amplitude of gaussian actuation)
+# Actions
 for i in range(action_size): # size of action 
-	e["Variables"][statesize+i]["Name"] = "Actuator " + str(i)
-	e["Variables"][statesize+i]["Type"] = "Action"
-	e["Variables"][statesize+i]["Lower Bound"] = -0.5**3
-	e["Variables"][statesize+i]["Upper Bound"] = 0.5**3
-	e["Variables"][statesize+i]["Initial Exploration Noise"] = 0.3**3 #0.15**3
+	e["Variables"][state_size+i]["Name"] = "Actuator " + str(i)
+	e["Variables"][state_size+i]["Type"] = "Action"
+	e["Variables"][state_size+i]["Lower Bound"] = -0.5**3
+	e["Variables"][state_size+i]["Upper Bound"] = 0.5**3
+	e["Variables"][state_size+i]["Initial Exploration Noise"] = 0.3**3 #0.15**3
 
 ### Setting Experience Replay and REFER settings
-
 e["Solver"]["Experience Replay"]["Off Policy"]["Annealing Rate"] = 5.0e-8
 e["Solver"]["Experience Replay"]["Off Policy"]["Cutoff Scale"] = 5.0
 e["Solver"]["Experience Replay"]["Off Policy"]["REFER Beta"] = 0.3
@@ -102,7 +104,6 @@ e["Solver"]["Reward"]["Outbound Penalization"]["Enabled"] = True
 e["Solver"]["Reward"]["Outbound Penalization"]["Factor"] = 0.5
   
 ### Configuring the neural network and its hidden layers
-
 e["Solver"]["Neural Network"]["Engine"] = "OneDNN"
 e["Solver"]['Neural Network']['Optimizer'] = "Adam"
 e["Solver"]["L2 Regularization"]["Enabled"] = True
@@ -121,7 +122,6 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Type"] = "Layer/Activation"
 e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tanh"
 
 ### Setting file output configuration
-
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
 e["Solver"]["Termination Criteria"]["Max Generations"] = 10
 e["Solver"]["Experience Replay"]["Serialize"] = True
@@ -129,8 +129,6 @@ e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True
 e["File Output"]["Frequency"] = 1
 e["File Output"]["Path"] = resultFolder
-
-
 
 ### Over ride the settings for post process
 #if args['solver'] == 'postprocess':

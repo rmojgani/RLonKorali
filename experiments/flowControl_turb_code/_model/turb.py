@@ -35,19 +35,22 @@ class turb:
 
     #
     def __init__(self, 
-                Lx=2.0*math.pi, Ly=2.0*math.pi, 
-                NX=128, NY=128, 
+                Lx=2.0*np.pi, Ly=2.0*np.pi, 
+                NX=128,       NY=128, 
                 dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, 
 				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
                 RL=False, 
                 nActions=1, sigma=0.4,
-                case='1', rewardtype='k1', statetype='psiomegadiag',
+                case='1', rewardtype='k1', statetype='enstrophy',
                 actiontype='CL'):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
         self.tic = time.time()
-        self.rewardtype = rewardtype 
+        self.rewardtype= rewardtype
+        self.statetype= statetype
+        self.actiontype= actiontype
+
         # Choose reward type function
         #if rewardtype[0] =='k':
         #    order = int(rewardtype[1])
@@ -85,7 +88,9 @@ class turb:
         self.iout   = iout
         self.nout   = int(nsteps/iout)
         self.RL     = RL
-        #
+        # ----------
+        
+        # 
         self.stepsave = 15000
         print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
@@ -215,18 +220,24 @@ class turb:
                 self.tt[self.ioutnum]   = self.t
 
     def state(self):
-        s1 = np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
-        s2 = np.diag(np.real(np.fft.ifft2(self.psiCurrent_hat))).reshape(-1,)
-        return np.hstack((s1,s2))
+        NX= int(self.NX)
+        kmax= int(NX/2)+1
+        statetype=self.statetype
+        # --------------------------------------
+        if statetype=='psiomegadiag':
+            s1= np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
+            s2= np.diag(np.real(np.fft.ifft2(self.psiCurrent_hat))).reshape(-1,)
+            mystate= np.hstack((s1,s2))
+        # --------------------------
+        elif statetype=='enstrophy':
+            enstrophy= self.enstrophy_spectrum()
+            mystate= np.log(enstrophy[0:kmax])
+        # --------------------------
+        elif statetype=='energy':
+            energy= self.energy_spectrum()
+            mystate= np.log(energy[0:kmax])
+        return mystate
    
-#    def state(self):
-#        NX = int(self.NX)
-#        kmax = int(NX/2)+1
-#
-#        energy = self.energy_spectrum()
-#
-#        return np.log(energy[0:kmax])
-
     def rewardk(self, krange, rewardtype):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
@@ -412,9 +423,9 @@ class turb:
 
         if NX==64:
             if self.case == '1':
-                data_Poi = loadmat('iniWor_Re20kf4_64_1.mat')
+                data_Poi = loadmat('_init/Re20kf4/iniWor_Re20kf4_64_1.mat')
             elif self.case == '4':
-                data_Poi = loadmat('iniWor_Re20kf25_64_1.mat')
+                data_Poi = loadmat('_init/Re20kf25/iniWor_Re20kf25_64_1.mat')
 
         if NX==16:
 #            if self.case == '1':
@@ -425,13 +436,12 @@ class turb:
         if self.case =='4':
 #             ref_tke = np.loadtxt("tke_case04.dat") #instantaneous
 #             ref_ens = np.loadtxt("ens_case04.dat") #instantaneous
-             ref_tke = np.loadtxt("tke_case04_fdns.dat")#Averaged 
-             ref_ens = np.loadtxt("ens_case04_fdns.dat")#Averaged
+             ref_tke = np.loadtxt("_init/tke_case04_fdns.dat")#Averaged 
+             ref_ens = np.loadtxt("_init/ens_case04_fdns.dat")#Averaged
 
         if self.case == '1':
-            ref_tke = np.loadtxt("tke.dat")
-            ref_ens = np.loadtxt("ens.dat")
-        
+            ref_tke = np.loadtxt("_init/tke_case01.dat")
+            ref_ens = np.loadtxt("_init/ens_case01.dat")
  
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
