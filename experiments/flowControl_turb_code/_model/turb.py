@@ -131,13 +131,13 @@ class turb:
    
     def mykrange(self, order):
         NX = int(self.NX)
-        kmax = int(NX/2)+1
+        kmax = int(NX/2)#+1
         krange = 1+np.array(range(0, kmax))
         return krange**order
     
     def setup_targets(self):
         NX = self.NX
-        kmax = int(NX/2)+1
+        kmax = int(NX/2)#+1
         self.targets = np.zeros((2,kmax))
         self.targets[0,:] = self.ref_tke[0:kmax,1] #np.loadtxt("_model/tke.dat")[0:kmax,1]
         self.targets[1,:] = self.ref_ens[0:kmax,1] #np.loadtxt("_model/ens.dat")[0:kmax,1]
@@ -221,7 +221,7 @@ class turb:
 
     def state(self):
         NX= int(self.NX)
-        kmax= int(NX/2)+1
+        kmax= int(NX/2)#+1
         statetype=self.statetype
         # --------------------------------------
         if statetype=='psiomegadiag':
@@ -241,7 +241,7 @@ class turb:
     def rewardk(self, krange, rewardtype):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
-        kmax = int(NX/2)+1
+        kmax = int(NX/2)#+1
         #print('ezzzzzzzzzzz',rewardtype) 
         if rewardtype == 'z':
             #print('enssssssssssssssssssss')
@@ -258,7 +258,7 @@ class turb:
     def rewardratio(self,rewardtype):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
-        kmax = int(NX/2)+1
+        kmax = int(NX/2)#+1
 
         if rewardtype == 'z':
             #print('enssssssssssssssssssss')
@@ -287,7 +287,7 @@ class turb:
     def reward(self):
         # use some self.variable to calculate the reward
         NX = int(self.NX)
-        kmax = int(NX/2)+1
+        kmax = int(NX/2)#+1
         
         krange = np.array(range(0, kmax))
         enstrophy = self.enstrophy_spectrum()
@@ -414,23 +414,12 @@ class turb:
         time = 0.0
         slnW = []
         
-        if NX==128:
-            if self.case =='1':
-                data_Poi = loadmat('_init/Re20kf4/iniWor_Re20kf4_128_1.mat')
-            elif self.case == '4':
-                data_Poi = loadmat('_init/Re20kf25/iniWor_Re20kf25_128_4.mat')
+        if self.case =='1':
+            folder_path = '_init/Re20kf4/iniWor_Re20kf4i_'
+        elif self.case == '4':
+            folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
-
-        if NX==64:
-            if self.case == '1':
-                data_Poi = loadmat('_init/Re20kf4/iniWor_Re20kf4_64_1.mat')
-            elif self.case == '4':
-                data_Poi = loadmat('_init/Re20kf25/iniWor_Re20kf25_64_1.mat')
-
-        if NX==16:
-#            if self.case == '1':
-           data_Poi = loadmat('iniWor_16_5.mat')
-
+        data_Poi = loadmat(folder_path+str(NX)+'_1.mat')
         w1 = data_Poi['w1']
         
         if self.case =='4':
@@ -438,10 +427,11 @@ class turb:
 #             ref_ens = np.loadtxt("ens_case04.dat") #instantaneous
              ref_tke = np.loadtxt("_init/tke_case04_fdns.dat")#Averaged 
              ref_ens = np.loadtxt("_init/ens_case04_fdns.dat")#Averaged
+             stop_load_file
 
         if self.case == '1':
-            ref_tke = np.loadtxt("_init/tke_case01.dat")
-            ref_ens = np.loadtxt("_init/ens_case01.dat")
+            ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
+            ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
  
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
@@ -552,7 +542,41 @@ class turb:
 #        print(cs, ve)
 #        stop
         return ve
-
+    #-----------------------------------------
+    def enstrophy_spectrum(w1_hat,NX,NY,Ksq):
+        NX = self.NX
+        NY = self.NY # Square for now
+        w1_hat = self.w1_hat
+        #-----------------------------------
+        signal = np.power(abs(w1_hat),2)/2;
+    
+        spec_x = np.mean(np.abs(signal),axis=0)
+        spec_y = np.mean(np.abs(signal),axis=1)
+        spec = (spec_x + spec_y)/2
+        spec = spec/ (NX**2)/NX
+        spec = spec[0:int(NX/2)]
+    
+        self.enstrophy_spec = spec
+        return spec
+    #-----------------------------------------
+    def energy_spectrum(w1_hat,NX,NY,Ksq):
+        NX = self.NX
+        NY = self.NY # Square for now
+        Ksq = self.Ksq
+        w1_hat = self.w1_hat
+    
+        Ksq[0,0]=1
+        w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
+        w_hat[0,0]=0;
+        spec_x = np.mean(np.abs(w_hat),axis=0)
+        spec_y = np.mean(np.abs(w_hat),axis=1)
+        spec = (spec_x + spec_y)/2
+        spec = spec /NX
+        
+        spec=spec[0:int(NX/2)]
+        return  energy_spectrum
+    #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    '''
     def enstrophy_spectrum(self):
         omega=np.real(np.fft.ifft2(self.w1_hat))
         NX = self.NX
@@ -560,6 +584,7 @@ class turb:
 #        enstrophy_spectrum = self.myspectrum(np.power(omega,2))
         enstrophy_spectrum = self.myspectrum2(omega)
         self.enstrophy_spec = enstrophy_spectrum#/NX/NY
+        error_ens_spec
         return  enstrophy_spectrum#/NX/NY
 
     def energy_spectrum(self):
@@ -577,12 +602,18 @@ class turb:
         spec_x = np.mean(np.abs(w_hat),axis=0)
         spec_y = np.mean(np.abs(w_hat),axis=1)
         tke = (spec_x + spec_y)/2
+        if NX==32:
+            tke=tke/2
+        error_ens_spec
         return  tke
 
     def myspectrum(self, a):
+        stop_myspec
+
         return np.mean(np.abs(np.fft.fft(a,axis=0)),axis=1)
         
     def myspectrum2(self, a):
+        stop_myspec2
         NX = self.NX
         NY = self.NY
         a_hat = np.fft.fft2(a)/NX/NY
@@ -590,12 +621,14 @@ class turb:
         spec_x = np.mean(np.abs(a_hat_sq),axis=0)
         spec_y = np.mean(np.abs(a_hat_sq),axis=1)
         tke = (spec_x + spec_y)/2
+        if NX==32:
+            tke=tke/2
         return tke
-
+    '''
 
     def myplot(self, append_str=''):
         NX = int(self.NX)
-        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = int(NX/2)+1
+        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = int(NX/2)#+1
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
         #kplot_str = '\kappa_{sq}'
         stepnum = self.stepnum

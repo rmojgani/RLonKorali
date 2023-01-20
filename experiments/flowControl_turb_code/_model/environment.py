@@ -1,4 +1,8 @@
 from turb import *
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.rcParams['image.cmap'] = 'bwr_r'
 
 import numpy as np
 def environment( args, s ):
@@ -28,14 +32,10 @@ def environment( args, s ):
     print('Simulate, nsteps=', nInitialSteps)
     sim.simulate( nsteps=nInitialSteps )
 
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt 
-    plt.rcParams['image.cmap'] = 'bwr_r'
     #print('------------------')
-    #print(sim.w1_hat.shape)
-    #print(sim.psiPrevious_hat.shape)
-    #print(sim.psi_hat.shape)
+    print(sim.w1_hat.shape)
+    print(sim.psiPrevious_hat.shape)
+    print(sim.psi_hat.shape)
     #print('------------------')
     sim.myplot(casestr)    
     print('PNG file saved')

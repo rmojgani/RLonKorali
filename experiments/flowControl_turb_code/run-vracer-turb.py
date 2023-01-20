@@ -3,7 +3,6 @@ import sys
 sys.path.append('_model')
 #sys.path.append('_init')
 from environment import *
-import math
 ## Parameters
 
 ### Parsing arguments
@@ -33,7 +32,7 @@ elif args['case']=='4':
 
 # State type
 if args['statetype'] == 'enstrophy' or args['statetype'] == 'energy':
-    state_size = int(NLES/2)+1
+    state_size = int(NLES/2)#+1
 elif args['statetype'] == 'psiomegadiag':
     state_size = int(NLES*2)
 
@@ -123,7 +122,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 
 ### Setting file output configuration
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 10
+e["Solver"]["Termination Criteria"]["Max Generations"] = 50
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True
@@ -137,7 +136,7 @@ e["File Output"]["Path"] = resultFolder
 #    e["Solver"]["Mode"] = "Training" #"Training / Testing"
 
 ### Running Experiment
-
+print("Running the experiment ---- ")
 k.run(e)
 
 ### Checking if we reached a minimum performance
