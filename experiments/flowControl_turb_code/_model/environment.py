@@ -33,16 +33,13 @@ def environment( args, s ):
     sim.simulate( nsteps=nInitialSteps )
 
     #print('------------------')
-    print(sim.w1_hat.shape)
-    print(sim.psiPrevious_hat.shape)
-    print(sim.psi_hat.shape)
+    #print(sim.w1_hat.shape)
+    #print(sim.psiPrevious_hat.shape)
+    #print(sim.psi_hat.shape)
     #print('------------------')
     sim.myplot(casestr)    
     print('PNG file saved')
-    #print(sim.state())
-    #print(sim.state().tolist())
-    #print('xxxx       \n')
-    #print(s)
+
     ## get initial state
     s["State"] = sim.state().tolist()
     # print("state:", sim.state())
@@ -73,6 +70,6 @@ def environment( args, s ):
 
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    sim.myplot('_ctr')
+    sim.myplot(casestr+'_RL')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

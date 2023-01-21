@@ -415,7 +415,7 @@ class turb:
         slnW = []
         
         if self.case =='1':
-            folder_path = '_init/Re20kf4/iniWor_Re20kf4i_'
+            folder_path = '_init/Re20kf4/iniWor_Re20kf4_'
         elif self.case == '4':
             folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
@@ -423,11 +423,8 @@ class turb:
         w1 = data_Poi['w1']
         
         if self.case =='4':
-#             ref_tke = np.loadtxt("tke_case04.dat") #instantaneous
-#             ref_ens = np.loadtxt("ens_case04.dat") #instantaneous
-             ref_tke = np.loadtxt("_init/tke_case04_fdns.dat")#Averaged 
-             ref_ens = np.loadtxt("_init/ens_case04_fdns.dat")#Averaged
-             stop_load_file
+            ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
+            ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
 
         if self.case == '1':
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
@@ -437,7 +434,6 @@ class turb:
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
     
-
         # ... and save to self
         self.w1_hat = w1_hat
         self.psi_hat = psi_hat
@@ -460,7 +456,7 @@ class turb:
         # Reference files 
         self.ref_tke = ref_tke
         self.ref_ens = ref_ens
-        print('init: omega, psi')
+        #print('init: omega, psi')
         #print(w1_hat.shape)
         #print(psi_hat.shape)
 
@@ -543,7 +539,7 @@ class turb:
 #        stop
         return ve
     #-----------------------------------------
-    def enstrophy_spectrum(w1_hat,NX,NY,Ksq):
+    def enstrophy_spectrum(self):
         NX = self.NX
         NY = self.NY # Square for now
         w1_hat = self.w1_hat
@@ -559,7 +555,7 @@ class turb:
         self.enstrophy_spec = spec
         return spec
     #-----------------------------------------
-    def energy_spectrum(w1_hat,NX,NY,Ksq):
+    def energy_spectrum(self):
         NX = self.NX
         NY = self.NY # Square for now
         Ksq = self.Ksq
@@ -574,7 +570,7 @@ class turb:
         spec = spec /NX
         
         spec=spec[0:int(NX/2)]
-        return  energy_spectrum
+        return  spec
     #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     '''
     def enstrophy_spectrum(self):
@@ -661,7 +657,7 @@ class turb:
         plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
         plt.xlabel(rf'${kplot_str}$')
         plt.xlim([1,1e3])
-        plt.ylim([1e-4,1e2])
+        plt.ylim([1e-6,1e0])
         
         ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
@@ -674,7 +670,7 @@ class turb:
         plt.xlabel(rf'${kplot_str}$')
         plt.xlim([1,1e2])
         #plt.ylim([1e-5,1e0])
-        plt.ylim([1e-4,1e-1])
+        plt.ylim([1e-3,1e1])
         #plt.pcolor(np.real(sim.w1_hat));plt.colorbar()
         
         #plt.subplot(3,2,5)

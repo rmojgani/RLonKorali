@@ -1,4 +1,5 @@
 rm core.*
+rm -i nohup.*
 rm *.png
 rm N*_t\=*.mat
 rm -rf _result_vracer*/
