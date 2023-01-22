@@ -1,8 +1,9 @@
 import argparse
 import sys
+import os
 sys.path.append('_model')
 #sys.path.append('_init')
-from environment import *
+#from environment import *
 ## Parameters
 
 ### Parsing arguments
@@ -15,11 +16,12 @@ parser.add_argument('--actiontype', help='Action type [CL,CLxyt,nuxyt,] ', type=
 parser.add_argument('--NLES', help='', type=int, default=128)
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
+parser.add_argument('--runstrpost', help='Smag,', type=str, default='nosgs,leith,smag, ')
 
 args = vars(parser.parse_args())
 
 NLES = args['NLES']
-casestr = 'C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
+casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
 
 print(args)
 print ('case:', casestr)
@@ -42,13 +44,6 @@ if args['actiontype'] == 'CL':
 else:
     action_size=8**2
 
-#if args['solver']=='training':
-#    print('Enviroment loaded')
-#    from environment import *
-#else:
-#print('Postprocess enviroment loaded')
-#from environmentpost import environmentpost as environment
-
 ### Defining Korali Problem
 import korali
 k = korali.Engine()
@@ -59,6 +54,17 @@ resultFolder = '_result_vracer'+casestr+'/'
 found = e.loadState(resultFolder + '/latest')
 if found == True:
 	print("[Korali] Continuing execution from previous run...\n");
+
+# Mode settings
+if args['solver']=='training':
+    print('Enviroment loaded')
+    from environment import *
+else:
+    print('Postprocess enviroment loaded')
+    from environmentpost import environmentpost as environment
+    args['runFolder'] = resultFolder+args['runstrpost']+'/'
+    os.makedirs(args['runFolder'], exist_ok = True)
+    print(args['runFolder'])
 
 ### Defining Problem Configuration
 e["Problem"]["Type"] = "Reinforcement Learning / Continuous"

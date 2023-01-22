@@ -337,8 +337,8 @@ class turb:
        	diffu_hat = -Ksq*w1_hat
        
         # Calculate SGS diffusion 
-        ve = self.leith_cs(w1_hat, action)
-#        ve = self.smag_cs(w1_hat, action)
+#        ve = self.leith_cs(w1_hat, action)
+        ve = self.smag_cs(w1_hat, action)
 #        print(ve1, ve2)
 #        ve = 0
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
@@ -491,12 +491,12 @@ class turb:
         self.Kabs = Kabs
         self.invKsq = invKsq
     
-    def leith_cs(self, w1_hat, action_leith=None):
+    def leith_cs(self, w1_hat, action=None):
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
         '''
         #print('action is:', action_leith)
-        if action_leith != None:
+        if action != None:
             if self.veRL !=0:
                 CL3 = self.veRL#action_leith[0]
         #       print('CL3', self.veRL, action_leith)
@@ -526,13 +526,17 @@ class turb:
         Ky = self.Ky
         NX = self.NX
         psiCurrent_hat = self.psiCurrent_hat
+
+        if action != None:
+            cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+        else:
+            cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
+
+
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
         S  = 2.0*(S1*S1 + S2*S2)**0.5
-        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
-#        print(S**2.0.shape)
-#        print(S1.shape)
-#        print(S.shape)
+#        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
         S = (np.mean(S**2.0))**0.5;
         ve = cs*S
 #        print(cs, ve)
@@ -622,7 +626,7 @@ class turb:
         return tke
     '''
 
-    def myplot(self, append_str=''):
+    def myplot(self, append_str='', prepend_str=''):
         NX = int(self.NX)
         Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = int(NX/2)#+1
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
@@ -697,7 +701,7 @@ class turb:
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
 
-        filename = '2Dturb_N'+str(NX)+'_'+str(stepnum)+append_str
+        filename = prepend_str+'2Dturb_N'+str(NX)+'_'+str(stepnum)+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
         
 #        print(filename)

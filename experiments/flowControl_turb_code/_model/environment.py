@@ -13,7 +13,7 @@ def environment( args, s ):
     rewardtype = args["rewardtype"]
     statetype = args['statetype']
     actiontype = args['actiontype']
-    casestr = 'C'+args['case']+'_N'+str(N)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
+    casestr = '_C'+args['case']+'_N'+str(N)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
 
     IF_RL = True #False
     # simulate up to T=20

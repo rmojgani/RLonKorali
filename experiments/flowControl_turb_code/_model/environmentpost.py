@@ -7,6 +7,7 @@ def environmentpost( args, s ):
     dt   = 5.0e-4
     case = args["case"]
     rewardtype = args["rewardtype"]
+    runFolder = args["runFolder"]
     statetype = args['statetype']
     actiontype = args['actiontype']
     casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(args['NLES'])+'_'
@@ -50,11 +51,12 @@ def environmentpost( args, s ):
     ## run controlled simulation
     nContolledSteps = int(3e6) #int(3e6/3e3)
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
+    mystr = 'smag0d17'
     step = 0
     while step < nContolledSteps:
         if step % int(50e3) == 0 :
-            sim.myplot('_controlled_testing_'+str(step))
-            savemat('N'+str(sim.NX)+'_t='+str(step)+'_RL_testing.mat',
+            sim.myplot('_controlled_'+mystr+'_'+str(step), runFolder)
+            savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
             dict([('psi_hat', sim.psi_hat),('w_hat', sim.w1_hat)]))
 
         # Getting new action
@@ -77,7 +79,7 @@ def environmentpost( args, s ):
         step += 1
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    np.savetxt('controlled_CL3_testing.out', np.array(sim.velist).T, delimiter='\t')
+    np.savetxt(runFolder+'controlled_CL3_'+mystr+'.out', np.array(sim.velist).T, delimiter='\t')
     #print(sim.velist)
     stop_post
     # TODO?: Termination in case of divergence
