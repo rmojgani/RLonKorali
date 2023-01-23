@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
 parser.add_argument('--statetype', help='State type [enstrophy,energy,psidiag,psiomegadiag,] ', type=str, default='psiomegadiag')
-parser.add_argument('--actiontype', help='Action type [CL,CLxyt,nuxyt,] ', type=str, default='CL')
+parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
 parser.add_argument('--NLES', help='', type=int, default=128)
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
@@ -41,9 +41,11 @@ elif args['statetype'] == 'psiomegadiag':
 # Type of the action
 if args['actiontype'] == 'CL':
     action_size=1
+elif args['actiontype'] == 'CS':
+    action_size=1
 else:
     action_size=8**2
-
+print('Action size is:', action_size)
 ### Defining Korali Problem
 import korali
 k = korali.Engine()
@@ -128,7 +130,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 
 ### Setting file output configuration
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 50
+e["Solver"]["Termination Criteria"]["Max Generations"] = 51
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True

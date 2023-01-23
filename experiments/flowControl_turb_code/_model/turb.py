@@ -46,6 +46,7 @@ class turb:
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
+        print('actionsize=', nActions)
         self.tic = time.time()
         self.rewardtype= rewardtype
         self.statetype= statetype
@@ -108,11 +109,12 @@ class turb:
 
         # get targets for control:
         if self.RL:
-            self.nActions = nActions
+#            self.nActions = nActions
             self.sigma = sigma
             self.x = np.arange(self.NX)*self.Lx/(self.NX-1)
-            self.case = case
-	
+        self.case = case
+        self.nActions = nActions
+
 	    # SAVE SIZE
         slnU = np.zeros([NX,NNSAVE])
         slnV = np.zeros([NX,NNSAVE])
@@ -146,23 +148,20 @@ class turb:
         '''
         2D Turbulence: One time step simulation of 2D Turbulence
         '''
-        forcing  = np.zeros(self.N)
-        #Fforcing = np.zeros(self.N)#QG?
+        forcing  = np.zeros(self.nActions)
         if (action is not None):
             assert len(action) == self.nActions, print("Wrong number of actions. provided {}/{}".format(len(action), self.nActions))
             for i, a in enumerate(action):
                 forcing += a #*self.gaussians[i,:]
-                #Fforcing = fft( forcing )
-            #print('forcing',forcing)
-            #stop
-        #
         # Action
         if (action is not None):
             #print(forcing.shape)
             self.veRL = forcing[0]
             #print(self.veRL)
             #stop_veRL
-#        else:
+        else:
+            self.veRL=0.17**2
+
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
             #self.myplot()
@@ -530,7 +529,9 @@ class turb:
         if action != None:
             cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
         else:
-            cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
+            #self.veRL = 0.17 * 2
+            cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+            #cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
 
 
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 

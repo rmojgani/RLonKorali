@@ -49,9 +49,9 @@ def environmentpost( args, s ):
     # print("state:", sim.state())
 
     ## run controlled simulation
-    nContolledSteps = int(3e6) #int(3e6/3e3)
+    nContolledSteps = int(1e7) #int(3e6/3e3)
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
-    mystr = 'smag0d17'
+    mystr = "smagRL"#'smag0d17'
     step = 0
     while step < nContolledSteps:
         if step % int(50e3) == 0 :
@@ -81,6 +81,6 @@ def environmentpost( args, s ):
 
     np.savetxt(runFolder+'controlled_CL3_'+mystr+'.out', np.array(sim.velist).T, delimiter='\t')
     #print(sim.velist)
-    stop_post
+    stop_post_end
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"
