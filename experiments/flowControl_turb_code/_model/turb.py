@@ -48,7 +48,15 @@ class turb:
         print('rewardtype', rewardtype[0:2])
         print('actionsize=', nActions)
         self.tic = time.time()
-        self.rewardtype= rewardtype
+        if rewardtype[0]=='z':
+            self.rewardtype ='enstrophy'
+        elif rewardtype[0]=='k':
+            self.rewardtype ='energy'
+        if rewardtype[1]=='1':
+            self.rewardfunc = '1'
+        elif rewardtype[1]=='e':
+            self.rewardfunc = 'e'
+
         self.statetype= statetype
         self.actiontype= actiontype
 
@@ -90,8 +98,6 @@ class turb:
         self.nout   = int(nsteps/iout)
         self.RL     = RL
         # ----------
-        
-        # 
         self.stepsave = 15000
         print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
@@ -101,11 +107,7 @@ class turb:
         self.v=0
 
         # set initial condition
-#        if (u0 is None) or (v0 is None):
-#			# turb:
-#			# Initial condition
         self.IC()
-
 
         # get targets for control:
         if self.RL:
@@ -133,17 +135,57 @@ class turb:
    
     def mykrange(self, order):
         NX = int(self.NX)
-        kmax = int(NX/2)#+1
-        krange = 1+np.array(range(0, kmax))
+        kmax = self.kmax
+        krange = np.array(range(0, kmax))
         return krange**order
     
-    def setup_targets(self):
+    def setup_reference(self):
         NX = self.NX
-        kmax = int(NX/2)#+1
-        self.targets = np.zeros((2,kmax))
-        self.targets[0,:] = self.ref_tke[0:kmax,1] #np.loadtxt("_model/tke.dat")[0:kmax,1]
-        self.targets[1,:] = self.ref_ens[0:kmax,1] #np.loadtxt("_model/ens.dat")[0:kmax,1]
-    
+        kmax = self.kmax
+        rewardtype = self.rewardtype
+        if rewardtype == 'enstrophy':
+            #print('Enstrophy as reference')
+            spec_ref = self.ref_ens[0:kmax,1]
+        elif rewardtype == 'energy':
+            #print('Energy as reference')
+            spec_ref = self.ref_ens[0:kmax,1]
+        self.spec_ref = spec_ref
+
+    def setup_target(self):
+        NX = self.NX
+        kmax = self.kmax
+        rewardtype = self.rewardtype
+        if rewardtype == 'enstrophy':
+            #print('Enstrophy as reference')
+            spec_now = self.enstrophy_spectrum()
+        elif rewardtype == 'energy':
+            #print('Energy as reference')
+            spec_now = self.energy_spectrum()
+        return spec_now
+
+    def setup_reward(self):
+        rewardtype = self.rewardtype
+        krange = self.krange
+        rewardfunc = self.rewardfunc
+
+        reference  = self.spec_ref
+        target = self.setup_target()
+
+        if rewardfunc == '1' or rewardfunc == '3':
+            myreward = 1/( np.linalg.norm( krange*(target-reference)  )**2 )
+        elif rewardfunc == 'e':
+            print('not implemented')
+            stop_
+        return myreward
+
+    def mySGS(self, action):
+        actiontype = self.actiontype
+        if actiontype=='CL':
+            nu = self.leith_cs(action)
+        elif actiontype=='CS':
+            nu = self.smag_cs(action)
+        return nu
+
     def step( self, action=None ):
         '''
         2D Turbulence: One time step simulation of 2D Turbulence
@@ -196,31 +238,12 @@ class turb:
             self.setup_timeseries(nout=self.nout)
         #
         # advance in time for nsteps steps
-        if (correction==[]):
-            for n in range(1,self.nsteps+1):
-                self.step()
-        else:
-            # lots of code duplication here, but should improve speed instead of having the 'if correction' at every time step
-            for n in range(1,self.nsteps+1):
-                try:
-                     self.step()
-                     self.v += correction
-                except FloatingPointError:
-                    #
-                    # something exploded
-                    # cut time series to last saved solution and return
-                    self.nout = self.ioutnum
-                    self.vv.resize((self.nout+1,self.N)) # nout+1 because the IC is in [0]
-                    self.tt.resize(self.nout+1)      # nout+1 because the IC is in [0]
-                    return -1
-            if ( (self.iout>0) and (n%self.iout==0) ):
-                self.ioutnum += 1
-                self.vv[self.ioutnum,:] = self.v
-                self.tt[self.ioutnum]   = self.t
+        for n in range(1,self.nsteps+1):
+            self.step()
 
     def state(self):
         NX= int(self.NX)
-        kmax= int(NX/2)#+1
+        kmax= self.kmax
         statetype=self.statetype
         # --------------------------------------
         if statetype=='psiomegadiag':
@@ -237,62 +260,9 @@ class turb:
             mystate= np.log(energy[0:kmax])
         return mystate
    
-    def rewardk(self, krange, rewardtype):
-        # use some self.variable to calculate the reward
-        NX = int(self.NX)
-        kmax = int(NX/2)#+1
-        #print('ezzzzzzzzzzz',rewardtype) 
-        if rewardtype == 'z':
-            #print('enssssssssssssssssssss')
-            spec_now = self.enstrophy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
-        elif rewardtype == 'e':
-            #print('energyyyyyyyyyyyyyyyy')
-            spec_now = self.energy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
-
-        myreward = 1/( np.linalg.norm( krange*(spec_now - spec_ref)  )**2 )
-        return myreward
-
-    def rewardratio(self,rewardtype):
-        # use some self.variable to calculate the reward
-        NX = int(self.NX)
-        kmax = int(NX/2)#+1
-
-        if rewardtype == 'z':
-            #print('enssssssssssssssssssss')
-            spec_now = self.enstrophy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
-        elif rewardtype == 'e':
-            #print('energyyyyyyyyyyyyyyyy')
-            spec_now = self.energy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
-
-        myreward = -np.linalg.norm( (spec_now - spec_ref)  / np.linalg.norm( spec_ref)  )
-        return myreward
-    
-    def rewardreserve(self):
-        rewardtype = self.rewardtype
-        # Choose reward type function
-        #if rewardtype[0] =='k':
-        order = int(rewardtype[1])
-        reward = self.rewardk(self.mykrange(order), 'z')# rewardtype[0] )
-        #elif rewardtype[0:2] == 'ratio':
-        #    reward = self.rewardratio()
-        if reward==np.infty or reward==-np.infty:
-            reward = np.sign(reward)*1e24
-        return reward
 
     def reward(self):
-        # use some self.variable to calculate the reward
-        NX = int(self.NX)
-        kmax = int(NX/2)#+1
-        
-        krange = np.array(range(0, kmax))
-        enstrophy = self.enstrophy_spectrum()
-        enstrophy_ref = self.ref_ens[0:kmax,1]
-        myreward = 1/( np.linalg.norm( krange*(enstrophy[0:kmax] - enstrophy_ref)  )**2 )
-        return myreward
+        return self.setup_reward()
 
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
         Kx = self.Kx
@@ -336,9 +306,7 @@ class turb:
        	diffu_hat = -Ksq*w1_hat
        
         # Calculate SGS diffusion 
-#        ve = self.leith_cs(w1_hat, action)
-        ve = self.smag_cs(w1_hat, action)
-#        print(ve1, ve2)
+        ve = self.mySGS(action)
 #        ve = 0
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
        	RHS[0,0] = 0
@@ -449,19 +417,21 @@ class turb:
         # 
         self.Fk = Fk
         self.Fn = n # Forcing k
+        # Aux reward 
+        kmax = self.kmax
+        krange = np.array(range(0, kmax))
+        self.krange = krange
         # SGS Model
         self.ve = 0
         self.velist = []
         # Reference files 
         self.ref_tke = ref_tke
         self.ref_ens = ref_ens
-        #print('init: omega, psi')
-        #print(w1_hat.shape)
-        #print(psi_hat.shape)
-
         # temporary
         self.N = NX
         self.L = 2*np.pi
+        # 
+        self.setup_reference()
 
     def operatorgen(self):
         Lx = self.Lx
@@ -469,7 +439,9 @@ class turb:
         dx = Lx/NX
         #-----------------  
         x        = np.linspace(0, Lx-dx, num=NX)
-        kx       = (2*math.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),np.arange((-NX/2+1),0,dtype=np.float64)))   
+        kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
+                                                np.arange((-NX/2+1),0,dtype=np.float64)
+                                                ))   
         [Y,X]    = np.meshgrid(x,x)
         [Ky,Kx]  = np.meshgrid(kx,kx)
         Ksq      = (Kx**2 + Ky**2)
@@ -478,7 +450,7 @@ class turb:
         invKsq   = 1/Ksq
         Ksq[0,0] = 0
         invKsq[0,0] = 0
-
+        kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
         self.Y = Y
@@ -489,8 +461,11 @@ class turb:
         self.Ksq = Ksq
         self.Kabs = Kabs
         self.invKsq = invKsq
-    
-    def leith_cs(self, w1_hat, action=None):
+        self.kmax = kmax
+    #-----------------------------------------
+    # ============= SGS Models ===============
+    #-----------------------------------------
+    def leith_cs(self, action=None):
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
         '''
@@ -498,33 +473,29 @@ class turb:
         if action != None:
             if self.veRL !=0:
                 CL3 = self.veRL#action_leith[0]
-        #       print('CL3', self.veRL, action_leith)
-        #     with open("test.txt", "a") as myfile:
-        #        myfile.write(str(CL3)+"\n")
         else:
-            CL3 = 0.17**3# (EKI)
+            CL3 = 0.17**3# (Lit)
         #else:
         Kx = self.Kx
         Ky = self.Ky
-  
+        w1_hat = self.w1_hat
+
         w1x_hat = -(1j*Kx)*w1_hat
         w1y_hat = (1j*Ky)*w1_hat
         w1x = np.real(np.fft.ifft2(w1x_hat))
         w1y = np.real(np.fft.ifft2(w1y_hat))
         abs_grad_omega = np.mean(np.sqrt( w1x**2+w1y**2  ))
         # 
-        #LAPL_omega = np.real(np.fft.ifft2(diffu_hat))
-        #LAPL_omega = np.abs(LAPL_omega)**(0.5)
-        
         delta3 = (2*math.pi/self.NX)**3
         ve = CL3*delta3*abs_grad_omega
         return ve
 
-    def smag_cs(self, w1_hat, action=None):
+    def smag_cs(self, action=None):
         Kx = self.Kx
         Ky = self.Ky
         NX = self.NX
         psiCurrent_hat = self.psiCurrent_hat
+        w1_hat = self.w1_hat
 
         if action != None:
             cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
@@ -533,15 +504,12 @@ class turb:
             cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
             #cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
 
-
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
         S  = 2.0*(S1*S1 + S2*S2)**0.5
 #        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
         S = (np.mean(S**2.0))**0.5;
         ve = cs*S
-#        print(cs, ve)
-#        stop
         return ve
     #-----------------------------------------
     def enstrophy_spectrum(self):
@@ -576,60 +544,10 @@ class turb:
         
         spec=spec[0:int(NX/2)]
         return  spec
-    #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    '''
-    def enstrophy_spectrum(self):
-        omega=np.real(np.fft.ifft2(self.w1_hat))
-        NX = self.NX
-        NY = self.NY # Square for now
-#        enstrophy_spectrum = self.myspectrum(np.power(omega,2))
-        enstrophy_spectrum = self.myspectrum2(omega)
-        self.enstrophy_spec = enstrophy_spectrum#/NX/NY
-        error_ens_spec
-        return  enstrophy_spectrum#/NX/NY
-
-    def energy_spectrum(self):
-        omega=np.real(np.fft.ifft2(self.w1_hat))
-        psi=np.real(np.fft.ifft2(self.psi_hat))
-        NX = self.NX
-        NY = self.NY # Square for now
-        Ksq = self.Ksq
-        #energy_spectrum = self.myspectrum(psi*omega)
-        #self.energy_spec = energy_spectrum/NX/NY
-        #np.power(np.abs(np.fft.fft2(a)),2)/NX/NY/Ksq
-        Ksq[0,0]=1
-        w_hat = np.power(np.abs(np.fft.fft2(omega)),2)/NX/NY/Ksq 
-        w_hat[0,0]=0;
-        spec_x = np.mean(np.abs(w_hat),axis=0)
-        spec_y = np.mean(np.abs(w_hat),axis=1)
-        tke = (spec_x + spec_y)/2
-        if NX==32:
-            tke=tke/2
-        error_ens_spec
-        return  tke
-
-    def myspectrum(self, a):
-        stop_myspec
-
-        return np.mean(np.abs(np.fft.fft(a,axis=0)),axis=1)
-        
-    def myspectrum2(self, a):
-        stop_myspec2
-        NX = self.NX
-        NY = self.NY
-        a_hat = np.fft.fft2(a)/NX/NY
-        a_hat_sq = np.power(a_hat,2)
-        spec_x = np.mean(np.abs(a_hat_sq),axis=0)
-        spec_y = np.mean(np.abs(a_hat_sq),axis=1)
-        tke = (spec_x + spec_y)/2
-        if NX==32:
-            tke=tke/2
-        return tke
-    '''
-
+    #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
         NX = int(self.NX)
-        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = int(NX/2)#+1
+        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = self.kmax
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
         #kplot_str = '\kappa_{sq}'
         stepnum = self.stepnum
@@ -712,8 +630,7 @@ class turb:
         
         np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
         np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
-
- 
+    #-----------------------------------------
     def KDEof(self, u):
         from PDE_KDE import myKDE
         Vecpoints, exp_log_kde, logkde, kde = myKDE(u)
