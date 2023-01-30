@@ -12,8 +12,7 @@ plt.rcParams['image.cmap'] = 'bwr'
 np.seterr(over='raise', invalid='raise')
 
 # ---------------------- Forced turb
-import math
-# ---------------------- QG
+#import math
 
 #ts = int(SPIN_UP*2) # Total timesteps
 #tot_time = dt*ts    # Length of run
@@ -501,8 +500,8 @@ class turb:
             cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
         else:
             #self.veRL = 0.17 * 2
-            cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
-            #cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
+            #cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+            cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
 
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
