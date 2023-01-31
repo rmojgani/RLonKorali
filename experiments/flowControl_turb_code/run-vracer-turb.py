@@ -16,9 +16,11 @@ parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', ty
 parser.add_argument('--NLES', help='', type=int, default=128)
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
-parser.add_argument('--runstrpost', help='Smag,', type=str, default='nosgs,leith,smag, ')
+parser.add_argument('--runstrpost', help='nosgs, Leith, Smag,', type=str, default='')
 
 args = vars(parser.parse_args())
+
+args['runstrpost']=args['actiontype']+'post'
 
 NLES = args['NLES']
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']

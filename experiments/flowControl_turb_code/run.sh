@@ -1,8 +1,8 @@
-NLES=64
+NLES=32
 case=1
-rewardtype=k1 # [k1,k2,k3,log,]
+rewardtype=z1 # [k1,k2,k3,log,]
 statetype=enstrophy # [enstrophy,energy,psidiag,psiomegadiag,] 
-actiontype=CS
+actiontype=CL
 gensize=10
 solver=training #postproces
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}.out

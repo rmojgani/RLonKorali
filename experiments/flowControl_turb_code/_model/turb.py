@@ -485,7 +485,7 @@ class turb:
         w1y = np.real(np.fft.ifft2(w1y_hat))
         abs_grad_omega = np.mean(np.sqrt( w1x**2+w1y**2  ))
         # 
-        delta3 = (2*math.pi/self.NX)**3
+        delta3 = (2*np.pi/self.NX)**3
         ve = CL3*delta3*abs_grad_omega
         return ve
 

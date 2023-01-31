@@ -13,10 +13,10 @@ import sys
 # directory = '.'
 NLES = 64
 
-sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smagRL/')
-directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smagRL/'
+sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS/CSpost/')
+directory = '_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS/CSpost/'
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
-METHOD = 'smag' # 'Leith' , 'Smag'
+METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 
 # sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/')
 # directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/'
@@ -25,7 +25,7 @@ METHOD = 'smag' # 'Leith' , 'Smag'
 Fn = 4
 CASENO = 1
 
-CL = 's'
+CL = ''
 
 num_file = 0
 omega_M = []# np.zeros((NLES, NLES))
@@ -70,7 +70,7 @@ if CASENO == 1:
 
 std_omega = std_omega_DNS#np.std(omega_M)
 
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M,BANDWIDTH=2.0)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
 # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
@@ -104,7 +104,7 @@ plt.title(r'Comparison of PDF of $\omega$, '+CASE)
 filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
 
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
-# stop
+stop
 #%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
 # np.savetxt(filename_save+"_pdfdns.dat", pdf_dns_, delimiter='\t')
@@ -190,6 +190,7 @@ for i in [3,4]:
     
 plt.savefig(filename_save+'_spec.png', bbox_inches='tight', dpi=450)
 #%%
+stop
 tke_ave_=np.stack((Kplot,tke_ave)).T
 np.savetxt(filename_save+"_tkeave.dat", tke_ave_,delimiter='\t')
 
