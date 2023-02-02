@@ -43,12 +43,14 @@ elif args['statetype'] == 'psiomegadiag':
 
 # Type of the action
 if args['actiontype'] == 'CL':
-    action_size=1
+    action_size=1+1
 elif args['actiontype'] == 'CS':
-    action_size=1
+    action_size=1+1
 else:
     action_size=8**2
-print('Action size is:', action_size)
+action_size=2
+print('Racer: Action size is:', action_size)
+args['nActions']=action_size
 ### Defining Korali Problem
 import korali
 k = korali.Engine()
@@ -115,8 +117,8 @@ e["Solver"]["Experience Replay"]["Maximum Size"] = 100000
 e["Solver"]["Policy"]["Distribution"] = "Squashed Normal"
 e["Solver"]["State Rescaling"]["Enabled"] = True
 e["Solver"]["Reward"]["Rescaling"]["Enabled"] = True
-e["Solver"]["Reward"]["Outbound Penalization"]["Enabled"] = True
-e["Solver"]["Reward"]["Outbound Penalization"]["Factor"] = 0.5
+#e["Solver"]["Reward"]["Outbound Penalization"]["Enabled"] = True
+#e["Solver"]["Reward"]["Outbound Penalization"]["Factor"] = 0.5
   
 ### Configuring the neural network and its hidden layers
 e["Solver"]["Neural Network"]["Engine"] = "OneDNN"

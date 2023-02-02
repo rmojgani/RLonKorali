@@ -44,7 +44,7 @@ class turb:
                 rewardtype='k1', 
                 statetype='enstrophy',
                 actiontype='CL',
-                nagents=1):
+                nagents=2):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
@@ -195,13 +195,13 @@ class turb:
         '''
         forcing  = np.zeros(self.nActions)
         if (action is not None):
-            assert len(action) == self.nActions, print("Wrong number of actions. provided {}/{}".format(len(action), self.nActions))
+            assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
             for i, a in enumerate(action):
                 forcing += a #*self.gaussians[i,:]
         # Action
         if (action is not None):
             #print(forcing.shape)
-            self.veRL = forcing[0]
+            self.veRL = forcing[0]# For test
             #print(self.veRL)
             #stop_veRL
         else:
@@ -263,10 +263,9 @@ class turb:
             energy= self.energy_spectrum()
             mystate= np.log(energy[0:kmax])
 
-        mystatelist = [mystate]
+        mystatelist = [mystate.tolist()]
         for _ in range(nagents-1):
-            mystatelist.append(mystate)
-        print(mystatelist)
+            mystatelist.append(mystate.tolist())
         return mystatelist
    
 
@@ -275,10 +274,9 @@ class turb:
         # --------------------------------------
         myreward=self.setup_reward()
         # --------------------------
-        myrewardlist = [myreward]
+        myrewardlist = [myreward.tolist()]
         for _ in range(nagents-1):
-            myrewardlist.append(myreward)
-        print(myrewardlist)
+            myrewardlist.append(myreward.tolist())
         return myrewardlist 
 
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):

@@ -10,6 +10,7 @@ def environment( args, s ):
     N    = args['NLES'] #128# 64
     dt   = 5.0e-4
     case = args["case"]
+    action_size = args["nActions"]
     rewardtype = args["rewardtype"]
     statetype = args['statetype']
     actiontype = args['actiontype']
@@ -26,6 +27,7 @@ def environment( args, s ):
     sim  = turb(RL=IF_RL, 
                 NX=N, NY=N,
                 case=case,
+                nActions=action_size,
                 rewardtype=rewardtype,
                 statetype=statetype,
                 actiontype=actiontype,
@@ -44,7 +46,7 @@ def environment( args, s ):
     print('PNG file saved')
 
     ## get initial state
-    s["State"] = sim.state().tolist()
+    s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
     ## run controlled simulation
@@ -64,7 +66,7 @@ def environment( args, s ):
         #print("Reward", s["Reward"])
 
         # get new state
-        s["State"] = sim.state().tolist()
+        s["State"] = sim.state()#.tolist()
         # print("state:", sim.state())
         
         # print()
