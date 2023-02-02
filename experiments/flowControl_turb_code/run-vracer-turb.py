@@ -17,6 +17,7 @@ parser.add_argument('--NLES', help='', type=int, default=128)
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 parser.add_argument('--runstrpost', help='nosgs, Leith, Smag,', type=str, default='')
+parser.add_argument('--nagents', help='Number of Agents', type=int, default=2)
 
 args = vars(parser.parse_args())
 
@@ -73,7 +74,12 @@ else:
 ### Defining Problem Configuration
 e["Problem"]["Type"] = "Reinforcement Learning / Continuous"
 e["Problem"]["Environment Function"] = lambda x : environment( args, x )
-e["Problem"]["Agents Per Environment"] = 1
+e["Problem"]["Agents Per Environment"] = args['nagents']
+e["Problem"]["Policies Per Environment"] = 1
+print('Number of agents', args['nagents'])
+if args['nagents']>1:
+    e["Solver"]["Multi Agent Relationship"] = "Individual" #"Individual" (or "Cooperation")
+    e["Solver"]["Multi Agent Correlation"] = False # (False or True)
 
 ### Defining Agent Configuration 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"

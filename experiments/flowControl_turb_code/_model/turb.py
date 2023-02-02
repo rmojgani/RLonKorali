@@ -40,8 +40,11 @@ class turb:
 				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
                 RL=False, 
                 nActions=1, sigma=0.4,
-                case='1', rewardtype='k1', statetype='enstrophy',
-                actiontype='CL'):
+                case='1', 
+                rewardtype='k1', 
+                statetype='enstrophy',
+                actiontype='CL',
+                nagents=1):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
@@ -58,6 +61,7 @@ class turb:
 
         self.statetype= statetype
         self.actiontype= actiontype
+        self.nagents= nagents
 
         # Choose reward type function
         #if rewardtype[0] =='k':
@@ -244,6 +248,7 @@ class turb:
         NX= int(self.NX)
         kmax= self.kmax
         statetype=self.statetype
+        nagents=self.nagents
         # --------------------------------------
         if statetype=='psiomegadiag':
             s1= np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
@@ -257,11 +262,24 @@ class turb:
         elif statetype=='energy':
             energy= self.energy_spectrum()
             mystate= np.log(energy[0:kmax])
-        return mystate
+
+        mystatelist = [mystate]
+        for _ in range(nagents-1):
+            mystatelist.append(mystate)
+        print(mystatelist)
+        return mystatelist
    
 
     def reward(self):
-        return self.setup_reward()
+        nagents=self.nagents
+        # --------------------------------------
+        myreward=self.setup_reward()
+        # --------------------------
+        myrewardlist = [myreward]
+        for _ in range(nagents-1):
+            myrewardlist.append(myreward)
+        print(myrewardlist)
+        return myrewardlist 
 
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
         Kx = self.Kx

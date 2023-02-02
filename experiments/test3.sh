@@ -9,5 +9,6 @@ PWDH=$(pwd)
 #PWDH=/home/exouser/mount/docker/flowControl_turb
 #PWDH=/media/volume/sdb/docker/flowControl_turb
 
-docker run -v ${PWDH}:${PWDD} -it cselab/korali:3.0.2
+#docker run -v ${PWDH}:${PWDD} -it cselab/korali:3.0.2
+docker run -v ${PWDH}:${PWDD} -it cselab/korali:latest
 #docker start -a -i flamboyant_noether
