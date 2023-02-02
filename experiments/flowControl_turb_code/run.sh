@@ -1,7 +1,7 @@
 NLES=32
 case=1
 rewardtype=z1 # [k1,k2,k3,log,]
-statetype=enstrophy # [enstrophy,energy,psidiag,psiomegadiag,] 
+statetype=energy # [enstrophy,energy,psidiag,psiomegadiag,] 
 actiontype=CL
 gensize=10
 solver=training #postproces

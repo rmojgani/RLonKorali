@@ -132,7 +132,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 
 ### Setting file output configuration
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 51
+e["Solver"]["Termination Criteria"]["Max Generations"] = 54
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True
