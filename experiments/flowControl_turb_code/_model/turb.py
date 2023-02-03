@@ -3,6 +3,8 @@ from scipy.fftpack import fft, ifft
 import numpy as np
 import time as time
 from scipy.io import loadmat,savemat
+import scipy as sp
+from scipy.interpolate import RectBivariateSpline
 
 import matplotlib
 matplotlib.use('Agg')
@@ -202,6 +204,7 @@ class turb:
                 forcing += a #*self.gaussians[i,:]
         # Action
         if (action is not None):
+            nActionSQRT = (self.nActions)**(0.5)
             #print(forcing.shape)
             forcingzero = 0*self.w1_hat
             forcingzero[:int(NX/2),:int(NX/2)] = forcing[0]
@@ -458,6 +461,29 @@ class turb:
         self.L = 2*np.pi
         # 
         self.setup_reference()
+        self.setup_MAagents()
+
+    def setup_MAagents(self):
+        # Copied from:   f36df60 on main  
+        # temporary
+        nActiongrid = int((self.nActions)**0.5)
+        self.nActiongrid = nActiongrid
+        # Initlize action
+        X = np.linspace(0,self.L,nActiongrid, endpoint=True)
+        Y = np.linspace(0,self.L,nActiongrid, endpoint=True)
+        self.xaction = X
+        self.yaction = Y
+
+    def upsample(self, action): 
+        arr_action = np.array(action).reshape(self.nActiongrid, self.nActiongrid)
+        upsample_action = RectBivariateSpline(self.xaction, self.yaction, arr_action, kx=1, ky=1)
+
+        # Initlize action
+        upsamplesize = self.NX # 1 for testing, will be changed to grid size eventually
+        x2 = np.linspace(0,self.L, upsamplesize, endpoint=True)
+        y2 = np.linspace(0,self.L,  upsamplesize, endpoint=True)
+        forcing = upsample_action(x2, y2)
+        return forcing
 
     def operatorgen(self):
         Lx = self.Lx
