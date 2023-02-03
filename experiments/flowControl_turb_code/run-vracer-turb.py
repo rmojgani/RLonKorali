@@ -17,7 +17,7 @@ parser.add_argument('--NLES', help='', type=int, default=128)
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 parser.add_argument('--runstrpost', help='nosgs, Leith, Smag,', type=str, default='')
-parser.add_argument('--nagents', help='Number of Agents', type=int, default=2)
+parser.add_argument('--nagents', help='Number of Agents', type=int, default=4)
 
 args = vars(parser.parse_args())
 
@@ -48,7 +48,7 @@ elif args['actiontype'] == 'CS':
     action_size=1+1
 else:
     action_size=8**2
-action_size=2
+action_size=4
 print('Racer: Action size is:', action_size)
 args['nActions']=action_size
 ### Defining Korali Problem

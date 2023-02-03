@@ -193,6 +193,8 @@ class turb:
         '''
         2D Turbulence: One time step simulation of 2D Turbulence
         '''
+        NX=self.NX
+
         forcing  = np.zeros(self.nActions)
         if (action is not None):
             assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
@@ -201,7 +203,13 @@ class turb:
         # Action
         if (action is not None):
             #print(forcing.shape)
-            self.veRL = forcing[0]# For test
+            forcingzero = 0*self.w1_hat
+            forcingzero[:int(NX/2),:int(NX/2)] = forcing[0]
+            forcingzero[int(NX/2):,:int(NX/2)] = forcing[1]
+            forcingzero[:int(NX/2),int(NX/2):] = forcing[2]
+            forcingzero[int(NX/2):,int(NX/2):] = forcing[3]
+
+            self.veRL = forcingzero#forcing[0]# For test
             #print(self.veRL)
             #stop_veRL
         else:
@@ -272,7 +280,10 @@ class turb:
     def reward(self):
         nagents=self.nagents
         # --------------------------------------
-        myreward=self.setup_reward()
+        try:
+            myreward=self.setup_reward()
+        except:
+            myreward=-10000
         # --------------------------
         myrewardlist = [myreward.tolist()]
         for _ in range(nagents-1):
