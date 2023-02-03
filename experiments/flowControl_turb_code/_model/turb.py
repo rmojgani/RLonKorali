@@ -200,19 +200,11 @@ class turb:
         forcing  = np.zeros(self.nActions)
         if (action is not None):
             assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
-            for i, a in enumerate(action):
-                forcing += a #*self.gaussians[i,:]
+            forcing = self.upsample(self.action)
+
         # Action
         if (action is not None):
-            nActionSQRT = (self.nActions)**(0.5)
-            #print(forcing.shape)
-            forcingzero = 0*self.w1_hat
-            forcingzero[:int(NX/2),:int(NX/2)] = forcing[0]
-            forcingzero[int(NX/2):,:int(NX/2)] = forcing[1]
-            forcingzero[:int(NX/2),int(NX/2):] = forcing[2]
-            forcingzero[int(NX/2):,int(NX/2):] = forcing[3]
-
-            self.veRL = forcingzero#forcing[0]# For test
+            self.veRL = forcing#forcing[0]# For test
             #print(self.veRL)
             #stop_veRL
         else:
