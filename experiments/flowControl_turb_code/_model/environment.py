@@ -3,8 +3,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr_r'
-
 import numpy as np
+
 def environment( args, s ):
     L    = 2*np.pi
     N    = args['NLES'] #128# 64
@@ -76,5 +76,6 @@ def environment( args, s ):
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
     sim.myplot(casestr+'_RL')
+    sim.myplotforcing(casestr+'_RL_f')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

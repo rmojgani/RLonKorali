@@ -64,6 +64,7 @@ class turb:
         self.statetype= statetype
         self.actiontype= actiontype
         self.nagents= nagents
+        self.nActions = nActions
 
         # Choose reward type function
         #if rewardtype[0] =='k':
@@ -120,7 +121,7 @@ class turb:
             self.sigma = sigma
             self.x = np.arange(self.NX)*self.Lx/(self.NX-1)
         self.case = case
-        self.nActions = nActions
+        #self.nActions = nActions
 
 	    # SAVE SIZE
         slnU = np.zeros([NX,NNSAVE])
@@ -200,7 +201,7 @@ class turb:
         forcing  = np.zeros(self.nActions)
         if (action is not None):
             assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
-            forcing = self.upsample(self.action)
+            forcing = self.upsample(action)
 
         # Action
         if (action is not None):
@@ -458,7 +459,7 @@ class turb:
     def setup_MAagents(self):
         # Copied from:   f36df60 on main  
         # temporary
-        nActiongrid = int((self.nActions)**0.5)
+        nActiongrid = self.nActions#int((self.nActions)**0.5)
         self.nActiongrid = nActiongrid
         # Initlize action
         X = np.linspace(0,self.L,nActiongrid, endpoint=True)
@@ -608,10 +609,10 @@ class turb:
         plt.title(r'$\omega$')
 
 
-        levels = np.linspace(-30,3,100)
+        #levels = np.linspace(-30,3,100)
  
         plt.subplot(3,2,2)
-        plt.contourf(np.real(np.fft.ifft2(self.sol[1])),levels);plt.colorbar()
+        plt.contourf(np.real(np.fft.ifft2(self.sol[1])));plt.colorbar()
         plt.title(r'$\psi$')
         
         ref_tke = self.ref_tke#np.loadtxt("tke.dat")
@@ -660,11 +661,18 @@ class turb:
         plt.subplot(3,2,5)
         plt.pcolor(u)
         plt.subplot(3,2,6)
-        plt.pcolor(v)
+        try:
+            if len(self.veRL)>1:
+                plt.pcolor(self.veRL)
+                plt.title('forcing')
+        except:
+            plt.pcolor(v)
+            plt.title('v')
+        plt.colorbar()
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
 
-        filename = prepend_str+'2Dturb_N'+str(NX)+'_'+str(stepnum)+append_str
+        filename = prepend_str+'2Dturb_'+str(stepnum)+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
         
 #        print(filename)
@@ -674,6 +682,50 @@ class turb:
         
         np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
         np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
+
+    #-----------------------------------------
+    def myplotforcing(self, append_str='', prepend_str=''):
+        NX = int(self.NX)
+        Kx = self.Kx
+        Ky = self.Ky
+        w1_hat = self.w1_hat
+
+        w1x_hat = -(1j*Kx)*w1_hat
+        w1y_hat = (1j*Ky)*w1_hat
+        w1x = np.real(np.fft.ifft2(w1x_hat))
+        w1y = np.real(np.fft.ifft2(w1y_hat))
+        grad_omega = np.sqrt( w1x**2+w1y**2)
+
+        veRL=self.veRL
+        stepnum = self.stepnum
+
+        plt.figure(figsize=(8,14))
+        levels = np.linspace(-30,30,100)
+
+        plt.subplot(3,2,1)
+        plt.contourf(veRL)
+        plt.colorbar()
+        plt.title(r'forcing')
+
+        plt.subplot(3,2,3)
+        plt.contourf(grad_omega)
+        plt.colorbar()
+        plt.title(r'$\| \nabla \omega \|$')
+
+        omega = np.real(np.fft.ifft2(self.sol[0]))
+        plt.subplot(3,2,2)
+        plt.plot(veRL.reshape(-1,1), omega.reshape(-1,1), '.k')
+        plt.xlabel(r'$forcing$')
+        plt.ylabel(r'$\omega$')
+
+        plt.subplot(3,2,4)
+        plt.plot(veRL.reshape(-1,1), grad_omega.reshape(-1,1), '.k')
+        plt.xlabel(r'$forcing$')
+        plt.ylabel(r'$\| \nabla \omega \|$')
+
+        filename = prepend_str+'2Dturb_'+str(stepnum)+'forcing'+append_str
+        plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
+
     #-----------------------------------------
     def KDEof(self, u):
         from PDE_KDE import myKDE

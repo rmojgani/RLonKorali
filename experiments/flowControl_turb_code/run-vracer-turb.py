@@ -24,7 +24,7 @@ args = vars(parser.parse_args())
 args['runstrpost']=args['actiontype']+'post'
 
 NLES = args['NLES']
-casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']
+casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
 
 print(args)
 print ('case:', casestr)
@@ -43,12 +43,11 @@ elif args['statetype'] == 'psiomegadiag':
 
 # Type of the action
 if args['actiontype'] == 'CL':
-    action_size=1+1
+    action_size=1*args['nagents']
 elif args['actiontype'] == 'CS':
-    action_size=1+1
+    action_size=1*args['nagents']
 else:
     action_size=8**2
-action_size=4
 print('Racer: Action size is:', action_size)
 args['nActions']=action_size
 ### Defining Korali Problem
