@@ -203,7 +203,9 @@ class turb:
         if (action is not None):
             #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
             forcing = self.upsample(action)
-
+        print('action:',action)
+        print('nactions, nagents:',self.nActions, self.nAgents)
+        print('forcing',forcing)
         # Action
         if (action is not None):
             self.veRL = forcing#forcing[0]# For test
@@ -211,6 +213,7 @@ class turb:
             #stop_veRL
         else:
             self.veRL=0.17**2
+        print('self.veRL:',self.veRL)
 
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
@@ -603,18 +606,25 @@ class turb:
         dt = self.dt
         # --------------
         plt.figure(figsize=(8,14))
-        levels = np.linspace(-30,30,100)
  
+        omega = np.real(np.fft.ifft2(self.sol[0]))
+        VMAX, VMIN = np.max(omega), np.min(omega)
+        VMAX = max(np.abs(VMIN), np.abs(VMAX))
+        VMIN = -VMAX
+        levels = np.linspace(VMIN,VMAX,100)
+
         plt.subplot(3,2,1)
-        plt.contourf(np.real(np.fft.ifft2(self.sol[0])),levels, vmin=-30,vmax=30)
-        plt.colorbar()
+        plt.contourf(omega, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\omega$')
 
-
-        #levels = np.linspace(-30,3,100)
+        psi = np.real(np.fft.ifft2(self.sol[1]))
+        VMAX, VMIN = np.max(psi), np.min(psi)
+        VMAX = max(np.abs(VMIN), np.abs(VMAX))
+        VMIN = -VMAX
+        levels = np.linspace(VMIN,VMAX,100)
  
         plt.subplot(3,2,2)
-        plt.contourf(np.real(np.fft.ifft2(self.sol[1])));plt.colorbar()
+        plt.contourf(psi, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\psi$')
         
         ref_tke = self.ref_tke#np.loadtxt("tke.dat")
@@ -663,13 +673,8 @@ class turb:
         plt.subplot(3,2,5)
         plt.pcolor(u)
         plt.subplot(3,2,6)
-        try:
-            if len(self.veRL)>1:
-                plt.pcolor(self.veRL)
-                plt.title('forcing')
-        except:
-            plt.pcolor(v)
-            plt.title('v')
+        plt.pcolor(v)
+        plt.title('v')
         plt.colorbar()
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
@@ -691,7 +696,7 @@ class turb:
         Kx = self.Kx
         Ky = self.Ky
         w1_hat = self.w1_hat
-
+        omega = np.real(np.fft.ifft2(self.sol[0]))
         w1x_hat = -(1j*Kx)*w1_hat
         w1y_hat = (1j*Ky)*w1_hat
         w1x = np.real(np.fft.ifft2(w1x_hat))
@@ -714,7 +719,6 @@ class turb:
         plt.colorbar()
         plt.title(r'$\nabla \omega$')
 
-        omega = np.real(np.fft.ifft2(self.sol[0]))
         plt.subplot(3,2,2)
         xplot = veRL.reshape(-1,1)
         yplot = omega.reshape(-1,1)

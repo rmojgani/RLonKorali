@@ -147,9 +147,10 @@ e["File Output"]["Frequency"] = 1
 e["File Output"]["Path"] = resultFolder
 
 ### Over ride the settings for post process
-#if args['solver'] == 'postprocess':
-#    print('Generation ........... ')
-#    e["Solver"]["Episodes Per Generation"] = 1
+if args['solver'] == 'postprocess':
+    print('Postprocess ---> Generation ........... ')
+    e["Solver"]["Episodes Per Generation"] = 1
+#    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
 #    e["Solver"]["Mode"] = "Training" #"Training / Testing"
 
 ### Running Experiment
