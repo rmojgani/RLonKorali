@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr'
+from scipy.stats import multivariate_normal
 
 np.seterr(over='raise', invalid='raise')
 
@@ -711,30 +712,46 @@ class turb:
         plt.subplot(3,2,3)
         plt.contourf(grad_omega)
         plt.colorbar()
-        plt.title(r'$\| \nabla \omega \|$')
+        plt.title(r'$\nabla \omega$')
 
         omega = np.real(np.fft.ifft2(self.sol[0]))
         plt.subplot(3,2,2)
-        plt.plot(veRL.reshape(-1,1), omega.reshape(-1,1), '.k',alpha=0.5)
-        plt.plot( [np.mean(veRL.reshape(-1,1)),np.mean(veRL.reshape(-1,1))],
-                  [np.mean(omega.reshape(-1,1)),np.mean(omega.reshape(-1,1))] , '+r',markersize=12)
+        xplot = veRL.reshape(-1,1)
+        yplot = omega.reshape(-1,1)
+
+        xv, yv, rv, pos, meanxy = self.multivariat_fit(xplot,yplot)
+        plt.plot(xplot, yplot,'.k',alpha=0.5)
+        plt.scatter(meanxy[0],meanxy[1], marker="+", color='red',s=100)
+        plt.contour(xv, yv, rv.pdf(pos))
 
         plt.xlabel(r'$forcing$')
         plt.ylabel(r'$\omega$')
         plt.grid(color='gray', linestyle='dashed')
 
         plt.subplot(3,2,4)
-        plt.plot(veRL.reshape(-1,1), grad_omega.reshape(-1,1), '.k',alpha=0.5)
-        plt.plot( [np.mean(veRL.reshape(-1,1)),np.mean(veRL.reshape(-1,1))],
-                  [np.mean(grad_omega.reshape(-1,1)),np.mean(grad_omega.reshape(-1,1))] , '+r',markersize=12)
+        xplot = veRL.reshape(-1,1)
+        yplot = grad_omega.reshape(-1,1)
+        xv, yv, rv, pos, meanxy = self.multivariat_fit(xplot,yplot)
+        plt.plot(xplot, yplot,'.k',alpha=0.5)
+        plt.scatter(meanxy[0],meanxy[1], marker="+", color='red',s=100)
+        plt.contour(xv, yv, rv.pdf(pos))
 
         plt.xlabel(r'$forcing$')
-        plt.ylabel(r'$\| \nabla \omega \|$')
+        plt.ylabel(r'$\nabla \omega$')
         plt.grid(color='gray', linestyle='dashed')
 
         filename = prepend_str+'2Dturb_'+str(stepnum)+'forcing'+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
+    #-----------------------------------------  
+    def multivariat_fit(self,x,y):
+        covxy = np.cov(x,y, rowvar=False)
+        meanxy=np.mean(x),np.mean(y)
+        rv = multivariate_normal(mean=meanxy, cov=covxy, allow_singular=False)
+        xv, yv = np.meshgrid(np.linspace(x.min(),x.max(),100), 
+                             np.linspace(y.min(),y.max(),100), indexing='ij')
+        pos = np.dstack((xv, yv))
 
+        return xv, yv, rv, pos, meanxy 
     #-----------------------------------------
     def KDEof(self, u):
         from PDE_KDE import myKDE
