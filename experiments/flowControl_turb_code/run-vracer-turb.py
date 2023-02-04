@@ -43,9 +43,9 @@ elif args['statetype'] == 'psiomegadiag':
 
 # Type of the action
 if args['actiontype'] == 'CL':
-    action_size=1*args['nagents']
+    action_size=1
 elif args['actiontype'] == 'CS':
-    action_size=1*args['nagents']
+    action_size=1
 else:
     action_size=8**2
 print('Racer: Action size is:', action_size)

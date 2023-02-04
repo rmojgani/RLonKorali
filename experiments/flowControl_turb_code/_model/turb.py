@@ -200,7 +200,7 @@ class turb:
 
         forcing  = np.zeros(self.nActions)
         if (action is not None):
-            assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
+            #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
             forcing = self.upsample(action)
 
         # Action
@@ -459,7 +459,7 @@ class turb:
     def setup_MAagents(self):
         # Copied from:   f36df60 on main  
         # temporary
-        nActiongrid = self.nActions#int((self.nActions)**0.5)
+        nActiongrid = int((self.nActions*self.nagents)**0.5)
         self.nActiongrid = nActiongrid
         # Initlize action
         X = np.linspace(0,self.L,nActiongrid, endpoint=True)
@@ -468,7 +468,8 @@ class turb:
         self.yaction = Y
 
     def upsample(self, action): 
-        arr_action = np.array(action).reshape(self.nActiongrid, self.nActiongrid)
+        action_flat = [item for sublist in action for item in sublist]
+        arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
         upsample_action = RectBivariateSpline(self.xaction, self.yaction, arr_action, kx=1, ky=1)
 
         # Initlize action
