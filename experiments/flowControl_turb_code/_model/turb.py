@@ -714,14 +714,22 @@ class turb:
 
         omega = np.real(np.fft.ifft2(self.sol[0]))
         plt.subplot(3,2,2)
-        plt.plot(veRL.reshape(-1,1), omega.reshape(-1,1), '.k')
+        plt.plot(veRL.reshape(-1,1), omega.reshape(-1,1), '.k',alpha=0.5)
+        plt.plot( [np.mean(veRL.reshape(-1,1)),np.mean(veRL.reshape(-1,1))],
+                  [np.mean(omega.reshape(-1,1)),np.mean(omega.reshape(-1,1))] , '+r',markersize=12)
+
         plt.xlabel(r'$forcing$')
         plt.ylabel(r'$\omega$')
+        plt.grid(color='gray', linestyle='dashed')
 
         plt.subplot(3,2,4)
-        plt.plot(veRL.reshape(-1,1), grad_omega.reshape(-1,1), '.k')
+        plt.plot(veRL.reshape(-1,1), grad_omega.reshape(-1,1), '.k',alpha=0.5)
+        plt.plot( [np.mean(veRL.reshape(-1,1)),np.mean(veRL.reshape(-1,1))],
+                  [np.mean(grad_omega.reshape(-1,1)),np.mean(grad_omega.reshape(-1,1))] , '+r',markersize=12)
+
         plt.xlabel(r'$forcing$')
         plt.ylabel(r'$\| \nabla \omega \|$')
+        plt.grid(color='gray', linestyle='dashed')
 
         filename = prepend_str+'2Dturb_'+str(stepnum)+'forcing'+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)

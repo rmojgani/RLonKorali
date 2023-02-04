@@ -5,7 +5,7 @@ statetype=enstrophy # [enstrophy,energy,psidiag,psiomegadiag,]
 actiontype=CS
 gensize=10
 solver=training #postproces
-nagents=16
+nagents=4
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}.out
 echo ${myoutfile}>>${myoutfile}
 ps>>${myoutfile}
