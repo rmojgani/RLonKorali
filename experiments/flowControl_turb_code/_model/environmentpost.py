@@ -56,8 +56,7 @@ def environmentpost(args, s):
     mystr = "smagRL"#'smag0d17'
     step = 0
     while step < nContolledSteps:
-        print(sim.veRL)
-        if step % int(50e3/100) == 0 :
+        if step % int(50e3) == 1 :
             sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
             sim.myplotforcing('_ctrled_'+mystr+'_'+str(step), runFolder)
 

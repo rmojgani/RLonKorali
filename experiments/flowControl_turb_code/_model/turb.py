@@ -51,7 +51,9 @@ class turb:
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
-        print('actionsize=', nActions)
+        print('number of Actions=', nActions)
+        print('number of Agents=', nagents)
+
         self.tic = time.time()
         if rewardtype[0]=='z':
             self.rewardtype ='enstrophy'
@@ -203,9 +205,6 @@ class turb:
         if (action is not None):
             #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
             forcing = self.upsample(action)
-        print('action:',action)
-        print('nactions, nagents:',self.nActions, self.nAgents)
-        print('forcing',forcing)
         # Action
         if (action is not None):
             self.veRL = forcing#forcing[0]# For test
@@ -213,7 +212,6 @@ class turb:
             #stop_veRL
         else:
             self.veRL=0.17**2
-        print('self.veRL:',self.veRL)
 
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)

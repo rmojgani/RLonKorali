@@ -11,10 +11,10 @@ import os
 import sys
 # directory = '/home/rm99/Mount/aa/flowControl_turb/flowControl_turb_1'
 # directory = '.'
-NLES = 64
+NLES = 16
 
-sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS/CSpost/')
-directory = '_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS/CSpost/'
+sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/')
+directory = '_result_vracer_C1_N16_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/'
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 
@@ -70,7 +70,7 @@ if CASENO == 1:
 
 std_omega = std_omega_DNS#np.std(omega_M)
 
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M,BANDWIDTH=2.0)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M,BANDWIDTH=1.0)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
 # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
@@ -89,12 +89,12 @@ plt.ylim([1e-6, 1e-1])
 
 # pdf_DNS = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
 # pdf_DNS = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
-pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
+# pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
 pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
 
 # plt.semilogy(pdf_DNS[:,0]/std_omega_DNS, pdf_DNS[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
 
-plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
+# plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
 plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
 
 plt.legend(loc="upper left")
@@ -243,4 +243,72 @@ for i in [1,2,3,4]:
              linewidth='1.0', color='black', alpha=0.25)
     plt.grid(which='minor', linestyle='-',
              linewidth='0.5', color='red', alpha=0.25)
+#%% PDF of veRL
+num_file = 0
+veRL_M = []
+omega_M = []# np.zeros((NLES, NLES))
+psi_M = []
 
+for filename in os.listdir(directory):
+
+    if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
+        print(filename)
+        mat_contents = sio.loadmat(directory+filename)
+        veRL = mat_contents['veRL']
+        w1_hat = mat_contents['w_hat']
+        psi_hat = mat_contents['psi_hat']
+
+        omega = np.real(np.fft.ifft2(w1_hat))
+        psi = np.real(np.fft.ifft2(psi_hat))
+
+        omega_M = np.append(omega_M, omega)
+        veRL_M = np.append(veRL_M, veRL)
+        psi_M = np.append(psi_M, psi)
+
+#%%
+meanveRL = veRL_M.mean()
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(veRL_M,BANDWIDTH=0.1)
+plt.semilogy(Vecpoints, exp_log_kde, 'k', alpha=0.75, linewidth=1.0, label=METHOD+r'($C=$'+str(CL)+r')')
+plt.semilogy([meanveRL,meanveRL],[min(exp_log_kde),max(exp_log_kde)],'-r')
+#%%
+from scipy.stats import multivariate_normal
+
+def multivariat_fit(x,y):
+    covxy = np.cov(x,y, rowvar=False)
+    meanxy=np.mean(x),np.mean(y)
+    rv = multivariate_normal(mean=meanxy, cov=covxy, allow_singular=False)
+    xv, yv = np.meshgrid(np.linspace(x.min(),x.max(),100),
+                         np.linspace(y.min(),y.max(),100), indexing='ij')
+    pos = np.dstack((xv, yv))
+
+    return xv, yv, rv, pos, meanxy
+#%%
+Lx = 2*np.pi
+NX = 16
+kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
+                                        np.arange((-NX/2+1),0,dtype=np.float64)
+                                        ))
+[Ky,Kx]  = np.meshgrid(kx,kx)
+w1x_hat = -(1j*Kx)*w1_hat
+w1y_hat = (1j*Ky)*w1_hat
+
+
+#%%
+xplot, xplot_str = veRL_M, '$C_S^2$'
+yplot, yplot_str= omega_M, '$\omega$'
+# yplot, yplot_str = psi_M, '$\psi$'
+CS2 = 0.17**2
+CS2EKI = 0.1**2
+
+xv, yv, rv, pos, meanxy = multivariat_fit(xplot,yplot)
+plt.plot(xplot, yplot,'.k',alpha=0.05, markersize=2)
+plt.contour(xv, yv, rv.pdf(pos))
+plt.scatter(meanxy[0],meanxy[1], marker="+", color='red',s=100,linewidths=2)
+plt.scatter(CS2,meanxy[1], marker="o", color='green',s=50,linewidths=0.15)
+plt.scatter(CS2EKI,meanxy[1], marker="*", color='green',s=50,linewidths=0.15)
+
+plt.xlabel(xplot_str)
+plt.ylabel(yplot_str)
+plt.grid(color='gray', linestyle='dashed')
+
+plt.savefig(filename+'dis.png', bbox_inches='tight', dpi=450)
