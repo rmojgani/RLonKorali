@@ -1,4 +1,4 @@
-NLES=16
+NLES=32
 case=1
 rewardtype=z1 # [k1,k2,k3,log,]
 statetype=enstrophy # [enstrophy,energy,psidiag,psiomegadiag,] 

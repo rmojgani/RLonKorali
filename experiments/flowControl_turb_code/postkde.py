@@ -14,7 +14,7 @@ import sys
 NLES = 16
 
 sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/')
-directory = '_result_vracer_C1_N16_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/'
+directory = '_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/'
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 
@@ -281,7 +281,7 @@ def multivariat_fit(x,y):
                          np.linspace(y.min(),y.max(),100), indexing='ij')
     pos = np.dstack((xv, yv))
 
-    return xv, yv, rv, pos, meanxy
+    return xv, yv, rv, pos, meanxy, covxy
 #%%
 Lx = 2*np.pi
 NX = 16
@@ -293,14 +293,14 @@ w1x_hat = -(1j*Kx)*w1_hat
 w1y_hat = (1j*Ky)*w1_hat
 
 
-#%%
+#%% Plot Dis
 xplot, xplot_str = veRL_M, '$C_S^2$'
-yplot, yplot_str= omega_M, '$\omega$'
-# yplot, yplot_str = psi_M, '$\psi$'
+# yplot, yplot_str= omega_M, '$\omega$'
+yplot, yplot_str = psi_M, '$\psi$'
 CS2 = 0.17**2
 CS2EKI = 0.1**2
 
-xv, yv, rv, pos, meanxy = multivariat_fit(xplot,yplot)
+xv, yv, rv, pos, meanxy, covxy = multivariat_fit(xplot,yplot)
 plt.plot(xplot, yplot,'.k',alpha=0.05, markersize=2)
 plt.contour(xv, yv, rv.pdf(pos))
 plt.scatter(meanxy[0],meanxy[1], marker="+", color='red',s=100,linewidths=2)
@@ -311,4 +311,37 @@ plt.xlabel(xplot_str)
 plt.ylabel(yplot_str)
 plt.grid(color='gray', linestyle='dashed')
 
+plt.savefig(filename+'dis.png', bbox_inches='tight', dpi=450)
+#%%
+lambda_, v = np.linalg.eig(covxy)
+lambda_ = np.sqrt(lambda_)
+from matplotlib.patches import Ellipse
+fig, ax = plt.subplots()#subplot_kw={'aspect': 'equal'})
+
+for j in range(4):
+  ell = Ellipse(xy=meanxy,
+                width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+                angle=np.rad2deg(np.arccos(v[0, 0])),
+                alpha=0.05,
+                facecolor='blue',
+                #facecolor='none',
+                edgecolor='blue',
+                linestyle='-')
+
+
+  #ell.set_facecolor('none')
+  ax.add_artist(ell)
+
+
+
+#plt.plot(xplot, yplot,'.k',alpha=0.05, markersize=0.5)
+plt.scatter(xplot, yplot, marker=".", color='black',s=0.1,alpha=0.25)
+
+plt.scatter(meanxy[0],meanxy[1], marker="+", color='blue',s=100)
+plt.scatter(CS2,meanxy[1], marker="s", color='red',s=25,linewidths=0.15)
+plt.scatter(CS2EKI,meanxy[1], marker="*", color='black',s=50,linewidths=0.15)
+
+plt.xlabel(xplot_str)
+plt.ylabel(yplot_str)
+plt.grid(color='gray', linestyle='dashed')
 plt.savefig(filename+'dis.png', bbox_inches='tight', dpi=450)
