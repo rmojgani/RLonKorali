@@ -104,7 +104,7 @@ plt.title(r'Comparison of PDF of $\omega$, '+CASE)
 filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
 
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
-stop
+# stop
 #%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
 # np.savetxt(filename_save+"_pdfdns.dat", pdf_dns_, delimiter='\t')
@@ -190,7 +190,7 @@ for i in [3,4]:
     
 plt.savefig(filename_save+'_spec.png', bbox_inches='tight', dpi=450)
 #%%
-stop
+# stop
 tke_ave_=np.stack((Kplot,tke_ave)).T
 np.savetxt(filename_save+"_tkeave.dat", tke_ave_,delimiter='\t')
 
@@ -249,9 +249,9 @@ veRL_M = []
 omega_M = []# np.zeros((NLES, NLES))
 psi_M = []
 
-for filename in os.listdir(directory):
+for filename in sorted(os.listdir(directory)):
 
-    if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
+    if METHOD in filename and str(NLES) in filename and '01' in filename and filename.endswith('.mat'):
         print(filename)
         mat_contents = sio.loadmat(directory+filename)
         veRL = mat_contents['veRL']
@@ -264,7 +264,8 @@ for filename in os.listdir(directory):
         omega_M = np.append(omega_M, omega)
         veRL_M = np.append(veRL_M, veRL)
         psi_M = np.append(psi_M, psi)
-
+        num_file +=1
+        #if num_file==2: stop
 #%%
 meanveRL = veRL_M.mean()
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(veRL_M,BANDWIDTH=0.1)
@@ -283,16 +284,14 @@ def multivariat_fit(x,y):
 
     return xv, yv, rv, pos, meanxy, covxy
 #%%
-Lx = 2*np.pi
-NX = 16
-kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
-                                        np.arange((-NX/2+1),0,dtype=np.float64)
-                                        ))
-[Ky,Kx]  = np.meshgrid(kx,kx)
-w1x_hat = -(1j*Kx)*w1_hat
-w1y_hat = (1j*Ky)*w1_hat
-
-
+# Lx = 2*np.pi
+# NX = 16
+# kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
+#                                         np.arange((-NX/2+1),0,dtype=np.float64)
+#                                         ))
+# [Ky,Kx]  = np.meshgrid(kx,kx)
+# w1x_hat = -(1j*Kx)*w1_hat
+# w1y_hat = (1j*Ky)*w1_hat
 #%% Plot Dis
 xplot, xplot_str = veRL_M, '$C_S^2$'
 yplot, yplot_str= omega_M, '$\omega$'
@@ -339,10 +338,9 @@ for j in range(4):
   ax.add_artist(ell)
   ax.add_artist(ellborder)
 
-
-
 #plt.plot(xplot, yplot,'.k',alpha=0.05, markersize=0.5)
-plt.scatter(xplot, yplot, marker=".", color='black',s=0.1,alpha=0.25)
+#plt.scatter(xplot, yplot, marker=".", color='black',s=0.1,alpha=0.25)
+plt.scatter(xplot, yplot, marker=".", color='black',s=0.1,alpha=0.05)
 
 plt.scatter(meanxy[0],meanxy[1], marker="+", color='blue',s=100)
 plt.scatter(CS2,meanxy[1], marker="s", color='red',s=25,linewidths=0.15)
@@ -351,4 +349,85 @@ plt.scatter(CS2EKI,meanxy[1], marker="*", color='black',s=50,linewidths=0.15)
 plt.xlabel(xplot_str)
 plt.ylabel(yplot_str)
 plt.grid(color='gray', linestyle='dashed')
+plt.xlim([-0.1,0.1])
+plt.ylim([-20,20])
+
 plt.savefig(filename+'dis.png', bbox_inches='tight', dpi=450)
+
+#%% Plot Dis point forward
+xplot, xplot_str = veRL_M, '$C_S^2$'
+yplot, yplot_str= omega_M, '$\omega$'
+# yplot, yplot_str = psi_M, '$\psi$'
+CS2 = 0.17**2
+CS2EKI = 0.1**2
+meanxy_M = []
+
+from matplotlib.patches import Ellipse
+fig, ax = plt.subplots()#subplot_kw={'aspect': 'equal'})
+ax.set_axisbelow(True)
+    
+for icount in range(1,int(len(xplot)/NLES/NLES)):
+    print(icount)
+    xploti = xplot[(icount-1)*NLES*NLES:(icount)*NLES*NLES]
+    yploti = yplot[(icount-1)*NLES*NLES:(icount)*NLES*NLES]
+    
+    xv, yv, rv, pos, meanxy, covxy = multivariat_fit(xploti, yploti )
+    # # plt.plot(xploti, yploti,'.k',alpha=0.05, markersize=2)
+    plt.scatter(meanxy[0],meanxy[1], marker=".", color='red',s=10,linewidths=2)
+    plt.scatter(CS2,meanxy[1], marker="o", color='green',s=50,linewidths=0.15)
+    plt.scatter(CS2EKI,meanxy[1], marker="*", color='green',s=50,linewidths=0.15)
+    
+    # plt.xlabel(xplot_str)
+    # plt.ylabel(yplot_str)
+    # plt.grid(color='gray', linestyle='dashed')
+    
+    meanxy_M = np.append(meanxy_M, meanxy)
+
+    lambda_, v = np.linalg.eig(covxy)
+    lambda_ = np.sqrt(lambda_)
+
+    j=1
+    ellborder1 = Ellipse(xy=meanxy,
+                    width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+                    angle=np.rad2deg(np.arccos(v[0, 0])),
+                    facecolor='none',
+                    edgecolor='blue',
+                    alpha=0.1,
+                    linestyle='-',
+                    label=r'$\sigma$')
+    j=2
+    ellborder2 = Ellipse(xy=meanxy,
+              width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+              angle=np.rad2deg(np.arccos(v[0, 0])),
+              facecolor='none',
+              edgecolor='pink',
+              alpha=0.2,
+              linestyle='-',
+              label=r'$\sigma$')
+       
+    ax.add_artist(ellborder1)
+    ax.add_artist(ellborder2)
+    
+meanx_M = meanxy_M.reshape(-1,2)[:,0]
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
+plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+
+_, _, _, _, meanxy_alldata, _ = multivariat_fit(xplot, yplot )
+plt.scatter(meanxy_alldata[0],meanxy_alldata[1], marker="+", color='red',s=100)
+
+plt.xlabel(xplot_str)
+plt.ylabel(yplot_str)
+
+plt.xlim([-0.1,0.1])
+plt.ylim([-20,20])
+plt.grid(color='gray', linestyle='dashed')
+
+ax.add_artist(ellborder1)
+ax.add_artist(ellborder2)
+ax.legend(['Inst RL','Lit.','EKI','$\sigma$','$2\sigma$'])
+
+plt.savefig(filename+'_instant.png', bbox_inches='tight', dpi=450)
+#%%
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
+plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+plt.plot(meanx_M,'.k')
