@@ -519,8 +519,8 @@ class turb:
         '''
         #print('action is:', action_leith)
         if action != None:
-            if self.veRL !=0:
-                CL3 = self.veRL#action_leith[0]
+        #    if self.veRL !=0:
+            CL3 = self.veRL#action_leith[0]
         else:
             CL3 = 0.17**3# (Lit)
         #else:

@@ -11,7 +11,7 @@ import os
 import sys
 # directory = '/home/rm99/Mount/aa/flowControl_turb/flowControl_turb_1'
 # directory = '.'
-NLES = 16
+NLES = 32
 
 sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/')
 directory = '_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/'
@@ -295,8 +295,8 @@ w1y_hat = (1j*Ky)*w1_hat
 
 #%% Plot Dis
 xplot, xplot_str = veRL_M, '$C_S^2$'
-# yplot, yplot_str= omega_M, '$\omega$'
-yplot, yplot_str = psi_M, '$\psi$'
+yplot, yplot_str= omega_M, '$\omega$'
+# yplot, yplot_str = psi_M, '$\psi$'
 CS2 = 0.17**2
 CS2EKI = 0.1**2
 
@@ -317,20 +317,27 @@ lambda_, v = np.linalg.eig(covxy)
 lambda_ = np.sqrt(lambda_)
 from matplotlib.patches import Ellipse
 fig, ax = plt.subplots()#subplot_kw={'aspect': 'equal'})
+ax.set_axisbelow(True)
 
 for j in range(4):
   ell = Ellipse(xy=meanxy,
                 width=lambda_[0]*j*2, height=lambda_[1]*j*2,
                 angle=np.rad2deg(np.arccos(v[0, 0])),
                 alpha=0.05,
-                facecolor='blue',
+                #facecolor='blue',
                 #facecolor='none',
                 edgecolor='blue',
                 linestyle='-')
 
-
-  #ell.set_facecolor('none')
+  ellborder = Ellipse(xy=meanxy,
+                width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+                angle=np.rad2deg(np.arccos(v[0, 0])),
+                facecolor='none',
+                edgecolor='blue',
+                linestyle='-')
+  
   ax.add_artist(ell)
+  ax.add_artist(ellborder)
 
 
 
