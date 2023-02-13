@@ -51,6 +51,8 @@ class turb:
             self.rewardtype ='enstrophy'
         elif rewardtype[0]=='k':
             self.rewardtype ='energy'
+
+        print(rewardtype)
         if rewardtype[1]=='1':
             self.rewardfunc = '1'
         elif rewardtype[1]=='e':
@@ -173,8 +175,9 @@ class turb:
         if rewardfunc == '1' or rewardfunc == '3':
             myreward = 1/( np.linalg.norm( krange*(target-reference)  )**2 )
         elif rewardfunc == 'e':
-            print('not implemented')
-            stop_
+            myreward = 1/(np.linalg.norm(np.log(target)-np.log(reference))**2)
+        #    print('not implemented')
+        #    stop_
         return myreward
 
     def mySGS(self, action):
