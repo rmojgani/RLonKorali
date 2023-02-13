@@ -193,6 +193,8 @@ class turb:
             nu = self.leith_cs(action)
         elif actiontype=='CS':
             nu = self.smag_cs(action)
+        elif actiontype=='none':
+            nu = self.none_cs(action)
         return nu
 
     def step( self, action=None ):
@@ -559,6 +561,15 @@ class turb:
         S = (np.mean(S**2.0))**0.5;
         ve = cs*S
         return ve
+
+    def none_cs(self, action=None):
+        if action != None:
+            cs = (self.veRL) #* ((2*np.pi/NX )**2)  # for LX = 2 pi
+        else:
+            cs = 0*(self.veRL)
+        ve = cs
+        return ve
+
     #-----------------------------------------
     def enstrophy_spectrum(self):
         NX = self.NX
