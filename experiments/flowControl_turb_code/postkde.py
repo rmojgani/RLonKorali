@@ -12,9 +12,11 @@ import sys
 # directory = '/home/rm99/Mount/aa/flowControl_turb/flowControl_turb_1'
 # directory = '.'
 NLES = 32
+CASENO = 1; Fn = 4;
+# CASENO = 4; Fn = 25;
 
-sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/')
-directory = '_result_vracer_C1_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents16/CSpost/'
+sys.path.append('_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents16/CLpost/')
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents16/CLpost/'
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 
@@ -22,14 +24,11 @@ METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 # directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/'
 # METHOD = 'smag0d17' # 'Leith' , 'Smag'
 
-Fn = 4
-CASENO = 1
-
 CL = ''
 
 num_file = 0
 omega_M = []# np.zeros((NLES, NLES))
-for filename in os.listdir(directory):
+for filename in sorted(os.listdir(directory)):
 
     if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
         print(filename)
@@ -117,7 +116,7 @@ col1, col2 = 0, 0
 ens_M = np.zeros((int(NLES/2)-1,num_file))
 tke_M = np.zeros((int(NLES/2)-1,num_file))
 
-for filename in os.listdir(directory):
+for filename in sorted(os.listdir(directory)):
 
     if filename.endswith("ens.out"):
 
@@ -166,6 +165,8 @@ plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
 plt.xlabel(rf'${kplot_str}$')
 plt.xlim([1,1e3])
 plt.ylim([1e-4,1e0])
+if CASENO==4:
+    plt.ylim([1e-9,1e-1])
 
 
 # Enstrophy
@@ -178,6 +179,10 @@ plt.xlabel(rf'${kplot_str}$')
 plt.xlim([1,1e2])
 #plt.ylim([1e-5,1e0])
 plt.ylim([1e-4,1e1])
+if CASENO==4:
+    plt.xlim([1,1e3])
+    plt.ylim([1e-4,1e1])
+
 
 for i in [3,4]:
     plt.subplot(3,2,i)
@@ -284,14 +289,69 @@ def multivariat_fit(x,y):
 
     return xv, yv, rv, pos, meanxy, covxy
 #%%
-# Lx = 2*np.pi
-# NX = 16
-# kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
-#                                         np.arange((-NX/2+1),0,dtype=np.float64)
-#                                         ))
-# [Ky,Kx]  = np.meshgrid(kx,kx)
-# w1x_hat = -(1j*Kx)*w1_hat
-# w1y_hat = (1j*Ky)*w1_hat
+Lx = 2*np.pi
+NX = NLES
+kx = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
+                                  np.arange((-NX/2+1),0,dtype=np.float64)
+                                ))
+[Ky,Kx]  = np.meshgrid(kx,kx)
+w1x_hat = -(1j*Kx)*psi_hat
+w1y_hat = +(1j*Ky)*psi_hat
+
+u1_hat = -(1j*Ky)*psi_hat
+v1_hat = +(1j*Kx)*psi_hat
+u1 = np.real(np.fft.ifft2(u1_hat))
+v1 = np.real(np.fft.ifft2(v1_hat))
+#%% velocity 
+def realVelInc_fast(u,ax,r):
+    # https://github.com/cselab/MARL_LES/blob/acd73f9c6c6195bda90209f1d7a8441993e547f4/plot_compute_structure.py#L90
+    nx, ny, nz = np.shape(u)
+    ret = np.zeros((nx,ny,nz,2))
+    # Roll array elements along a given axis. Elements that roll
+    # beyond the last position are re-introduced at the first.
+    ret[:,:,:,0] = np.roll(u,  int(r), axis=ax) - u
+    ret[:,:,:,1] = np.roll(u, -int(r), axis=ax) - u
+    return ret
+#%%
+u = u1
+dr = 1
+v = v1
+
+u = np.expand_dims(u, axis=2)
+du = realVelInc_fast(u, ax=0, r=dr).reshape(-1)
+v = np.expand_dims(v, axis=2)
+dv = realVelInc_fast(v, ax=0, r=dr).reshape(-1)
+# dv = realVelInc_fast(v, ax=1, r=dr).reshape(-1)
+incr = np.concatenate((du,dv), axis=None) # / u_rms
+##%%
+u = u1
+dr = 1
+dur = u[:,dr:]-u[:,0:-dr]
+
+v = v1
+dr = 1
+# dvr = v[:,dr:]-v[:,0:-dr] #dv = realVelInc_fast(v, ax=1, r=dr).reshape(-1)
+dvr = v[dr:,:]-v[0:-dr,:]# dv = realVelInc_fast(v, ax=0, r=dr).reshape(-1)
+duv = np.concatenate((dur,dvr), axis=None) # / u_rms
+
+
+plt.figure()
+plt.subplot(2,2,1)
+plt.contourf(u,cmap='bwr',levels=50)
+plt.subplot(2,2,2)
+plt.contourf(dur,cmap='bwr',levels=50)
+
+plt.subplot(2,2,3)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(u,BANDWIDTH=0.01)
+plt.plot(Vecpoints, exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+
+plt.subplot(2,2,4)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(duv,BANDWIDTH=0.01)
+plt.plot(Vecpoints, exp_log_kde, '.r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.01)
+plt.plot(Vecpoints, exp_log_kde, '.b', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+# plt.ylim([1e-2,1e0])
 #%% Plot Dis
 xplot, xplot_str = veRL_M, '$C_S^2$'
 yplot, yplot_str= omega_M, '$\omega$'

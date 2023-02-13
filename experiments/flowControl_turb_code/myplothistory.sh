@@ -6,8 +6,14 @@ gnuplot <<- EOF
     set xlabel "Generation"
     set ylabel "Reward"
     set title "Reward history"
-    set output 'myscatterplot.txt'
+    set output 'myscatterplot.plot'
     set logscale y
+   # set margins 0,0,0,0
+   # set autoscale xfix
+   # set autoscale yfix
+    unset xtics
+   # unset ytics
+   # unset key
     plot "myhistory.out" with points pointtype "."
 EOF
-vim myscatterplot.txt
+vim myscatterplot.plot
