@@ -11,10 +11,12 @@ import os
 import sys
 # directory = '/home/rm99/Mount/aa/flowControl_turb/flowControl_turb_1'
 # directory = '.'
-NLES = 64
+#Fn = 4; CASENO = 1
+Fn = 25; CASENO = 4
+NLES = 128
 
-sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smagRL/')
-directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smagRL/'
+sys.path.append('_result_vracer_C4_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CS/smagRL/')
+directory = '_result_vracer_C4_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CS/smagRL/'
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smag' # 'Leith' , 'Smag'
 
@@ -22,14 +24,11 @@ METHOD = 'smag' # 'Leith' , 'Smag'
 # directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/'
 # METHOD = 'smag0d17' # 'Leith' , 'Smag'
 
-Fn = 4
-CASENO = 1
-
 CL = 's'
 
 num_file = 0
 omega_M = []# np.zeros((NLES, NLES))
-for filename in os.listdir(directory):
+for filename in sorted(os.listdir(directory)):
 
     if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
         print(filename)
@@ -87,15 +86,15 @@ plt.grid(which='minor', linestyle='-',
 plt.ylim([1e-6, 1e-1])
 #plt.xlim([-8, 8])
 
-# pdf_DNS = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
-# pdf_DNS = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
-pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
-pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
+pdf_DNS1 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
+pdf_DNS2 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
+# pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
+# pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
 
 # plt.semilogy(pdf_DNS[:,0]/std_omega_DNS, pdf_DNS[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
 
 plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
-plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
+# plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
 
 plt.legend(loc="upper left")
 plt.title(r'Comparison of PDF of $\omega$, '+CASE)
@@ -104,6 +103,7 @@ plt.title(r'Comparison of PDF of $\omega$, '+CASE)
 filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
 
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
+plt.show()
 # stop
 #%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
@@ -117,7 +117,7 @@ col1, col2 = 0, 0
 ens_M = np.zeros((int(NLES/2)-1,num_file))
 tke_M = np.zeros((int(NLES/2)-1,num_file))
 
-for filename in os.listdir(directory):
+for filename in sorted(os.listdir(directory)):
 
     if filename.endswith("ens.out"):
 
@@ -145,10 +145,15 @@ for filename in os.listdir(directory):
 ens_ave = np.mean(ens_M,axis=1)
 tke_ave = np.mean(tke_M,axis=1)
 #%%
-tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+if CASENO==1:
+    tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+    ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+elif CASENO==4:
+    tke_dns =  np.loadtxt('_init/Re20kf25/'+'energy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,1]
+    ens_dns =  np.loadtxt('_init/Re20kf25/'+'enstrophy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,1]
+    
 Kplot_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,0]
 
-ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
 
 #%%
 Kplot = np.array(range(int(NLES/2)-1))
@@ -160,24 +165,29 @@ plt.figure(figsize=(10,14))
 # Energy 
 plt.subplot(3,2,3)
 plt.loglog(Kplot,tke_ave,'k')
-plt.plot([Fn,Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
+plt.plot([Fn,Fn],[1e-9,1e6],':k', alpha=0.5, linewidth=2)
 plt.loglog(Kplot_dns,tke_dns,':k', alpha=0.5, linewidth=4)
 plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
 plt.xlabel(rf'${kplot_str}$')
 plt.xlim([1,1e3])
 plt.ylim([1e-4,1e0])
-
+if CASENO==4:
+    plt.ylim([1e-9,1e-1])
 
 # Enstrophy
 plt.subplot(3,2,4)
 plt.loglog(Kplot, ens_ave,'k')
-plt.plot([Fn,Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
+plt.plot([Fn,Fn],[1e-9,1e6],':k', alpha=0.5, linewidth=2)
 plt.loglog(Kplot_dns, ens_dns,':k', alpha=0.5, linewidth=4)
 plt.title(rf'$\varepsilon({kplot_str})$')
 plt.xlabel(rf'${kplot_str}$')
 plt.xlim([1,1e2])
 #plt.ylim([1e-5,1e0])
 plt.ylim([1e-4,1e1])
+if CASENO==4:
+    plt.xlim([1,1e3])
+    plt.ylim([1e-4,1e1])
+
 
 for i in [3,4]:
     plt.subplot(3,2,i)
