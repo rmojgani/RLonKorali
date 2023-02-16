@@ -290,17 +290,7 @@ for filename in sorted(os.listdir(directory)):
 # plt.semilogy(Vecpoints, exp_log_kde, 'k', alpha=0.75, linewidth=1.0)#, label=METHOD+r'($C=$'+str(CL)+r')')
 # plt.semilogy([meanveRL,meanveRL],[min(exp_log_kde),max(exp_log_kde)],'-r')
 #%%
-from scipy.stats import multivariate_normal
-
-def multivariat_fit(x,y):
-    covxy = np.cov(x,y, rowvar=False)
-    meanxy=np.mean(x),np.mean(y)
-    rv = multivariate_normal(mean=meanxy, cov=covxy, allow_singular=False)
-    xv, yv = np.meshgrid(np.linspace(x.min(),x.max(),100),
-                         np.linspace(y.min(),y.max(),100), indexing='ij')
-    pos = np.dstack((xv, yv))
-
-    return xv, yv, rv, pos, meanxy, covxy
+from multivariat_tools import multivariat_fit
 ##%%
 Lx = 2*np.pi
 NX = NLES
@@ -325,8 +315,8 @@ v = v1
 u = np.expand_dims(u, axis=2)
 du = realVelInc_fast(u, ax=0, r=dr).reshape(-1)
 v = np.expand_dims(v, axis=2)
-dv = realVelInc_fast(v, ax=0, r=dr).reshape(-1)
-# dv = realVelInc_fast(v, ax=1, r=dr).reshape(-1)
+# dv = realVelInc_fast(v, ax=0, r=dr).reshape(-1)
+dv = realVelInc_fast(v, ax=1, r=dr).reshape(-1)
 incr = np.concatenate((du,dv), axis=None) # / u_rms
 ##%%
 u = u1
@@ -351,10 +341,10 @@ Vecpoints, exp_log_kde, log_kde, kde = myKDE(u,BANDWIDTH=0.01)
 plt.plot(Vecpoints, exp_log_kde, 'r', alpha=0.75, linewidth=2, label=r'$u$')
 
 plt.subplot(2,2,4)
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(duv,BANDWIDTH=0.5)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(duv,BANDWIDTH=0.1)
 plt.semilogy(Vecpoints, exp_log_kde, 'r', alpha=0.75, linewidth=2, label=r'$u$')
 
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.5)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.1)
 plt.semilogy(Vecpoints, exp_log_kde, 'b', alpha=0.75, linewidth=2, label=r'$u$')
 plt.xlabel(r'$\delta u$',fontsize=16)
 plt.ylabel(r'$\mathcal{P}( \left( \delta u \right)$',fontsize=16)
