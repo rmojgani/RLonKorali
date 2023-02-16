@@ -1,4 +1,4 @@
-for d in _result*/ ; do
+for d in _result*64/ ; do
     echo "$d"
     python3 -m korali.rlview --dir $d --output $d/history.png
 done

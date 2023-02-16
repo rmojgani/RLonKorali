@@ -58,8 +58,12 @@ def environmentpost(args, s):
     while step < nContolledSteps:
         if step % int(50e3) == 1 :
             sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
-            sim.myplotforcing('_ctrled_'+mystr+'_'+str(step), runFolder)
-
+            '''
+            try:
+                sim.myplotforcing('_ctrled_'+mystr+'_'+str(step), runFolder)
+            except:
+                print("not plotted")
+            '''
             savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
                      dict([('psi_hat', sim.psi_hat),
                            ('w_hat', sim.w1_hat),

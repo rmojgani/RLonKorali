@@ -9,14 +9,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
-# directory = '/home/rm99/Mount/aa/flowControl_turb/flowControl_turb_1'
-# directory = '.'
-NLES = 32
+#%%
+NLES = 64
+nAgents = 16
 CASENO = 1; Fn = 4;
 # CASENO = 4; Fn = 25;
 
-sys.path.append('_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents16/CLpost/')
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents16/CLpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
+
+
+# NLES = 64
+# nAgents = 64
+# CASENO = 1; Fn = 4;
+# directory = '_result_vracer_C1_N64_R_z1_State_enstrophy_Action_CL_nAgents64/CLpost_w1/'
+
+# NLES = 16
+# nAgents = 16
+# CASENO = 1; Fn = 4;
+# directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
+
+sys.path.append(directory)
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 
@@ -69,7 +81,7 @@ if CASENO == 1:
 
 std_omega = std_omega_DNS#np.std(omega_M)
 
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M,BANDWIDTH=1.0)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M,BANDWIDTH=2.0)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
 # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
@@ -100,9 +112,10 @@ plt.legend(loc="upper left")
 plt.title(r'Comparison of PDF of $\omega$, '+CASE)
 
 
-filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
+filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)+'_nAgents'+str(nAgents)
 
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
+plt.show()
 # stop
 #%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
@@ -209,45 +222,45 @@ np.savetxt(filename_save+"_ensave.dat", ens_ave_,delimiter='\t')
 # ens_ave_=np.stack((Kplot,ens_dns)).T
 # np.savetxt(filename_save+"_ensdns.dat", ens_ave_,delimiter='\t')
 ## Plot loss types
-plt.figure(figsize=(10,14))
+# plt.figure(figsize=(10,14))
 
-# Enstrophy
-plt.subplot(3,2,1)
-plt.plot( Kplot    * ens_dns , 'k')
-plt.plot((Kplot**2)*(ens_dns),'--r')
-plt.plot((Kplot**3)*(ens_dns),'.-b')
-plt.plot((np.log(ens_dns)),'--*k')
-plt.title(rf'$\varepsilon({kplot_str})$')
+# # Enstrophy
+# plt.subplot(3,2,1)
+# plt.plot( Kplot    * ens_dns , 'k')
+# plt.plot((Kplot**2)*(ens_dns),'--r')
+# plt.plot((Kplot**3)*(ens_dns),'.-b')
+# plt.plot((np.log(ens_dns)),'--*k')
+# plt.title(rf'$\varepsilon({kplot_str})$')
 
-plt.subplot(3,2,2)
-plt.plot(Kplot*(ens_dns-ens_ave), 'k')
-plt.plot((Kplot**2)*(ens_dns-ens_ave),'--r')
-plt.plot((Kplot**3)*(ens_dns-ens_ave),'.-b')
-plt.plot((np.log(ens_dns)-np.log(ens_ave)),'--*k')
-plt.title(rf'$\varepsilon({kplot_str})$')
+# plt.subplot(3,2,2)
+# plt.plot(Kplot*(ens_dns-ens_ave), 'k')
+# plt.plot((Kplot**2)*(ens_dns-ens_ave),'--r')
+# plt.plot((Kplot**3)*(ens_dns-ens_ave),'.-b')
+# plt.plot((np.log(ens_dns)-np.log(ens_ave)),'--*k')
+# plt.title(rf'$\varepsilon({kplot_str})$')
 
-# Energy
-plt.subplot(3,2,3)
-plt.plot( Kplot    * tke_dns , 'k')
-plt.plot((Kplot**2)*(tke_dns),'--r')
-plt.plot((Kplot**3)*(tke_dns),'.-b')
-plt.plot((np.log(tke_dns)),'--*k')
-plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
+# # Energy
+# plt.subplot(3,2,3)
+# plt.plot( Kplot    * tke_dns , 'k')
+# plt.plot((Kplot**2)*(tke_dns),'--r')
+# plt.plot((Kplot**3)*(tke_dns),'.-b')
+# plt.plot((np.log(tke_dns)),'--*k')
+# plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
 
-plt.subplot(3,2,4)
-plt.plot(Kplot*(tke_dns-tke_ave), 'k')
-plt.plot((Kplot**2)*(tke_dns-tke_ave),'--r')
-plt.plot((Kplot**3)*(tke_dns-tke_ave),'.-b')
-plt.plot((np.log(tke_dns)-np.log(tke_ave)),'--*k')
-plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
+# plt.subplot(3,2,4)
+# plt.plot(Kplot*(tke_dns-tke_ave), 'k')
+# plt.plot((Kplot**2)*(tke_dns-tke_ave),'--r')
+# plt.plot((Kplot**3)*(tke_dns-tke_ave),'.-b')
+# plt.plot((np.log(tke_dns)-np.log(tke_ave)),'--*k')
+# plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
 
-for i in [1,2,3,4]:
-    plt.subplot(3,2,i)
+# for i in [1,2,3,4]:
+#     plt.subplot(3,2,i)
 
-    plt.grid(which='major', linestyle='--',
-             linewidth='1.0', color='black', alpha=0.25)
-    plt.grid(which='minor', linestyle='-',
-             linewidth='0.5', color='red', alpha=0.25)
+#     plt.grid(which='major', linestyle='--',
+#              linewidth='1.0', color='black', alpha=0.25)
+#     plt.grid(which='minor', linestyle='-',
+#              linewidth='0.5', color='red', alpha=0.25)
 #%% PDF of veRL
 num_file = 0
 veRL_M = []
@@ -272,10 +285,10 @@ for filename in sorted(os.listdir(directory)):
         num_file +=1
         #if num_file==2: stop
 #%%
-meanveRL = veRL_M.mean()
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(veRL_M,BANDWIDTH=0.1)
-plt.semilogy(Vecpoints, exp_log_kde, 'k', alpha=0.75, linewidth=1.0, label=METHOD+r'($C=$'+str(CL)+r')')
-plt.semilogy([meanveRL,meanveRL],[min(exp_log_kde),max(exp_log_kde)],'-r')
+# meanveRL = veRL_M.mean()
+# Vecpoints, exp_log_kde, log_kde, kde = myKDE(veRL_M,BANDWIDTH=0.1)
+# plt.semilogy(Vecpoints, exp_log_kde, 'k', alpha=0.75, linewidth=1.0)#, label=METHOD+r'($C=$'+str(CL)+r')')
+# plt.semilogy([meanveRL,meanveRL],[min(exp_log_kde),max(exp_log_kde)],'-r')
 #%%
 from scipy.stats import multivariate_normal
 
@@ -288,7 +301,7 @@ def multivariat_fit(x,y):
     pos = np.dstack((xv, yv))
 
     return xv, yv, rv, pos, meanxy, covxy
-#%%
+##%%
 Lx = 2*np.pi
 NX = NLES
 kx = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
@@ -302,16 +315,8 @@ u1_hat = -(1j*Ky)*psi_hat
 v1_hat = +(1j*Kx)*psi_hat
 u1 = np.real(np.fft.ifft2(u1_hat))
 v1 = np.real(np.fft.ifft2(v1_hat))
-#%% velocity 
-def realVelInc_fast(u,ax,r):
-    # https://github.com/cselab/MARL_LES/blob/acd73f9c6c6195bda90209f1d7a8441993e547f4/plot_compute_structure.py#L90
-    nx, ny, nz = np.shape(u)
-    ret = np.zeros((nx,ny,nz,2))
-    # Roll array elements along a given axis. Elements that roll
-    # beyond the last position are re-introduced at the first.
-    ret[:,:,:,0] = np.roll(u,  int(r), axis=ax) - u
-    ret[:,:,:,1] = np.roll(u, -int(r), axis=ax) - u
-    return ret
+#%%
+from velincrement import realVelInc_fast
 #%%
 u = u1
 dr = 1
@@ -335,7 +340,7 @@ dvr = v[dr:,:]-v[0:-dr,:]# dv = realVelInc_fast(v, ax=0, r=dr).reshape(-1)
 duv = np.concatenate((dur,dvr), axis=None) # / u_rms
 
 
-plt.figure()
+plt.figure(figsize=(12,6),dpi=400)
 plt.subplot(2,2,1)
 plt.contourf(u,cmap='bwr',levels=50)
 plt.subplot(2,2,2)
@@ -343,15 +348,17 @@ plt.contourf(dur,cmap='bwr',levels=50)
 
 plt.subplot(2,2,3)
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(u,BANDWIDTH=0.01)
-plt.plot(Vecpoints, exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+plt.plot(Vecpoints, exp_log_kde, 'r', alpha=0.75, linewidth=2, label=r'$u$')
 
 plt.subplot(2,2,4)
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(duv,BANDWIDTH=0.01)
-plt.plot(Vecpoints, exp_log_kde, '.r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(duv,BANDWIDTH=0.5)
+plt.semilogy(Vecpoints, exp_log_kde, 'r', alpha=0.75, linewidth=2, label=r'$u$')
 
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.01)
-plt.plot(Vecpoints, exp_log_kde, '.b', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
-# plt.ylim([1e-2,1e0])
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.5)
+plt.semilogy(Vecpoints, exp_log_kde, 'b', alpha=0.75, linewidth=2, label=r'$u$')
+plt.xlabel(r'$\delta u$',fontsize=16)
+plt.ylabel(r'$\mathcal{P}( \left( \delta u \right)$',fontsize=16)
+plt.ylim([1e-2,1e0])
 #%% Plot Dis
 xplot, xplot_str = veRL_M, '$C_S^2$'
 yplot, yplot_str= omega_M, '$\omega$'

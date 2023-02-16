@@ -76,6 +76,6 @@ def environment( args, s ):
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
     sim.myplot(casestr+'_RL')
-    sim.myplotforcing(casestr+'_RL_f')
+    #sim.myplotforcing(casestr+'_RL_f')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

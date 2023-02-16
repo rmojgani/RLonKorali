@@ -410,7 +410,8 @@ class turb:
         elif self.case == '4':
             folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
-        data_Poi = loadmat(folder_path+str(NX)+'_1.mat')
+        filenum=str(1)
+        data_Poi = loadmat(folder_path+str(NX)+'_'+str(filenum)+'.mat')
         w1 = data_Poi['w1']
         
         if self.case =='4':
@@ -603,6 +604,10 @@ class turb:
         Fn = self.Fn
         dt = self.dt
         # --------------
+        energy = self.energy_spectrum()
+        enstrophy = self.enstrophy_spectrum()
+        #
+        '''
         plt.figure(figsize=(8,14))
  
         omega = np.real(np.fft.ifft2(self.sol[0]))
@@ -676,15 +681,16 @@ class turb:
         plt.colorbar()
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
-
+        '''
         filename = prepend_str+'2Dturb_'+str(stepnum)+append_str
+        '''
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
-        
+        plt.close('all')
+        '''
 #        print(filename)
 #        print(Kplot[0:kmax,0].shape)
 #        print( energy[0:kmax].shape)
 #        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
-        
         np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
         np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
 
@@ -744,13 +750,14 @@ class turb:
 
         filename = prepend_str+'2Dturb_'+str(stepnum)+'forcing'+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
+        plt.close('all')
     #-----------------------------------------  
     def multivariat_fit(self,x,y):
         covxy = np.cov(x,y, rowvar=False)
         meanxy=np.mean(x),np.mean(y)
         rv = multivariate_normal(mean=meanxy, cov=covxy, allow_singular=False)
-        xv, yv = np.meshgrid(np.linspace(x.min(),x.max(),100), 
-                             np.linspace(y.min(),y.max(),100), indexing='ij')
+        xv, yv = np.meshgrid(np.linspace(x.min(),x.max(),50), 
+                             np.linspace(y.min(),y.max(),50), indexing='ij')
         pos = np.dstack((xv, yv))
 
         return xv, yv, rv, pos, meanxy 
