@@ -17,7 +17,6 @@ CASENO = 1; Fn = 4;
 
 directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
 
-
 # NLES = 64
 # nAgents = 64
 # CASENO = 1; Fn = 4;
@@ -28,7 +27,7 @@ directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy
 # CASENO = 1; Fn = 4;
 # directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
 
-sys.path.append(directory)
+# sys.path.append(directory)
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 
@@ -50,7 +49,7 @@ for filename in sorted(os.listdir(directory)):
         if omega.max() > 10:
             print(omega.max())
         omega_M = np.append(omega_M, omega)
-        omega_M = np.append(omega_M, -omega)
+        # omega_M = np.append(omega_M, -omega)
 
         num_file += 1
     #     try:
@@ -484,7 +483,155 @@ ax.add_artist(ellborder2)
 ax.legend(['Inst RL','Lit.','EKI','$\sigma$','$2\sigma$'])
 
 plt.savefig(filename+'_instant.png', bbox_inches='tight', dpi=450)
+#%% 3D Plot Dis point forward
+[Ky,Kx]  = np.meshgrid(kx,kx)
+NY = NX
+Ksq      = (Kx**2 + Ky**2)
+Kabs     = np.sqrt(Ksq)
+Ksq[0,0] = 1e12
+invKsq   = 1/Ksq
+Ksq[0,0] = 0
+invKsq[0,0] = 0
+#%%
+from DSMAG import smag_dynamic_cs
+ALPHA=1
+plt.rcParams.update({
+    "figure.facecolor":  (1.0, 1.0, 1.0, ALPHA),  # red   with alpha = 30%
+    "axes.facecolor":    (1.0, 1.0, 1.0, ALPHA),  # green with alpha = 50%
+    "savefig.facecolor": (1.0, 1.0, 1.0, ALPHA),  # blue  with alpha = 20%
+})
+
+xplot, xplot_str = veRL_M, '$C_S^2$'
+yplot, yplot_str= omega_M, '$\omega$'
+# yplot, yplot_str = psi_M, '$\psi$'
+CS2 = 0.17**2
+CS2EKI = 0.1**2
+meanxy_M = []
+cs_Local_SM_M = []
+cs_local_SM_withClipping_M = []
+S_M = []
+
+from matplotlib.patches import Ellipse
+fig, ax = plt.subplots(figsize=(6,6),dpi=400)#subplot_kw={'aspect': 'equal'})
+# plt.figure(figsize=(12,6),dpi=400)
+
+ax.set_axisbelow(True)
+
+this_method ='MARL' # 'LDSM', 'LDSMw', 'MARL'
+for filename in sorted(os.listdir(directory)):
+
+    if METHOD in filename and str(NLES) in filename and '01' in filename and filename.endswith('.mat'):
+        print(filename)
+        mat_contents = sio.loadmat(directory+filename)
+        w1_hat = mat_contents['w_hat']
+
+        cs_Local_SM, cs_local_SM_withClipping, cs_Averaged_SM, cs_Averaged_SM_withClipping, S =\
+            smag_dynamic_cs(w1_hat, invKsq, NX, NY, Kx, Ky)
+        
+        if this_method=='LDSM':
+            cs2_plot = cs_Local_SM
+            xploti_str='Dynamic local'
+        elif this_method=='LDSMw':
+            cs2_plot = cs_local_SM_withClipping
+            xploti_str='Dynamic local w. clipping'
+        elif this_method=='MARL':
+            cs2_plot = mat_contents['veRL']
+            xploti_str='MARL'
+
+        cs_Local_SM_M.append(cs_Local_SM)
+        cs_local_SM_withClipping_M.append(cs_local_SM_withClipping)
+
+        xploti = cs2_plot.reshape(-1,)
+
+        # yploti = np.real(np.fft.ifft2(w1_hat)).reshape(-1,)
+        yploti = S.reshape(-1,)
+        yplot_str = r'$S$'
+        
+        xv, yv, rv, pos, meanxy, covxy = multivariat_fit(xploti, yploti )
+        # # plt.plot(xploti, yploti,'.k',alpha=0.05, markersize=2)
+        plt.scatter(meanxy[0],meanxy[1], marker=".", color='red',s=10,linewidths=2)
+        plt.scatter(CS2,meanxy[1], marker="o", color='green',s=50,linewidths=0.15)
+        plt.scatter(CS2EKI,meanxy[1], marker="*", color='green',s=50,linewidths=0.15)
+        
+        # plt.xlabel(xplot_str)
+        # plt.ylabel(yplot_str)
+        # plt.grid(color='gray', linestyle='dashed')
+        meanxy_M = np.append(meanxy_M, meanxy)
+        S_M = np.append(S_M, S)
+
+        lambda_, v = np.linalg.eig(covxy)
+        lambda_ = np.sqrt(lambda_)
+    
+        j=1
+        ellborder1 = Ellipse(xy=meanxy,
+                        width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+                        angle=np.rad2deg(np.arccos(v[0, 0])),
+                        facecolor='none',
+                        edgecolor='blue',
+                        alpha=0.1,
+                        linestyle='-',
+                        label=r'$\sigma$')
+        j=2
+        ellborder2 = Ellipse(xy=meanxy,
+                  width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+                  angle=np.rad2deg(np.arccos(v[0, 0])),
+                  facecolor='none',
+                  edgecolor='pink',
+                  alpha=0.2,
+                  linestyle='-',
+                  label=r'$\sigma$')
+           
+        ax.add_artist(ellborder1)
+        ax.add_artist(ellborder2)
+     
+        # plt.xlim([-0.1,0.1])
+        # plt.ylim([-20,20])
+        
+meanx_M = meanxy_M.reshape(-1,2)[:,0]
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
+plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label='Model')
+
+_, _, _, _, meanxy_alldata, _ = multivariat_fit(xplot, yplot )
+plt.scatter(meanxy_alldata[0],meanxy_alldata[1], marker="+", color='red',s=100)
+
+plt.xlabel(xplot_str)
+plt.ylabel(yplot_str)
+
+plt.xlim([-0.1,0.1])
+plt.ylim([-20,20])
+plt.grid(color='gray', linestyle='dashed')
+
+ax.add_artist(ellborder1)
+ax.add_artist(ellborder2)
+ax.legend([xploti_str,'Lit.','EKI','$\sigma$','$2\sigma$'])
 #%%
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
 plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 plt.plot(meanx_M,'.k')
+#%%
+CS_M= [ np.expand_dims(veRL, axis=2),
+np.expand_dims(np.array(cs_Local_SM_M)[-1,:,:], axis=2),
+np.expand_dims(np.array(cs_local_SM_withClipping_M)[-1,:,:], axis=2)]
+plt.figure(figsize=(12,6),dpi=400)
+
+icount = 0
+for CS in CS_M:
+    icount += 1
+    dCS1 = realVelInc_fast(CS, ax=0, r=dr).reshape(-1)
+    dCS2 = realVelInc_fast(CS, ax=1, r=dr).reshape(-1)
+    incr = np.concatenate((dCS1,dCS2), axis=None) # / u_rms
+    
+    
+    plt.subplot(2,3,icount)
+    plt.contourf(CS[:,:,0],cmap='bwr',levels=50);plt.colorbar()
+    plt.axis('equal')
+    plt.subplot(2,1,2)
+    
+    Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.01)
+    plt.semilogy(Vecpoints, exp_log_kde, 'b', alpha=0.75, linewidth=2, label=r'$C^2_S$')
+    plt.xlabel(r'$\delta C^2_S$',fontsize=22)
+    plt.ylabel(r'$\mathcal{P}( \left( \delta C^2_S \right)$',fontsize=22)
+    plt.ylim([5e-3,5e1])
+    plt.xlim([-0.1,0.1])
+    
+plt.xlim([-1,1])
