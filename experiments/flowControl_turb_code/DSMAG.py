@@ -117,7 +117,7 @@ def smag_dynamic_cs(w1_hat, invKsq, NX, NY, Kx, Ky):
     Lr12 = L12;
     Lr22 = L22 - 0.5*(L11 + L22);
     
-    aa = M11*Lr11+2.0*M12*Lr12+M22*Lr22
+    aa = M11*Lr11+2.0*M12*Lr12+M22*Lr22 # This is equal to: M11*L11+2.0*M12*L12+M22*L22
     bb = (M11**2) + 2*(M12**2) + (M22**2)
     
     cs_Local_SM = aa/bb
@@ -125,4 +125,4 @@ def smag_dynamic_cs(w1_hat, invKsq, NX, NY, Kx, Ky):
     cs_Averaged_SM = aa.sum()/bb.sum()
     cs_Averaged_SM_withClipping = 0.5*(cs_Averaged_SM+np.abs(cs_Averaged_SM))
     
-    return cs_Local_SM, cs_local_SM_withClipping, cs_Averaged_SM, cs_Averaged_SM_withClipping, Sbar
+    return cs_Local_SM, cs_local_SM_withClipping, cs_Averaged_SM, cs_Averaged_SM_withClipping, aa

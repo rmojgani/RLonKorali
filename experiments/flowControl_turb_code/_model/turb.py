@@ -359,7 +359,7 @@ class turb:
         self.psiPrevious_hat = psiPrevious_hat
         self.psiCurrent_hat = psiCurrent_hat
         self.ve = ve
-        self.velist.append(self.veRL)
+        #self.velist.append(self.veRL)
 
     def IC(self, u0=None, v0=None, SEED=42):
         X = self.X
@@ -410,8 +410,8 @@ class turb:
         elif self.case == '4':
             folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
-        filenum=str(1)
-        data_Poi = loadmat(folder_path+str(NX)+'_'+str(filenum)+'.mat')
+        filenum_str=str(5)
+        data_Poi = loadmat(folder_path+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
         
         if self.case =='4':
@@ -448,7 +448,7 @@ class turb:
         self.krange = krange
         # SGS Model
         self.ve = 0
-        self.velist = []
+        #self.velist = []
         # Reference files 
         self.ref_tke = ref_tke
         self.ref_ens = ref_ens
@@ -607,7 +607,6 @@ class turb:
         energy = self.energy_spectrum()
         enstrophy = self.enstrophy_spectrum()
         #
-        '''
         plt.figure(figsize=(8,14))
  
         omega = np.real(np.fft.ifft2(self.sol[0]))
@@ -681,12 +680,9 @@ class turb:
         plt.colorbar()
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
-        '''
         filename = prepend_str+'2Dturb_'+str(stepnum)+append_str
-        '''
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
         plt.close('all')
-        '''
 #        print(filename)
 #        print(Kplot[0:kmax,0].shape)
 #        print( energy[0:kmax].shape)

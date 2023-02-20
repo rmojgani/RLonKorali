@@ -11,11 +11,11 @@ import os
 import sys
 #%%
 NLES = 64
-nAgents = 16
+nAgents = 64
 CASENO = 1; Fn = 4;
 # CASENO = 4; Fn = 25;
-
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
+# directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 
 # NLES = 64
 # nAgents = 64
@@ -63,64 +63,57 @@ for filename in sorted(os.listdir(directory)):
     #         print('none')
     # else:
     #     continue
-
-
 # %%
 if CASENO == 4:
-    CASE = r'Case 4 ($Re = 20x10^3, k_f=25$)'
-elif CASENO == 1:
-    CASE = r'Case 1 ($Re = 20x10^3, k_f=4$)'
-
-
-if CASENO == 4:
+    CASE_str = r'Case 4 ($Re = 20x10^3, k_f=25$)'
+    pdf_DNS1 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
+    pdf_DNS2 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     std_omega_DNS = 12.85
-if CASENO == 1:
-    std_omega_DNS = 6.0705
 
+elif CASENO == 1:
+    CASE_str = r'Case 1 ($Re = 20x10^3, k_f=4$)'
+    pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
+    pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
+    std_omega_DNS = 6.0705
 
 std_omega = std_omega_DNS#np.std(omega_M)
 
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M,BANDWIDTH=2.0)
-plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M, BANDWIDTH=2)
 
 # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
 # plt.semilogy(Vecpoints/std_omega, exp_log_kde)
-
-plt.xlabel(r'$\omega / \sigma(\omega)$, $\sigma(\omega)$=' +
-           str(np.round(std_omega, 2)))
-plt.ylabel('PDF with '+str(num_file)+' samples')
-plt.grid(which='major', linestyle='--',
-         linewidth='1.0', color='black', alpha=0.25)
-plt.grid(which='minor', linestyle='-',
-         linewidth='0.5', color='red', alpha=0.25)
-
-plt.ylim([1e-6, 1e-1])
-#plt.xlim([-8, 8])
-
-# pdf_DNS = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
-# pdf_DNS = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
-# pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
-pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
-
-# plt.semilogy(pdf_DNS[:,0]/std_omega_DNS, pdf_DNS[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
+#%%
+plt.figure(figsize=(6,4),dpi=400)
+plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+# plt.semilogy(pdf_DNS1[:,0], pdf_DNS1[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
 
 # plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
 plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
 
 plt.legend(loc="upper left")
-plt.title(r'Comparison of PDF of $\omega$, '+CASE)
+plt.title(CASE_str)
 
+plt.xlabel(r'$\omega / \sigma(\omega)$, $\sigma(\omega)$=' +
+           str(np.round(std_omega, 2)))
+plt.ylabel(r'$\mathcal{P}\left(\omega\right)$, w. '+str(num_file)+' samples')
 
-filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)+'_nAgents'+str(nAgents)
+plt.grid(which='major', linestyle='--',
+         linewidth='1.0', color='black', alpha=0.25)
+plt.grid(which='minor', linestyle='-',
+         linewidth='0.5', color='red', alpha=0.25)
 
+# plt.ylim([1e-3, 1e-1])
+plt.ylim([1e-6, 1e-1])
+
+#plt.xlim([-8, 8])
+
+filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
 plt.show()
 # stop
 #%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
 # np.savetxt(filename_save+"_pdfdns.dat", pdf_dns_, delimiter='\t')
-
-
 pdf_les_= np.stack((Vecpoints, exp_log_kde,Vecpoints/std_omega),axis=1)
 np.savetxt(filename_save+"_pdf.dat", pdf_les_, delimiter='\t')
 #%% Plot enstrophy
@@ -134,7 +127,7 @@ for filename in sorted(os.listdir(directory)):
 
         ens_i = np.loadtxt(directory+filename)[:-1,1]
         
-        if len(filename)<=41:
+        if len(filename)<=40:
             ens_dns = ens_i
             Kplot =  np.loadtxt(directory+filename)[:-1,0]
         else:
@@ -146,7 +139,7 @@ for filename in sorted(os.listdir(directory)):
 
         tke_i = np.loadtxt(directory+filename)[:-1,1]
         
-        if len(filename)<=41:
+        if len(filename)<=40:
             tke_dns = tke_i
             Kplot =  np.loadtxt(directory+filename)[:-1,0]
         else:
@@ -156,10 +149,15 @@ for filename in sorted(os.listdir(directory)):
 ens_ave = np.mean(ens_M,axis=1)
 tke_ave = np.mean(tke_M,axis=1)
 #%%
-tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
-Kplot_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,0]
+if CASENO == 4:
+    tke_dns =  np.loadtxt('_init/Re20kf25/'+'energy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,1]
+    Kplot_dns =  np.loadtxt('_init/Re20kf25/'+'energy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,0]
+    ens_dns =  np.loadtxt('_init/Re20kf25/'+'enstrophy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,1]
 
-ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+elif CASENO == 1:
+    tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+    Kplot_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,0]
+    ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
 
 #%%
 Kplot = np.array(range(int(NLES/2)-1))
@@ -205,7 +203,7 @@ for i in [3,4]:
              linewidth='0.5', color='red', alpha=0.25)
     
     
-plt.savefig(filename_save+'_spec.png', bbox_inches='tight', dpi=450)
+# plt.savefig(filename_save+'_spec.png', bbox_inches='tight', dpi=450)
 #%%
 # stop
 tke_ave_=np.stack((Kplot,tke_ave)).T
@@ -465,7 +463,7 @@ for icount in range(1,int(len(xplot)/NLES/NLES)):
     ax.add_artist(ellborder2)
     
 meanx_M = meanxy_M.reshape(-1,2)[:,0]
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01, padding=0.025)
 plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
 _, _, _, _, meanxy_alldata, _ = multivariat_fit(xplot, yplot )
@@ -510,6 +508,8 @@ meanxy_M = []
 cs_Local_SM_M = []
 cs_local_SM_withClipping_M = []
 S_M = []
+omega_M = []
+veRL_M = []
 
 from matplotlib.patches import Ellipse
 fig, ax = plt.subplots(figsize=(6,6),dpi=400)#subplot_kw={'aspect': 'equal'})
@@ -524,6 +524,11 @@ for filename in sorted(os.listdir(directory)):
         print(filename)
         mat_contents = sio.loadmat(directory+filename)
         w1_hat = mat_contents['w_hat']
+        w1_hat = mat_contents['w_hat']
+        omega = np.real(np.fft.ifft2(w1_hat))
+        omega_M = np.append(omega_M, omega)
+        veRL = mat_contents['veRL']
+
 
         cs_Local_SM, cs_local_SM_withClipping, cs_Averaged_SM, cs_Averaged_SM_withClipping, S =\
             smag_dynamic_cs(w1_hat, invKsq, NX, NY, Kx, Ky)
@@ -538,8 +543,11 @@ for filename in sorted(os.listdir(directory)):
             cs2_plot = mat_contents['veRL']
             xploti_str='MARL'
 
+
         cs_Local_SM_M.append(cs_Local_SM)
         cs_local_SM_withClipping_M.append(cs_local_SM_withClipping)
+        S_M = np.append(S_M, S)
+        veRL_M = np.append(veRL_M, veRL)
 
         xploti = cs2_plot.reshape(-1,)
 
@@ -557,7 +565,6 @@ for filename in sorted(os.listdir(directory)):
         # plt.ylabel(yplot_str)
         # plt.grid(color='gray', linestyle='dashed')
         meanxy_M = np.append(meanxy_M, meanxy)
-        S_M = np.append(S_M, S)
 
         lambda_, v = np.linalg.eig(covxy)
         lambda_ = np.sqrt(lambda_)
@@ -586,10 +593,10 @@ for filename in sorted(os.listdir(directory)):
      
         # plt.xlim([-0.1,0.1])
         # plt.ylim([-20,20])
-        
+        stop
 meanx_M = meanxy_M.reshape(-1,2)[:,0]
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
-plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label='Model')
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01,padding=0.1)
+plt.plot(Vecpoints, 0.01*exp_log_kde, 'r', alpha=0.75, linewidth=2, label='Model')
 
 _, _, _, _, meanxy_alldata, _ = multivariat_fit(xplot, yplot )
 plt.scatter(meanxy_alldata[0],meanxy_alldata[1], marker="+", color='red',s=100)
@@ -598,7 +605,7 @@ plt.xlabel(xplot_str)
 plt.ylabel(yplot_str)
 
 plt.xlim([-0.1,0.1])
-plt.ylim([-20,20])
+# plt.ylim([-20,20])
 plt.grid(color='gray', linestyle='dashed')
 
 ax.add_artist(ellborder1)
@@ -608,7 +615,7 @@ ax.legend([xploti_str,'Lit.','EKI','$\sigma$','$2\sigma$'])
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01)
 plt.plot(Vecpoints, 0.5*exp_log_kde, 'r', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 plt.plot(meanx_M,'.k')
-#%%
+#%% Distribtuion of increments of ve
 CS_M= [ np.expand_dims(veRL, axis=2),
 np.expand_dims(np.array(cs_Local_SM_M)[-1,:,:], axis=2),
 np.expand_dims(np.array(cs_local_SM_withClipping_M)[-1,:,:], axis=2)]
@@ -623,7 +630,7 @@ for CS in CS_M:
     
     
     plt.subplot(2,3,icount)
-    plt.contourf(CS[:,:,0],cmap='bwr',levels=50);plt.colorbar()
+    plt.contourf(CS[:,:,0],cmap='bwr',levels=50,vmin=-0.12,vmax=0.12);plt.colorbar()
     plt.axis('equal')
     plt.subplot(2,1,2)
     
@@ -635,3 +642,99 @@ for CS in CS_M:
     plt.xlim([-0.1,0.1])
     
 plt.xlim([-1,1])
+#%% 3D scatter plot of
+import matplotlib.ticker as mticker
+ALPHA_S =0.1
+fig = plt.figure(figsize=(18,6))
+# ax = fig.add_axes([0,0,1,1], projection='3d')
+icount = 0
+
+for this_method in ['LDSM','LDSMw','MARL']:
+    icount+=1
+    if this_method=='LDSM':
+        cs2_plot = np.array(cs_Local_SM_M).reshape(-1,)
+        xploti_str='Dynamic local'
+    elif this_method=='LDSMw':
+        cs2_plot = np.array(cs_local_SM_withClipping_M).reshape(-1,)
+        xploti_str='Dynamic local w. clipping'
+    elif this_method=='MARL':
+        cs2_plot =  np.array(veRL_M).reshape(-1,)
+        xploti_str='MARL'
+    
+    ax = fig.add_subplot(1, 3, icount, projection='3d')
+
+    
+    # #plot the points
+    # ax.scatter(x,y,z*0.4, c="r", facecolor="r", s=60)
+    CPLOT = cs2_plot
+    # VMAX= max(cs2_plot.max(),-cs2_plot.min())
+    # VMIN=-VMAX
+    VMAX=0.01
+    VMIN=-VMAX
+    cax = ax.scatter3D(np.array(S_M),omega_M, (cs2_plot), s=3,\
+                       alpha=ALPHA_S, c=CPLOT, cmap='bwr',vmin=VMIN, vmax=VMAX);
+    fig.colorbar(cax, location='top')
+    
+    
+    ax.set_xlabel('S',fontsize=16)
+    ax.set_ylabel(r'$\omega$',fontsize=16)
+    ax.set_zlabel(r'$C_S^2$',fontsize=16)
+    
+    ax.set_title(xploti_str)
+    
+    # def log_tick_formatter(val, pos=None):
+    #     return f"$10^{{{int(val)}}}$"
+    
+    # ax.zaxis.set_major_formatter(mticker.FuncFormatter(log_tick_formatter))
+    # ax.zaxis.set_major_locator(mticker.MaxNLocator(integer=True))
+    
+    # ax.zaxis.set_scale('log')
+    ax.set_zlim(-0.1,0.1)
+    ax.set_xlim(-0.2,0.2)
+
+    # ax.view_init(azim=0, elev=90) # x-y 
+    ax.view_init(azim=0, elev=0) # z-y
+    # ax.view_init(azim=90, elev=90) # x-z
+    
+    ax.set_proj_type('ortho')  # FOV = 0 deg
+
+#%%
+import matplotlib.ticker as mticker
+
+this_method = 'LDSM' 
+cs2_plot1 = np.array(cs_Local_SM_M).reshape(-1,)
+xplot1_str='Dynamic local'
+cs2_plot2 = np.array(cs_local_SM_withClipping_M).reshape(-1,)
+xplot2_str='Dynamic local w. clipping'
+cs2_plot3 = veRL_M
+xplot3_str='MARL'
+
+fig = plt.figure(figsize=(6,6))
+ax = fig.add_axes([0,0,1,1], projection='3d')
+
+# #plot the points
+# ax.scatter(x,y,z*0.4, c="r", facecolor="r", s=60)
+cax = ax.scatter3D(cs2_plot1,cs2_plot2, cs2_plot3,'.',alpha=0.15, c=omega_M);
+fig.colorbar(cax, location='top')
+
+
+ax.set_xlabel(xplot1_str,fontsize=16)
+ax.set_ylabel(xplot2_str,fontsize=16)
+ax.set_zlabel(xplot3_str,fontsize=16)
+
+ax.set_title(xploti_str)
+
+# def log_tick_formatter(val, pos=None):
+#     return f"$10^{{{int(val)}}}$"
+
+# ax.zaxis.set_major_formatter(mticker.FuncFormatter(log_tick_formatter))
+# ax.zaxis.set_major_locator(mticker.MaxNLocator(integer=True))
+
+# ax.zaxis.set_scale('log')
+ax.set_xlim(-1,1)
+ax.set_ylim(-1,1)
+ax.set_zlim(-1,1)
+
+# for ii in range(1,360,30):
+#     ax.view_init(elev=20., azim=ii)
+#     plt.savefig("imovie%d.png" % ii)

@@ -2,7 +2,7 @@ from scipy import stats
 from sklearn.neighbors import KernelDensity
 import numpy as np
 
-def myKDE(uM, BANDWIDTH=1, Nx=100, padding=0.1):
+def myKDE(uM, BANDWIDTH=1, Nx=100, padding=0):
 
     print('Start: Calculating PDF - KDE ... > ')
 
