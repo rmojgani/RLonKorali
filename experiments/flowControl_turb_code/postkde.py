@@ -10,10 +10,10 @@ import numpy as np
 import os
 import sys
 #%%
-NLES = 64
+NLES = 128
 nAgents = 64
-CASENO = 1; Fn = 4;
-# CASENO = 4; Fn = 25;
+# CASENO = 1; Fn = 4;
+CASENO = 4; Fn = 25;
 # directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
 directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 
@@ -43,29 +43,31 @@ for filename in sorted(os.listdir(directory)):
 
     if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
         print(filename)
-        mat_contents = sio.loadmat(directory+filename)
-        w1_hat = mat_contents['w_hat']
-        omega = np.real(np.fft.ifft2(w1_hat))
-        if omega.max() > 10:
-            print(omega.max())
-        omega_M = np.append(omega_M, omega)
-        # omega_M = np.append(omega_M, -omega)
+        if 't=1_' not in filename:
 
-        num_file += 1
-    #     try:
-    #         mat_contents = sio.loadmat(filename)
-    #         w1_hat = mat_contents['w_hat']
-    #         omega = np.real(np.fft.ifft2(w1_hat))
-    #         omega_M = np.append(omega_M, omega)
-    #         num_file += 1
-    #         print(max(omega))
-    #     except:
-    #         print('none')
-    # else:
-    #     continue
+            mat_contents = sio.loadmat(directory+filename)
+            w1_hat = mat_contents['w_hat']
+            omega = np.real(np.fft.ifft2(w1_hat))
+            if omega.max() > 10:
+                print(omega.max())
+            omega_M = np.append(omega_M, omega)
+            # omega_M = np.append(omega_M, -omega)
+    
+            num_file += 1
+        #     try:
+        #         mat_contents = sio.loadmat(filename)
+        #         w1_hat = mat_contents['w_hat']
+        #         omega = np.real(np.fft.ifft2(w1_hat))
+        #         omega_M = np.append(omega_M, omega)
+        #         num_file += 1
+        #         print(max(omega))
+        #     except:
+        #         print('none')
+        # else:
+        #     continue
 # %%
 if CASENO == 4:
-    CASE_str = r'Case 4 ($Re = 20x10^3, k_f=25$)'
+    CASE_str = r'Case 4 ($Re = 20x10^3, k_f=25$)'+'$, n_{MARL}=$'+str(nAgents)
     pdf_DNS1 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     pdf_DNS2 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     std_omega_DNS = 12.85
@@ -87,8 +89,8 @@ plt.figure(figsize=(6,4),dpi=400)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 # plt.semilogy(pdf_DNS1[:,0], pdf_DNS1[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
 
-# plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
-plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
+plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
+# plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
 
 plt.legend(loc="upper left")
 plt.title(CASE_str)
@@ -123,23 +125,23 @@ tke_M = np.zeros((int(NLES/2)-1,num_file))
 
 for filename in sorted(os.listdir(directory)):
 
-    if filename.endswith("ens.out"):
+    if '_1_' not in filename and filename.endswith("ens.out"):
 
         ens_i = np.loadtxt(directory+filename)[:-1,1]
         
-        if len(filename)<=40:
+        if len(filename)<=10:
             ens_dns = ens_i
             Kplot =  np.loadtxt(directory+filename)[:-1,0]
         else:
             ens_M[:,col1] = ens_i
             col1 +=1
     
-    if filename.endswith("tke.out"):
+    if '_1_' not in filename and filename.endswith("tke.out"):
         print(filename)
 
         tke_i = np.loadtxt(directory+filename)[:-1,1]
         
-        if len(filename)<=40:
+        if len(filename)<=10:
             tke_dns = tke_i
             Kplot =  np.loadtxt(directory+filename)[:-1,0]
         else:

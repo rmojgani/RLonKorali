@@ -348,8 +348,6 @@ class turb:
         # Update this step
         self.update(w0_hat, w1_hat, convec0_hat, convec1_hat, psiPrevious_hat, psiCurrent_hat, ve )
 
-        
-    
     def update(self, w0_hat, w1_hat, convec0_hat, convec1_hat, psiPrevious_hat, psiCurrent_hat, ve):
         # write to self
         self.w0_hat = w0_hat
@@ -360,6 +358,8 @@ class turb:
         self.psiCurrent_hat = psiCurrent_hat
         self.ve = ve
         #self.velist.append(self.veRL)
+        self.myrewardlist=[]
+        self.mystatelist=[]
 
     def IC(self, u0=None, v0=None, SEED=42):
         X = self.X
@@ -410,7 +410,7 @@ class turb:
         elif self.case == '4':
             folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
-        filenum_str=str(5)
+        filenum_str=str(1)
         data_Poi = loadmat(folder_path+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
         
