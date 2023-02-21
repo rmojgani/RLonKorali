@@ -10,17 +10,17 @@ import numpy as np
 import os
 import sys
 #%%
-NLES = 128
+NLES = 64
 nAgents = 64
-# CASENO = 1; Fn = 4;
-CASENO = 4; Fn = 25;
+CASENO = 1; Fn = 4;
+# CASENO = 4; Fn = 25;
 # directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost_1ksave/'
 
 # NLES = 64
 # nAgents = 64
 # CASENO = 1; Fn = 4;
-# directory = '_result_vracer_C1_N64_R_z1_State_enstrophy_Action_CL_nAgents64/CLpost_w1/'
+# directory = '_result_vracer_C1_N64_R_z1_State_enstrophy_Action_CL_nAgents64/CLpost_backupFeb20/'
 
 # NLES = 16
 # nAgents = 16
@@ -42,8 +42,8 @@ omega_M = []# np.zeros((NLES, NLES))
 for filename in sorted(os.listdir(directory)):
 
     if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
-        print(filename)
-        if 't=1_' not in filename:
+        print(str(num_file), filename)
+        if 't=1_xxx' not in filename:
 
             mat_contents = sio.loadmat(directory+filename)
             w1_hat = mat_contents['w_hat']
@@ -54,6 +54,7 @@ for filename in sorted(os.listdir(directory)):
             # omega_M = np.append(omega_M, -omega)
     
             num_file += 1
+            if num_file==10: stop_
         #     try:
         #         mat_contents = sio.loadmat(filename)
         #         w1_hat = mat_contents['w_hat']
@@ -65,34 +66,49 @@ for filename in sorted(os.listdir(directory)):
         #         print('none')
         # else:
         #     continue
-# %%
+#%%
 if CASENO == 4:
     CASE_str = r'Case 4 ($Re = 20x10^3, k_f=25$)'+'$, n_{MARL}=$'+str(nAgents)
     pdf_DNS1 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     pdf_DNS2 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     std_omega_DNS = 12.85
+    XMIN, XMAX = -8, 8
 
 elif CASENO == 1:
-    CASE_str = r'Case 1 ($Re = 20x10^3, k_f=4$)'
+    CASE_str = r'Case 1 ($Re = 20x10^3, k_f=4$)'+'$, n_{MARL}=$'+str(nAgents)
     pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
     pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
     std_omega_DNS = 6.0705
-
+    XMIN, XMAX = -6, 6
+    
 std_omega = std_omega_DNS#np.std(omega_M)
-
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M, BANDWIDTH=2)
-
-# Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
-# plt.semilogy(Vecpoints/std_omega, exp_log_kde)
 #%%
+omega_M_2D = omega_M.reshape(NLES*NLES, -1)
+#%%
+from PDE_KDE import mybandwidth_scott
 plt.figure(figsize=(6,4),dpi=400)
-plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.75, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
-# plt.semilogy(pdf_DNS1[:,0], pdf_DNS1[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
+BANDWIDTH = 0.5
 
-plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
-# plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.25, label='DNS')
+div = 3#67
+for icount in range(int(len(omega_M_2D.T)/div)):
+    omega_M = omega_M_2D[:,icount:icount+div]
+    BANDWIDTH = mybandwidth_scott(omega_M.reshape(-1,1))*5
+    Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH)
+    
+    # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
+    # plt.semilogy(Vecpoints/std_omega, exp_log_kde)
+    
+    plt.plot(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.5, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+    # plt.semilogy(pdf_DNS1[:,0], pdf_DNS1[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
 
-plt.legend(loc="upper left")
+if CASENO == 1:
+    plt.plot(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.5, label='DNS')
+elif CASENO == 4:
+    plt.plot(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
+
+hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 30, fc='gray', histtype='stepfilled', alpha=0.3,density=True)
+
+# plt.legend(loc="upper left")
 plt.title(CASE_str)
 
 plt.xlabel(r'$\omega / \sigma(\omega)$, $\sigma(\omega)$=' +
@@ -107,17 +123,35 @@ plt.grid(which='minor', linestyle='-',
 # plt.ylim([1e-3, 1e-1])
 plt.ylim([1e-6, 1e-1])
 
-#plt.xlim([-8, 8])
+plt.xlim([XMIN, XMAX])
 
 filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
 plt.show()
 # stop
-#%%
+5#%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
 # np.savetxt(filename_save+"_pdfdns.dat", pdf_dns_, delimiter='\t')
 pdf_les_= np.stack((Vecpoints, exp_log_kde,Vecpoints/std_omega),axis=1)
 np.savetxt(filename_save+"_pdf.dat", pdf_les_, delimiter='\t')
+#%%
+# plt.hist(omega_M.reshape(-1,1), 30, fc='gray', histtype='stepfilled', alpha=0.3, normed=True)
+BANDWIDTH = mybandwidth_scott(omega_M.reshape(-1,1))*5
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH)
+
+
+fig = plt.figure()
+
+plt.plot(Vecpoints, exp_log_kde, 'k', alpha=0.5, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 300, fc='gray', histtype='stepfilled', alpha=0.3,density=True)
+
+plt.yscale('log')
+print((hist * np.diff(bins)).sum())
+plt.ylim([1e-6, 1e-1])
+
+# hist, bins, patches = plt.hist(omega_M.reshape(-1,1))
+
+
 #%% Plot enstrophy
 col1, col2 = 0, 0
 ens_M = np.zeros((int(NLES/2)-1,num_file))

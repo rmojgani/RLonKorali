@@ -205,13 +205,11 @@ class turb:
         if (action is not None):
             #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
             forcing = self.upsample(action)
-        # Action
-        if (action is not None):
             self.veRL = forcing#forcing[0]# For test
             #print(self.veRL)
             #stop_veRL
-        else:
-            self.veRL=0.17**2
+        #else:
+        #    #self.veRL=0.17**2
 
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
@@ -353,7 +351,7 @@ class turb:
         self.w0_hat = w0_hat
         self.w1_hat = w1_hat
         self.convec0_hat = convec0_hat
-        self.convec1_hat = convec1_hat
+        self.convec1_hat = convec1_hat # it is never used, consider deleting 
         self.psiPrevious_hat = psiPrevious_hat
         self.psiCurrent_hat = psiCurrent_hat
         self.ve = ve

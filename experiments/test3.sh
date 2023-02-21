@@ -2,7 +2,8 @@
 #docker run -it cselab/korali:latest
 #docker run -it cselab/korali:3.0.2
 # Destination in korali
-PWDD=/home/ubuntu/korali/examples/reinforcement.learning/flowControl_turb
+#PWDD=/home/ubuntu/korali/examples/reinforcement.learning/flowControl_turb
+PWDD=/home/ubuntu/korali/flowControl_turb
 
 # Home
 PWDH=$(pwd)

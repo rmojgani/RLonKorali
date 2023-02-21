@@ -56,7 +56,8 @@ def environmentpost(args, s):
     mystr = "smagRL"#'smag0d17'
     step = 0
     while step < nContolledSteps:
-        if step % int(50e3) == 1 :
+        if step % int(5e3) == 1 :
+            print('Save at time step=', step)
             sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
             '''
             try:
@@ -65,11 +66,14 @@ def environmentpost(args, s):
                 print("not plotted")
             '''
             savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
-                     dict([('psi_hat', sim.psi_hat),
+                     dict([
+                           ('psi_hat', sim.psiCurrent_hat),
                            ('w_hat', sim.w1_hat),
+                           ('convec1_hat', sim.convec1_hat),
                            ('veRL', sim.veRL)
                         ])
                      )
+
         # Getting new action
         s.update()
 

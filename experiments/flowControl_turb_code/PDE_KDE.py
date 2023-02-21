@@ -27,3 +27,11 @@ def mymodelsave(model,filename):
 
     return 1
 
+#from sklearn.model_selection import GridSearchCV
+#from sklearn.model_selection import LeaveOneOut
+
+def mybandwidth_scott(x):
+    # https://docs.scipy.org/doc//scipy-1.4.1/reference/generated/scipy.stats.gaussian_kde.html
+    d = 1
+    n = len(x)
+    return n**(-1./(d+4))
