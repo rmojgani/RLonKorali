@@ -181,10 +181,10 @@ class turb:
         rewardtype = self.rewardtype
         if rewardtype == 'enstrophy':
             #print('Enstrophy as reference')
-            spec_now = self.enstrophy_spectrum()
+            spec_now,_,_ = self.enstrophy_spectrum()
         elif rewardtype == 'energy':
             #print('Energy as reference')
-            spec_now = self.energy_spectrum()
+            spec_now, _, _ = self.energy_spectrum()
         return spec_now
 
     def setup_reward(self):
@@ -288,11 +288,11 @@ class turb:
             mystate= np.hstack((s1,s2))
         # --------------------------
         elif statetype=='enstrophy':
-            enstrophy= self.enstrophy_spectrum()
+            enstrophy, _, _ = self.enstrophy_spectrum()
             mystate= np.log(enstrophy[0:kmax])
         # --------------------------
         elif statetype=='energy':
-            energy= self.energy_spectrum()
+            energy, _, _= self.energy_spectrum()
             mystate= np.log(energy[0:kmax])
 
         mystatelist = [mystate.tolist()]
@@ -442,6 +442,12 @@ class turb:
         filenum_str=str(1)
         data_Poi = loadmat(folder_path+'iniWor_'+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
+
+        ref_tke = nnp.loadtxt(folder_path+"energy_spectrum_DNS1024_circle.dat")[:,0:2]
+        ref_ens = nnp.loadtxt(folder_path+"enstrophy_spectrum_DNS1024_circle.dat")[:,0:2]
+        print(ref_tke.shape)
+        print(ref_tke[:,0:2].shape)
+        print(ref_tke)
 
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
@@ -627,6 +633,8 @@ class turb:
         # --------------
         energy, Kplot, kplot_str = self.energy_spectrum()
         enstrophy, _, _ = self.enstrophy_spectrum()
+        print(energy.shape)
+        print(energy)
         #
         plt.figure(figsize=(8,14))
  
@@ -653,8 +661,8 @@ class turb:
         ref_tke = self.ref_tke#np.loadtxt("tke.dat")
         # Energy 
         plt.subplot(3,2,3)
-        energy = self.energy_spectrum()
-        plt.loglog(Kplot[0:kmax,0], energy[0:kmax],'k')
+        energy,_,_ = self.energy_spectrum()
+        plt.loglog(Kplot, energy,'k')
         plt.plot([self.Fn,self.Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
         plt.plot(ref_tke[:,0],ref_tke[:,1],':k', alpha=0.25, linewidth=4)
         plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
@@ -665,15 +673,15 @@ class turb:
         ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
         plt.subplot(3,2,4)
-        enstrophy = self.enstrophy_spectrum()
+        enstrophy,_,_= self.enstrophy_spectrum()
         plt.plot([self.Fn,self.Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
         plt.plot(ref_ens[:,0],ref_ens[:,1],':k', alpha=0.25, linewidth=4)
-        plt.loglog(Kplot[0:kmax,0], enstrophy[0:kmax],'k')
+        plt.loglog(Kplot, enstrophy,'k')
         plt.title(rf'$\varepsilon({kplot_str})$')
         plt.xlabel(rf'${kplot_str}$')
-        plt.xlim([1,1e2])
+        plt.xlim([1,1e3])
         #plt.ylim([1e-5,1e0])
-        plt.ylim([1e-3,1e1])
+        plt.ylim([1e-3,1e2])
         #plt.pcolor(np.real(sim.w1_hat));plt.colorbar()
         
         #plt.subplot(3,2,5)
@@ -708,8 +716,8 @@ class turb:
 #        print(Kplot[0:kmax,0].shape)
 #        print( energy[0:kmax].shape)
 #        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
-        nnp.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
-        nnp.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
+        nnp.savetxt(filename+'_tke.out', np.stack((Kplot, energy),axis=0).T, delimiter='\t')
+        nnp.savetxt(filename+'_ens.out', np.stack((Kplot, enstrophy),axis=0).T, delimiter='\t')
 
     #-----------------------------------------
     def myplotforcing(self, append_str='', prepend_str=''):
