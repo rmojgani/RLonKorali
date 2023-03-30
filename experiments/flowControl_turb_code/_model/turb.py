@@ -3,6 +3,8 @@ import time as time
 from scipy.io import loadmat,savemat
 import scipy as sp
 from scipy.interpolate import RectBivariateSpline
+# For calculating spectra
+from spectrum_angle_average_fun import spectrum_angle_average_vec, energy_es, enstrophy_es
 
 #import numpy as np
 import numpy as nnp
@@ -415,17 +417,19 @@ class turb:
         perturb[0:NX//2+1, NX//2+1:] = coef1[0:NX//2+1, NX//2-1:0:-1] - coef2[0:NX//2+1, NX//2-1:0:-1]
         perturb[NX//2+1:, NX//2+1:] = -(coef1[NX//2-1:0:-1, NX//2-1:0:-1] + coef2[NX//2-1:0:-1, NX//2-1:0:-1])
         perturb = np.exp(1j*perturb)
-	    # omega
+	      # omega
         w1_hat = np.sqrt(absK/np.pi*Ek)*perturb*np.power(NX,2)
         # psi
         psi_hat         = -w1_hat*invKsq
         psiPrevious_hat = psi_hat.astype(np.complex128)
         psiCurrent_hat  = psi_hat.astype(np.complex128)
-        '''
-        # Forcing
+        
+        # Case dependent parameters , Forcing (n) , path  
         if self.case=='1':
+            folder_path = '_init/Re20kf4/'
             n = 4
         elif self.case=='4':
+            folder_path = '_init/Re20kf25/'
             n = 25
 
         Xi = 1
@@ -435,23 +439,13 @@ class turb:
         time = 0.0
         slnW = []
         
-        if self.case =='1':
-            folder_path = '_init/Re20kf4/iniWor_Re20kf4_'
-        elif self.case == '4':
-            folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
-
         filenum_str=str(1)
-        data_Poi = loadmat(folder_path+str(NX)+'_'+filenum_str+'.mat')
+        data_Poi = loadmat(folder_path+'iniWor_'+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
         
-        if self.case =='4':
-            ref_tke = nnp.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
-            ref_ens = nnp.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
+        ref_tke = np.loadtxt(folder_path+"energy_spectrum_DNS1024_circle.dat")
+        ref_ens = np.loadtxt(folder_path+"enstrophy_spectrum_DNS1024_circle.dat")
 
-        if self.case == '1':
-            ref_tke = nnp.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
-            ref_ens = nnp.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
- 
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
@@ -529,15 +523,14 @@ class turb:
         Ksq      = (Kx**2 + Ky**2)
         Kabs     = nnp.sqrt(Ksq)
 
-        Ksq[0,0] = 1e12
+        Ksq[0,0] = 1e16
         invKsq   = 1/Ksq
         Ksq[0,0] = 0 
         invKsq[0,0] = 0 
 
         Ksq = np.array(Ksq)
         invKsq = np.array(invKsq)
-
-
+        
         kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
@@ -602,42 +595,32 @@ class turb:
     #-----------------------------------------
     def enstrophy_spectrum(self):
         NX = self.NX
-        NY = self.NY # Square for now
-        w1_hat = nnp.array(self.w1_hat)
-        #-----------------------------------
-        signal = (abs(w1_hat)**2)/2;
-    
-        spec_x = nnp.mean(nnp.abs(signal),axis=0)
-        spec_y = nnp.mean(nnp.abs(signal),axis=1)
-        spec = (spec_x + spec_y)/2
-        spec = spec/ (NX**2)/NX
-        spec = spec[0:int(NX/2)]
-    
-        self.enstrophy_spec = spec
-        return spec
+        Kabs = self.Kabs
+        w1_hat = self.w1_hat/NX/NX
+        #------------
+        signal_hat = enstrophy_es(w1_hat, Kabs, NX )
+        Kplot, spec, kplot_str =  spectrum_angle_average_vec(signal_hat, Kabs, NX)
+        self.energy_spec = spec
+        #------------
+        return spec, Kplot, kplot_str
     #-----------------------------------------
     def energy_spectrum(self):
         NX = self.NX
-        NY = self.NY # Square for now
-        Ksq = nnp.array(self.Ksq)
-        #print('type of w1_hat:', type(self.w1_hat)) 
-        w1_hat = nnp.array(self.w1_hat)
-        
-        #print(type(w1_hat))
-        Ksq[0,0]=1
-        w_hat = nnp.array( nnp.power(nnp.abs(w1_hat),2)/NX/NY/Ksq )
-        w_hat[0,0]=0;
-        spec_x = nnp.mean(nnp.abs(w_hat),axis=0)
-        spec_y = nnp.mean(nnp.abs(w_hat),axis=1)
-        spec = (spec_x + spec_y)/2
-        spec = spec /NX
-        
-        spec=spec[0:int(NX/2)]
-        return  spec
+        Ksq = self.Ksq
+        invKsq = self.invKsq
+        Kabs = self.Kabs
+        w1_hat = self.w1_hat/NX/NX
+        #------------
+        signal_hat = energy_es(w1_hat, invKsq, NX, Kabs)
+        Kplot, spec, kplot_str =  spectrum_angle_average_vec(signal_hat, Kabs, NX)
+        self.energy_spec = spec
+        #------------
+        return  spec, Kplot, kplot_str
     #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
         NX = int(self.NX)
-        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = self.kmax
+        Kplot = self.Kx; #kplot_str = '\kappa_{x}'; 
+        kmax = self.kmax
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
         #kplot_str = '\kappa_{sq}'
         stepnum = self.stepnum
@@ -645,8 +628,8 @@ class turb:
         Fn = self.Fn
         dt = self.dt
         # --------------
-        energy = self.energy_spectrum()
-        enstrophy = self.enstrophy_spectrum()
+        energy, Kplot, kplot_str = self.energy_spectrum()
+        enstrophy, _, _ = self.enstrophy_spectrum()
         #
         plt.figure(figsize=(8,14))
  
