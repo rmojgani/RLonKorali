@@ -1,4 +1,5 @@
-Multi-Agent Reinforcement Learning for Flow Control
+Multi-Agent Reinforcement Learning for 
+        Subgrid Scale Closures For Forced Turbulence
 ====================================================
 
 Two-dimensional turbulence 
