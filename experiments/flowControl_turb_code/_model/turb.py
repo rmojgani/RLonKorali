@@ -5,6 +5,8 @@ import time as time
 from scipy.io import loadmat,savemat
 import scipy as sp
 from scipy.interpolate import RectBivariateSpline
+# For calculating spectra
+from spectrum_angle_average_fun import spectrum_angle_average_vec, energy_es, enstrophy_es
 
 import matplotlib
 matplotlib.use('Agg')
@@ -493,10 +495,10 @@ class turb:
         [Ky,Kx]  = np.meshgrid(kx,kx)
         Ksq      = (Kx**2 + Ky**2)
         Kabs     = np.sqrt(Ksq)
-        Ksq[0,0] = 1e12
+        Ksq[0,0] = 1e16
         invKsq   = 1/Ksq
-        Ksq[0,0] = 0
-        invKsq[0,0] = 0
+        #Ksq[0,0] = 0
+        #invKsq[0,0] = 0
         kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
@@ -561,36 +563,27 @@ class turb:
     #-----------------------------------------
     def enstrophy_spectrum(self):
         NX = self.NX
-        NY = self.NY # Square for now
-        w1_hat = self.w1_hat
-        #-----------------------------------
-        signal = np.power(abs(w1_hat),2)/2;
-    
-        spec_x = np.mean(np.abs(signal),axis=0)
-        spec_y = np.mean(np.abs(signal),axis=1)
-        spec = (spec_x + spec_y)/2
-        spec = spec/ (NX**2)/NX
-        spec = spec[0:int(NX/2)]
-    
-        self.enstrophy_spec = spec
-        return spec
+        Kabs = self.Kabs
+        w1_hat = self.w1_hat/NX/NX
+        #------------
+        signal_hat = enstrophy_es(w1_hat, Kabs, NX )
+        Kplot, spec, kplot_str =  spectrum_angle_average_vec(signal_hat, Kabs, NX)
+        self.energy_spec = spec
+        #------------
+        return spec, Kplot, kplot_str
     #-----------------------------------------
     def energy_spectrum(self):
         NX = self.NX
-        NY = self.NY # Square for now
         Ksq = self.Ksq
-        w1_hat = self.w1_hat
-    
-        Ksq[0,0]=1
-        w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
-        w_hat[0,0]=0;
-        spec_x = np.mean(np.abs(w_hat),axis=0)
-        spec_y = np.mean(np.abs(w_hat),axis=1)
-        spec = (spec_x + spec_y)/2
-        spec = spec /NX
-        
-        spec=spec[0:int(NX/2)]
-        return  spec
+        invKsq = self.invKsq
+        Kabs = self.Kabs
+        w1_hat = self.w1_hat/NX/NX
+        #------------
+        signal_hat = energy_es(w1_hat, invKsq, NX, Kabs)
+        Kplot, spec, kplot_str =  spectrum_angle_average_vec(signal_hat, Kabs, NX)
+        self.energy_spec = spec
+        #------------
+        return  spec, Kplot, kplot_str
     #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
         NX = int(self.NX)
