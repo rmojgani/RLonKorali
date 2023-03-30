@@ -587,7 +587,8 @@ class turb:
     #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
         NX = int(self.NX)
-        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = self.kmax
+        Kplot = self.Kx; #kplot_str = '\kappa_{x}'; 
+        kmax = self.kmax
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
         #kplot_str = '\kappa_{sq}'
         stepnum = self.stepnum
@@ -595,8 +596,8 @@ class turb:
         Fn = self.Fn
         dt = self.dt
         # --------------
-        energy = self.energy_spectrum()
-        enstrophy = self.enstrophy_spectrum()
+        energy, Kplot, kplot_str = self.energy_spectrum()
+        enstrophy, _, _ = self.enstrophy_spectrum()
         #
         plt.figure(figsize=(8,14))
  
