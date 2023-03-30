@@ -406,14 +406,17 @@ class turb:
         slnW = []
         
         if self.case =='1':
-            folder_path = '_init/Re20kf4/iniWor_Re20kf4_'
+            folder_path = '_init/Re20kf4/'
         elif self.case == '4':
-            folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
+            folder_path = '_init/Re20kf25/'
 
         filenum_str=str(1)
-        data_Poi = loadmat(folder_path+str(NX)+'_'+filenum_str+'.mat')
+        data_Poi = loadmat(folder_path+'iniWor_'+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
         
+        ref_tke = np.loadtxt(folder_path+"_DNS1024_circle.dat")
+        ref_ens = np.loadtxt(folder_path+"_DNS1024_circle.dat")
+        '''
         if self.case =='4':
             #ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             #ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
@@ -424,7 +427,8 @@ class turb:
         if self.case == '1':
             #ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             #ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
- 
+         '''
+
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
