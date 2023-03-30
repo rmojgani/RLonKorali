@@ -3,7 +3,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr_r'
-import numpy as np
+import numpy as nnp
+import jax.numpy as np
+from jax import grad, jit, vmap, pmap
+from jax.lib import xla_bridge
+import jax
+
 # Loading files
 import glob
 import re
@@ -60,20 +65,24 @@ def environmentpost(args, s):
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
     mystr = "smagRL"#'smag0d17'
     step = 0
-
+    print('Type of init:', type(sim.psiCurrent_hat), type(sim.w1_hat), type(sim.w1_hat) )
     try:
         list_of_files = glob.glob(runFolder+'*.mat')
         latest_file = max(list_of_files, key=os.path.getctime)
         print('Last file loaded:', latest_file)
         mat_contents = sio.loadmat(latest_file)
-        sim.psiCurrent_hat = mat_contents['psi_hat']
-        sim.w1_hat = mat_contents['w_hat']
-        sim.convec0_hat = mat_contents['convec1_hat']
+
+        sim.psiCurrent_hat = np.array(mat_contents['psi_hat'])
+        sim.w1_hat = np.array(mat_contents['w_hat'])
+        sim.convec0_hat = np.array(mat_contents['convec1_hat'])
+
         numbers_in_file = re.findall(r'\d+', latest_file)
         print(numbers_in_file)
         step = int(numbers_in_file[-1])
         sim.stepnum = step
         print('Step number set to', step)
+        print('Type of loaded:', type(sim.psiCurrent_hat), type(sim.w1_hat), type(sim.w1_hat) )
+    
     except:
         print('Simulation initialized')
 
@@ -89,10 +98,10 @@ def environmentpost(args, s):
             '''
             savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
                      dict([
-                           ('psi_hat', sim.psiCurrent_hat),
-                           ('w_hat', sim.w1_hat),
-                           ('convec1_hat', sim.convec1_hat),
-                           ('veRL', sim.veRL)
+                           ('psi_hat', nnp.array(sim.psiCurrent_hat)),
+                           ('w_hat', nnp.array(sim.w1_hat)),
+                           ('convec1_hat', nnp.array(sim.convec1_hat)),
+                           ('veRL', nnp.array(sim.veRL))
                         ])
                      )
 

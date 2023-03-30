@@ -1,10 +1,15 @@
-#from numpy import pi
 from scipy.fftpack import fft, ifft
-import numpy as np
 import time as time
 from scipy.io import loadmat,savemat
 import scipy as sp
 from scipy.interpolate import RectBivariateSpline
+
+#import numpy as np
+import numpy as nnp
+import jax.numpy as np
+from jax import grad, jit, vmap, pmap
+from jax.lib import xla_bridge
+import jax
 
 import matplotlib
 matplotlib.use('Agg')
@@ -12,8 +17,11 @@ import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr'
 from scipy.stats import multivariate_normal
 
-np.seterr(over='raise', invalid='raise')
+nnp.seterr(over='raise', invalid='raise')
 
+from leith import leith_cs
+
+from convection_conserved import *
 # ---------------------- Forced turb
 #import math
 
@@ -50,6 +58,8 @@ class turb:
                 nagents=2):
         #
         print('__init__')
+        #print(xla_bridge.get_backend().platform)
+        #jax.config.update("jax_enable_x64", True)
         print('rewardtype', rewardtype[0:2])
         print('number of Actions=', nActions)
         print('number of Agents=', nagents)
@@ -63,6 +73,9 @@ class turb:
             self.rewardfunc = '1'
         elif rewardtype[1]=='e':
             self.rewardfunc = 'e'
+        elif rewardtype[1]=='c':
+            self.rewardfunc = 'c'
+
 
         self.statetype= statetype
         self.actiontype= actiontype
@@ -182,17 +195,30 @@ class turb:
 
         if rewardfunc == '1' or rewardfunc == '3':
             myreward = 1/( np.linalg.norm( krange*(target-reference)  )**2 )
+        elif rewardfunc == 'c':
+            myreward = - np.linalg.norm( (target-reference)  )**2 
         elif rewardfunc == 'e':
-            print('not implemented')
-            stop_
+            myreward = - np.linalg.norm( np.exp( (np.log(target)-np.log(reference))**2) )
+            #nnp.savetxt('aa_tke.out', np.stack(( myreward, np.log(target), np.log(reference) ),axis=0).T, delimiter='\t')
+            #print('not implemented')
+            #stop_
         return myreward
+
 
     def mySGS(self, action):
         actiontype = self.actiontype
+        veRL=self.veRL
+        Kx = self.Kx
+        Ky = self.Ky
+        w1_hat = self.w1_hat
+        NX = self.NX
+        nu = leith_cs(action, veRL, Kx, Ky, w1_hat, NX)
+        '''
         if actiontype=='CL':
             nu = self.leith_cs(action)
         elif actiontype=='CS':
             nu = self.smag_cs(action)
+        '''
         return nu
 
     def step( self, action=None ):
@@ -279,9 +305,12 @@ class turb:
         try:
             myreward=self.setup_reward()
         except:
-            myreward=-10000
+            myreward=np.array(100)
         # --------------------------
-        myrewardlist = [myreward.tolist()]
+        #print('---->>>>', type(myreward) )
+        #print( myreward )
+        myrewardlist = [nnp.array(myreward).tolist()]
+        #print('---->>>>', type(myreward))
         for _ in range(nagents-1):
             myrewardlist.append(myreward.tolist())
         return myrewardlist 
@@ -324,14 +353,15 @@ class turb:
         w1_hat = self.w1_hat
         convec0_hat = self.convec1_hat
         # 2 Adam bash forth Crank Nicolson
-        convec1_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        #convec1_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        convec1_hat = convection_conserved(psiCurrent_hat, w1_hat,self.Kx,self.Ky)
        	diffu_hat = -Ksq*w1_hat
        
         # Calculate SGS diffusion 
         ve = self.mySGS(action)
 #        ve = 0
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
-       	RHS[0,0] = 0
+       	#RHS[0,0] = 0
     
        	psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
     
@@ -367,8 +397,9 @@ class turb:
         Kx = self.Kx
         Ky = self.Ky
         invKsq = self.invKsq
+        '''
         # ------------------
-        np.random.seed(SEED)
+        #np.random.seed(SEED)
         # ------------------
         kp = 10.0
         A  = 4*np.power(kp,(-5))/(3*np.pi)  
@@ -390,6 +421,7 @@ class turb:
         psi_hat         = -w1_hat*invKsq
         psiPrevious_hat = psi_hat.astype(np.complex128)
         psiCurrent_hat  = psi_hat.astype(np.complex128)
+        '''
         # Forcing
         if self.case=='1':
             n = 4
@@ -413,17 +445,17 @@ class turb:
         w1 = data_Poi['w1']
         
         if self.case =='4':
-            ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
+            ref_tke = nnp.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
+            ref_ens = nnp.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
 
         if self.case == '1':
-            ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
+            ref_tke = nnp.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
+            ref_ens = nnp.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
  
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
-    
+        psi_hat         = -w1_hat*invKsq
         # ... and save to self
         self.w1_hat = w1_hat
         self.psi_hat = psi_hat
@@ -434,7 +466,9 @@ class turb:
         self.ioutnum = 0 # [0] is the initial condition
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
         # 
-        convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        #convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        convec0_hat = convection_conserved(psiCurrent_hat, w1_hat,self.Kx,self.Ky)
+
         self.convec0_hat = convec0_hat
         self.convec1_hat = convec0_hat
         # 
@@ -486,17 +520,24 @@ class turb:
         dx = Lx/NX
         #-----------------  
         x        = np.linspace(0, Lx-dx, num=NX)
-        kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
-                                                np.arange((-NX/2+1),0,dtype=np.float64)
+        kx       = (2*nnp.pi/Lx)*nnp.concatenate((
+                                                    nnp.arange(0,NX/2+1),
+                                                    nnp.arange(-NX/2+1,0)
                                                 ))   
-        [Y,X]    = np.meshgrid(x,x)
-        [Ky,Kx]  = np.meshgrid(kx,kx)
+        [Y,X]    = nnp.meshgrid(x,x)
+        [Ky,Kx]  = nnp.meshgrid(kx,kx)
         Ksq      = (Kx**2 + Ky**2)
-        Kabs     = np.sqrt(Ksq)
+        Kabs     = nnp.sqrt(Ksq)
+
         Ksq[0,0] = 1e12
         invKsq   = 1/Ksq
-        Ksq[0,0] = 0
-        invKsq[0,0] = 0
+        Ksq[0,0] = 0 
+        invKsq[0,0] = 0 
+
+        Ksq = np.array(Ksq)
+        invKsq = np.array(invKsq)
+
+
         kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
@@ -562,12 +603,12 @@ class turb:
     def enstrophy_spectrum(self):
         NX = self.NX
         NY = self.NY # Square for now
-        w1_hat = self.w1_hat
+        w1_hat = nnp.array(self.w1_hat)
         #-----------------------------------
-        signal = np.power(abs(w1_hat),2)/2;
+        signal = (abs(w1_hat)**2)/2;
     
-        spec_x = np.mean(np.abs(signal),axis=0)
-        spec_y = np.mean(np.abs(signal),axis=1)
+        spec_x = nnp.mean(nnp.abs(signal),axis=0)
+        spec_y = nnp.mean(nnp.abs(signal),axis=1)
         spec = (spec_x + spec_y)/2
         spec = spec/ (NX**2)/NX
         spec = spec[0:int(NX/2)]
@@ -578,14 +619,16 @@ class turb:
     def energy_spectrum(self):
         NX = self.NX
         NY = self.NY # Square for now
-        Ksq = self.Ksq
-        w1_hat = self.w1_hat
-    
+        Ksq = nnp.array(self.Ksq)
+        #print('type of w1_hat:', type(self.w1_hat)) 
+        w1_hat = nnp.array(self.w1_hat)
+        
+        #print(type(w1_hat))
         Ksq[0,0]=1
-        w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
+        w_hat = nnp.array( nnp.power(nnp.abs(w1_hat),2)/NX/NY/Ksq )
         w_hat[0,0]=0;
-        spec_x = np.mean(np.abs(w_hat),axis=0)
-        spec_y = np.mean(np.abs(w_hat),axis=1)
+        spec_x = nnp.mean(nnp.abs(w_hat),axis=0)
+        spec_y = nnp.mean(nnp.abs(w_hat),axis=1)
         spec = (spec_x + spec_y)/2
         spec = spec /NX
         
@@ -685,8 +728,8 @@ class turb:
 #        print(Kplot[0:kmax,0].shape)
 #        print( energy[0:kmax].shape)
 #        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
-        np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
-        np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
+        nnp.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
+        nnp.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
 
     #-----------------------------------------
     def myplotforcing(self, append_str='', prepend_str=''):

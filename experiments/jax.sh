@@ -11,5 +11,5 @@ PWDH=$(pwd)
 #PWDH=/media/volume/sdb/docker/flowControl_turb
 
 #docker run -v ${PWDH}:${PWDD} -it cselab/korali:3.0.2
-docker run -v ${PWDH}:${PWDD} -it --gpus all koraligpu #cselab/korali:latest
+docker run -v ${PWDH}:${PWDD} -it --gpus all gcr.io/tensorflow-testing/nosla-cuda10.0-cudnn7-ubuntu16.04-manylinux2010
 #docker start -a -i flamboyant_noether

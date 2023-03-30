@@ -10,12 +10,12 @@ import numpy as np
 import os
 import sys
 #%%
-NLES = 64
-nAgents = 64
-CASENO = 1; Fn = 4;
-# CASENO = 4; Fn = 25;
+NLES = 256
+nAgents = 16#64
+# CASENO = 1; Fn = 4;
+CASENO = 4; Fn = 25;
 # directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost_1ksave/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 
 # NLES = 64
 # nAgents = 64
@@ -54,7 +54,7 @@ for filename in sorted(os.listdir(directory)):
             # omega_M = np.append(omega_M, -omega)
     
             num_file += 1
-            if num_file==10: stop_
+           # if num_file==10: stop_
         #     try:
         #         mat_contents = sio.loadmat(filename)
         #         w1_hat = mat_contents['w_hat']
@@ -95,18 +95,18 @@ for icount in range(int(len(omega_M_2D.T)/div)):
     BANDWIDTH = mybandwidth_scott(omega_M.reshape(-1,1))*5
     Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH)
     
-    # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
-    # plt.semilogy(Vecpoints/std_omega, exp_log_kde)
+    Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
+    plt.semilogy(Vecpoints/std_omega, exp_log_kde)
     
     plt.plot(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.5, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
     # plt.semilogy(pdf_DNS1[:,0], pdf_DNS1[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
 
 if CASENO == 1:
-    plt.plot(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.5, label='DNS')
+    plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.5, label='DNS')
 elif CASENO == 4:
-    plt.plot(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
+    plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
 
-hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 30, fc='gray', histtype='stepfilled', alpha=0.3,density=True)
+# hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 30, fc='gray', histtype='stepfilled', alpha=0.3,density=True)
 
 # plt.legend(loc="upper left")
 plt.title(CASE_str)
@@ -126,10 +126,10 @@ plt.ylim([1e-6, 1e-1])
 plt.xlim([XMIN, XMAX])
 
 filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
-plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
+# plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
 plt.show()
 # stop
-5#%%
+#%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
 # np.savetxt(filename_save+"_pdfdns.dat", pdf_dns_, delimiter='\t')
 pdf_les_= np.stack((Vecpoints, exp_log_kde,Vecpoints/std_omega),axis=1)

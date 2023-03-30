@@ -21,7 +21,7 @@ def environment( args, s ):
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + int(10e3)*dt# 30e-3  #0.025*(2500*4+1000
+    tEnd = tInit + int(1*10e3)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
     print('Initlize sim.')
     sim  = turb(RL=IF_RL, 
@@ -50,7 +50,7 @@ def environment( args, s ):
     # print("state:", sim.state())
 
     ## run controlled simulation
-    nContolledSteps = int(10e3)#(tEnd-tInit)/dt)
+    nContolledSteps = int(1*10e3)#(tEnd-tInit)/dt)
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
     step = 0
     while step < nContolledSteps:
