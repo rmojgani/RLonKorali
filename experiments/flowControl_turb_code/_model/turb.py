@@ -415,12 +415,15 @@ class turb:
         w1 = data_Poi['w1']
         
         if self.case =='4':
-            ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
+            #ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
+            #ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
+
+            ref_tke = np.loadtxt(folder_path+"DNS1024_circle.dat")
+            ref_ens = np.loadtxt(folder_path+"_DNS1024_circle.dat")
 
         if self.case == '1':
-            ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
+            #ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
+            #ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
  
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
