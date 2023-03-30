@@ -445,9 +445,6 @@ class turb:
 
         ref_tke = nnp.loadtxt(folder_path+"energy_spectrum_DNS1024_circle.dat")[:,0:2]
         ref_ens = nnp.loadtxt(folder_path+"enstrophy_spectrum_DNS1024_circle.dat")[:,0:2]
-        print(ref_tke.shape)
-        print(ref_tke[:,0:2].shape)
-        print(ref_tke)
 
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
@@ -633,8 +630,6 @@ class turb:
         # --------------
         energy, Kplot, kplot_str = self.energy_spectrum()
         enstrophy, _, _ = self.enstrophy_spectrum()
-        print(energy.shape)
-        print(energy)
         #
         plt.figure(figsize=(8,14))
  
