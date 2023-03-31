@@ -204,6 +204,7 @@ class turb:
             #nnp.savetxt('aa_tke.out', np.stack(( myreward, np.log(target), np.log(reference) ),axis=0).T, delimiter='\t')
             #print('not implemented')
             #stop_
+        #print(myreward)
         return myreward
 
 
@@ -350,7 +351,7 @@ class turb:
         nu = self.nu
         alpha = self.alpha
         Fk = self.Fk
-        # ---------------
+        ## ---------------
         psiCurrent_hat = self.psiCurrent_hat
         w1_hat = self.w1_hat
         convec0_hat = self.convec1_hat
@@ -361,7 +362,7 @@ class turb:
        
         # Calculate SGS diffusion 
         ve = self.mySGS(action)
-#        ve = 0
+        #ve = 0
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
        	#RHS[0,0] = 0
     
@@ -445,6 +446,11 @@ class turb:
 
         ref_tke = nnp.loadtxt(folder_path+"energy_spectrum_DNS1024_circle.dat")[:,0:2]
         ref_ens = nnp.loadtxt(folder_path+"enstrophy_spectrum_DNS1024_circle.dat")[:,0:2]
+        self.energy_M_2D_mean_minus_std = nnp.loadtxt(folder_path+"energy_spectrum_DNS1024_circle.dat")[:,2]
+        self.energy_M_2D_mean_plus_std = nnp.loadtxt(folder_path+"energy_spectrum_DNS1024_circle.dat")[:,3]
+        self.enstrophy_M_2D_mean_minus_std = nnp.loadtxt(folder_path+"enstrophy_spectrum_DNS1024_circle.dat")[:,2]
+        self.enstrophy_M_2D_mean_plus_std = nnp.loadtxt(folder_path+"enstrophy_spectrum_DNS1024_circle.dat")[:,3]
+
 
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
@@ -639,20 +645,21 @@ class turb:
         VMIN = -VMAX
         levels = np.linspace(VMIN,VMAX,100)
 
-        plt.subplot(3,2,1)
+        ax = plt.subplot(3,2,1)
         plt.contourf(omega, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\omega$')
-
+        ax.set_aspect('equal', adjustable='box')
         psi = np.real(np.fft.ifft2(self.sol[1]))
         VMAX, VMIN = np.max(psi), np.min(psi)
         VMAX = max(np.abs(VMIN), np.abs(VMAX))
         VMIN = -VMAX
         levels = np.linspace(VMIN,VMAX,100)
  
-        plt.subplot(3,2,2)
+        ax = plt.subplot(3,2,2)
         plt.contourf(psi, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\psi$')
-        
+        ax.set_aspect('equal', adjustable='box')
+
         ref_tke = self.ref_tke#np.loadtxt("tke.dat")
         # Energy 
         plt.subplot(3,2,3)
@@ -660,17 +667,36 @@ class turb:
         plt.loglog(Kplot, energy,'k')
         plt.plot([self.Fn,self.Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
         plt.plot(ref_tke[:,0],ref_tke[:,1],':k', alpha=0.25, linewidth=4)
+        plt.fill_between(ref_tke[:,0],
+                  self.energy_M_2D_mean_minus_std,
+                  self.energy_M_2D_mean_plus_std,
+                  color='red', alpha=0.25)
+
         plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
         plt.xlabel(rf'${kplot_str}$')
         plt.xlim([1,1e3])
-        plt.ylim([1e-6,1e0])
-        
+        plt.ylim([1e-6,1e1])
+       
+        # 
+        Aslope = energy[self.Fn]*(self.Fn)**3
+
+        y2 = Aslope*ref_tke[4:,0]**(-3.0);
+        plt.plot(ref_tke[4:,0],y2,'-.r','linewidth',2);
+        y2 = Aslope*ref_tke[4:,0]**(-3.0)*(np.log(ref_tke[4:,0]/self.Fn))**(-1.0/3.0);
+        plt.plot(ref_tke[4:,0],y2,'--b','linewidth',2);
+
         ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
         plt.subplot(3,2,4)
         enstrophy,_,_= self.enstrophy_spectrum()
+        plt.loglog(Kplot, enstrophy,'k')
         plt.plot([self.Fn,self.Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
         plt.plot(ref_ens[:,0],ref_ens[:,1],':k', alpha=0.25, linewidth=4)
+        plt.fill_between(ref_ens[:,0],
+                  self.enstrophy_M_2D_mean_minus_std,
+                  self.enstrophy_M_2D_mean_plus_std,
+                  color='red', alpha=0.25)
+
         plt.loglog(Kplot, enstrophy,'k')
         plt.title(rf'$\varepsilon({kplot_str})$')
         plt.xlabel(rf'${kplot_str}$')
@@ -679,6 +705,15 @@ class turb:
         plt.ylim([1e-3,1e2])
         #plt.pcolor(np.real(sim.w1_hat));plt.colorbar()
         
+        for i in [3,4]:
+            plt.subplot(3,2,i)
+
+            plt.grid(which='major', linestyle='--',
+                      linewidth='1.0', color='black', alpha=0.25)
+            plt.grid(which='minor', linestyle='-',
+                      linewidth='0.5', color='red', alpha=0.25)
+
+
         #plt.subplot(3,2,5)
         #omega = np.real(np.fft.ifft2(self.w1_hat))
         #Vecpoints, exp_log_kde, log_kde, kde = self.KDEof(omega)
@@ -696,12 +731,17 @@ class turb:
         u = np.real(np.fft.ifft2(u_hat))
         v = np.real(np.fft.ifft2(v_hat))
 
-        plt.subplot(3,2,5)
+        ax = plt.subplot(3,2,5)
         plt.pcolor(u)
-        plt.subplot(3,2,6)
+        plt.colorbar()
+        ax.set_aspect('equal', adjustable='box')
+
+        ax = plt.subplot(3,2,6)
         plt.pcolor(v)
         plt.title('v')
         plt.colorbar()
+        ax.set_aspect('equal', adjustable='box')
+
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
         filename = prepend_str+'2Dturb_'+str(stepnum)+append_str

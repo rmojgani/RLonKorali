@@ -51,6 +51,8 @@ def environment( args, s ):
 
     ## run controlled simulation
     nContolledSteps = int(1*10e3)#(tEnd-tInit)/dt)
+    cumulativeReward = 0
+
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
     step = 0
     while step < nContolledSteps:
@@ -62,8 +64,13 @@ def environment( args, s ):
         #print("action:", s["Action"])
 
         # get reward
-        s["Reward"] = sim.reward()
+        #s["Reward"] = sim.reward()
         #print("Reward", s["Reward"])
+        if cumulativeReward==0:
+            cumulativeReward=sim.reward()
+        else:
+            cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
+        #cumulativeReward += sim.reward()
 
         # get new state
         s["State"] = sim.state()#.tolist()
@@ -74,6 +81,12 @@ def environment( args, s ):
         step += 1
 
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
+        
+    cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
+    s["Reward"] = cumulativeReward_normalized
+    print('cumulativeReward:', cumulativeReward)
+    print('cumulativeReward:', cumulativeReward_normalized)
+
 
     sim.myplot(casestr+'_RL')
     #sim.myplotforcing(casestr+'_RL_f')
