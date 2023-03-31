@@ -671,12 +671,6 @@ class turb:
                   self.energy_M_2D_mean_minus_std,
                   self.energy_M_2D_mean_plus_std,
                   color='red', alpha=0.25)
-
-        plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
-        plt.xlabel(rf'${kplot_str}$')
-        plt.xlim([1,1e3])
-        plt.ylim([1e-6,1e1])
-       
         # 
         Aslope = energy[self.Fn]*(self.Fn)**3
 
@@ -685,6 +679,11 @@ class turb:
         y2 = Aslope*ref_tke[4:,0]**(-3.0)*(np.log(ref_tke[4:,0]/self.Fn))**(-1.0/3.0);
         plt.plot(ref_tke[4:,0],y2,'--b','linewidth',2);
 
+        plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
+        plt.xlabel(rf'${kplot_str}$')
+        plt.xlim([1,1e3])
+        plt.ylim([1e-6,1e1])
+       
         ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
         plt.subplot(3,2,4)

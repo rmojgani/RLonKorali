@@ -48,7 +48,6 @@ def environment( args, s ):
     ## get initial state
     s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
-
     ## run controlled simulation
     nContolledSteps = int(1*10e3)#(tEnd-tInit)/dt)
     cumulativeReward = 0
