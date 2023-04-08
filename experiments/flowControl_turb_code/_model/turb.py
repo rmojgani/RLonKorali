@@ -5,6 +5,7 @@ import time as time
 from scipy.io import loadmat,savemat
 import scipy as sp
 from scipy.interpolate import RectBivariateSpline
+from split2d import split2d
 
 import matplotlib
 matplotlib.use('Agg')
@@ -254,6 +255,8 @@ class turb:
         statetype=self.statetype
         nagents=self.nagents
         # --------------------------------------
+        STATE_GLOBAL=True
+        # --------------------------------------
         if statetype=='psiomegadiag':
             s1= np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
             s2= np.diag(np.real(np.fft.ifft2(self.psiCurrent_hat))).reshape(-1,)
@@ -266,11 +269,25 @@ class turb:
         elif statetype=='energy':
             energy= self.energy_spectrum()
             mystate= np.log(energy[0:kmax])
+        # --------------------------
+        elif statetype=='psiomega':
+           STATE_GLOBAL=False
+           s1 = np.real(np.fft.ifft2(self.sol[0]))
+           s2 = np.real(np.fft.ifft2(self.sol[1]))
+        
+        if STATE_GLOBAL:
+            mystatelist = [mystate.tolist()]
+            for _ in range(nagents-1):
+                mystatelist.append(mystate.tolist())
 
-        mystatelist = [mystate.tolist()]
-        for _ in range(nagents-1):
-            mystatelist.append(mystate.tolist())
+        elif not STATE_GLOBAL:
+            mystatelist1 =  split2d(s1, 8)
+            mystatelist2 =  split2d(s2, 8)
+            mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
+            print(mystatelist1)
+            
         return mystatelist
+
    
 
     def reward(self):
