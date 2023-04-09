@@ -1,6 +1,6 @@
 NLES=128 
 case=4
-rewardtype=zc # [k1,k2,k3,z1,z2,z3,ze, ... ] 
+rewardtype=z1 # [k1,k2,k3,z1,z2,z3,ze, ... ] 
 statetype=enstrophy # [enstrophy,energy,psidiag,psiomegadiag,] 
 actiontype=CL
 gensize=10
