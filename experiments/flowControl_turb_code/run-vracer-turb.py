@@ -1,6 +1,7 @@
 import argparse
 import sys
 import os
+import numpy as np
 sys.path.append('_model')
 #sys.path.append('_init')
 #from environment import *
@@ -41,7 +42,8 @@ if args['statetype'] == 'enstrophy' or args['statetype'] == 'energy':
 elif args['statetype'] == 'psiomegadiag':
     state_size = int(NLES*2)
 elif args['statetype'] == 'psiomega':
-    state_size = int(2*(NLES/8)**2)
+    nagents_h = np.sqrt(args['nagents'])
+    state_size = int(2*(NLES/nagents_h)**2)
 
 # Type of the action
 if args['actiontype'] == 'CL':

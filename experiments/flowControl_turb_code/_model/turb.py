@@ -183,6 +183,7 @@ class turb:
 
         if rewardfunc == '1' or rewardfunc == '3':
             myreward = 1/( np.linalg.norm( krange*(target-reference)  )**2 )
+            #print(myreward)
         elif rewardfunc == 'e':
             print('not implemented')
             stop_
@@ -281,10 +282,9 @@ class turb:
                 mystatelist.append(mystate.tolist())
 
         elif not STATE_GLOBAL:
-            mystatelist1 =  split2d(s1, 8)
-            mystatelist2 =  split2d(s2, 8)
+            mystatelist1 =  split2d(s1, self.nActiongrid)
+            mystatelist2 =  split2d(s2, self.nActiongrid)
             mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
-            print(mystatelist1)
             
         return mystatelist
 

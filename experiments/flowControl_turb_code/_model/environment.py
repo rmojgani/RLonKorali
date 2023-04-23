@@ -4,6 +4,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr_r'
 import numpy as np
+import os
 
 def environment( args, s ):
     L    = 2*np.pi
@@ -41,6 +42,9 @@ def environment( args, s ):
     #print(sim.w1_hat.shape)
     #print(sim.psiPrevious_hat.shape)
     #print(sim.psi_hat.shape)
+    SYSMEM = os.system('cat /proc/meminfo | grep Mem | head -n 3')
+    SYSDATE = os.system('date')
+    print(SYSMEM, SYSDATE)
     #print('------------------')
     sim.myplot(casestr)    
     print('PNG file saved')
