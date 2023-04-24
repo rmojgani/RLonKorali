@@ -145,7 +145,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
 e["Solver"]["Termination Criteria"]["Max Generations"] = 51
 e["Solver"]["Experience Replay"]["Serialize"] = True
-e["Console Output"]["Verbosity"] = "Detailed"
+e["Console Output"]["Verbosity"] = "Minimal"
 e["File Output"]["Enabled"] = True
 e["File Output"]["Frequency"] = 1
 e["File Output"]["Path"] = resultFolder
@@ -157,6 +157,9 @@ if args['solver'] == 'postprocess':
 #    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
 #    e["Solver"]["Mode"] = "Testing" #"Training / Testing"
 #    e["Solver"]["Testing"]["Sample Ids"] = [0]
+
+k["Conduit"]["Type"] = "Concurrent"
+k["Conduit"]["Concurrent Jobs"] = 6
 
 ### Running Experiment
 print("Running the experiment ---- ")
