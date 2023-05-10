@@ -16,13 +16,17 @@ def environment( args, s ):
     statetype = args['statetype']
     actiontype = args['actiontype']
     nagents = args['nagents']
+    IF_REWARD_CUM = args['IF_REWARD_CUM']
 
     casestr = '_C'+case+'_N'+str(N)+'_R_'+rewardtype+'_State_'+statetype+'_Action_'+actiontype+'_nAgents_'+str(nagents)
+    casestr = casestr + '_0CREWARD'+str( IF_REWARD_CUM )
+
     print(casestr)
+
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + int(10e3)*dt# 30e-3  #0.025*(2500*4+1000
+    tEnd = tInit + int(10e3/10)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
     print('Initlize sim.')
     sim  = turb(RL=IF_RL, 
@@ -46,7 +50,7 @@ def environment( args, s ):
     SYSDATE = os.system('date')
     print(SYSMEM, SYSDATE)
     #print('------------------')
-    sim.myplot(casestr)    
+    #sim.myplot(casestr)    
     print('PNG file saved')
 
     ## get initial state
@@ -54,8 +58,9 @@ def environment( args, s ):
     # print("state:", sim.state())
 
     ## run controlled simulation
-    nContolledSteps = int(10e3)#(tEnd-tInit)/dt)
+    nContolledSteps = int(10e3/10)#(tEnd-tInit)/dt)
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
+
     step = 0
     while step < nContolledSteps:
         # Getting new action
@@ -68,7 +73,12 @@ def environment( args, s ):
         # get reward
         s["Reward"] = sim.reward()
         #print("Reward", s["Reward"])
-
+        '''
+        if not IF_REWARD_CUM or step == 0:
+            cumulativeReward = sim.reward()
+        else:
+            cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
+        '''
         # get new state
         s["State"] = sim.state()#.tolist()
         # print("state:", sim.state())
@@ -79,7 +89,12 @@ def environment( args, s ):
 
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    sim.myplot(casestr+'_RL')
+    '''
+    cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
+    s["Reward"] = cumulativeReward_normalized
+    '''
+
+    #sim.myplot(casestr+'_RL')
     #sim.myplotforcing(casestr+'_RL_f')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

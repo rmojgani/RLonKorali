@@ -5,6 +5,8 @@ import numpy as np
 sys.path.append('_model')
 #sys.path.append('_init')
 #from environment import *
+#from mpi4py import MPI
+
 ## Parameters
 
 ### Parsing arguments
@@ -14,20 +16,25 @@ parser.add_argument('--case', help='Reinforcement learning case considered. Choo
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
 parser.add_argument('--statetype', help='State type [enstrophy,energy,psidiag,psiomegadiag,psiomega] ', type=str, default='psiomegadiag')
 parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
-parser.add_argument('--NLES', help='', type=int, default=128)
+parser.add_argument('--NLES', help='', type=int, default=32)
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 parser.add_argument('--runstrpost', help='nosgs, Leith, Smag,', type=str, default='')
 parser.add_argument('--nagents', help='Number of Agents', type=int, default=4)
+parser.add_argument('--nconcurrent', help='Number of concurrent jobs', type=int, default=1)
+parser.add_argument('--IF_REWARD_CUM', type=bool, default=False, choices=[False, True], help='If reward to accumalated?')
 
 args = vars(parser.parse_args())
 
 args['runstrpost']=args['actiontype']+'post'
 
+args['IF_REWARD_CUM']=False
+
 NLES = args['NLES']
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
+casestr = casestr + '_0CREWARD'+str(args['IF_REWARD_CUM'])
 
-print(args)
+print('args:', args)
 print ('case:', casestr)
 
 # Case selection
@@ -143,7 +150,7 @@ e["Solver"]["Neural Network"]["Hidden Layers"][3]["Function"] = "Elementwise/Tan
 
 ### Setting file output configuration
 e["Solver"]["Termination Criteria"]["Max Experiences"] = 10e6
-e["Solver"]["Termination Criteria"]["Max Generations"] = 51
+e["Solver"]["Termination Criteria"]["Max Generations"] = 201
 e["Solver"]["Experience Replay"]["Serialize"] = True
 e["Console Output"]["Verbosity"] = "Detailed"
 e["File Output"]["Enabled"] = True
@@ -157,7 +164,19 @@ if args['solver'] == 'postprocess':
 #    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
 #    e["Solver"]["Mode"] = "Testing" #"Training / Testing"
 #    e["Solver"]["Testing"]["Sample Ids"] = [0]
+'''
+if args['nconcurrent'] > 1:
+    k["Conduit"]["Type"] = "Concurrent"
+    k["Conduit"]["Concurrent Jobs"] = 1#args['nconcurrent']
+    e["Solver"]["Concurrent Workers"] = args['nconcurrent'];
 
+if args['nconcurrent'] > 1:
+    print(MPI.COMM_WORLD)
+    k.setMPIComm(MPI.COMM_WORLD)
+    k["Conduit"]["Type"] = "Distributed";
+    k["Conduit"]["Ranks Per Worker"] = 1;
+    e["Solver"]["Concurrent Workers"] = 7;# args['nconcurrent'];
+'''
 ### Running Experiment
 print("Running the experiment ---- ")
 k.run(e)
