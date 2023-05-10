@@ -1,17 +1,23 @@
 NLES=32
 case=1
 rewardtype=z1 # [k1,k2,k3,log,]
-statetype=psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomega] 
+statetype=psiomega # [enstrophy,energy,psidiag,psiomegadiag,] 
 actiontype=CL
-gensize=1
-solver=postprocess #training #postproces
+gensize=10
+solver=postproces
 nagents=4
-myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}.out
-echo ${myoutfile}>>${myoutfile}
-ps>>${myoutfile}
+nconcurrent=1
+IF_REWARD_CUM=False #True
+
+myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}_nCCjobs${nconcurrent}_CReward${IF_REWARD_CUM}.out
+
+(echo ${myoutfile})>>${myoutfile}
+(ps)>>${myoutfile}
 (ls -ltr|tail -n 1)>>${myoutfile}
+(top -b -n 1)>>${myoutfile}
+(cat /proc/meminfo | grep Mem | head -n 3)>>${myoutfile}
+(nvidia-smi)>>${myoutfile}
 
-export OMP_NUM_THREADS=8
 
-nohup python3 -u run-vracer-turb.py --case=${case} --rewardtype=${rewardtype} --statetype=${statetype} --actiontype=${actiontype} --NLES=${NLES} --gensize=${gensize} --solver=${solver} --nagents=${nagents}>> ${myoutfile}&
-
+export OMP_NUM_THREADS=18
+nohup python3 -u run-vracer-turb.py --case=${case} --rewardtype=${rewardtype} --statetype=${statetype} --actiontype=${actiontype} --NLES=${NLES} --gensize=${gensize} --solver=${solver} --nagents=${nagents} --nconcurrent=${nconcurrent} --IF_REWARD_CUM=${IF_REWARD_CUM}>>${myoutfile}&

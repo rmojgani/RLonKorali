@@ -21,14 +21,14 @@ def environmentpost( args, s ):
     runFolder = args["runFolder"]
 
     casestr = '_C'+case+'_N'+str(N)+'_R_'+rewardtype+'_State_'+statetype+'_Action_'+actiontype+'_nAgents_'+str(nagents)
-    casestr = casestr + '_0CREWARD'+str( IF_REWARD_CUM )
+    casestr = casestr + '_CREWARD'+str( IF_REWARD_CUM )
 
     print(casestr)
 
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + int(10e3/10)*dt# 30e-3  #0.025*(2500*4+1000
+    tEnd = tInit + int(10e3)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
     print('Initlize sim.')
     sim  = turb(RL=IF_RL, 
@@ -67,7 +67,7 @@ def environmentpost( args, s ):
     step = 0
     while step < nContolledSteps:
         print(step)
-        if step % int(5e1) == 1 :
+        if step % int(5e3) == 1 :
             print('Save at time step=', step)
             sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
             '''

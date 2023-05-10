@@ -7,3 +7,4 @@ rm 2Dturb*.out
 rm train_CASE*.out
 rm training_CASE*.out
 rm postproces*.out
+rm *.out

@@ -7,7 +7,7 @@ gensize=10
 solver=training #postproces
 nagents=4
 nconcurrent=1
-IF_REWARD_CUM=False #True
+IF_REWARD_CUM=0 #{0,1}
 
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}_nCCjobs${nconcurrent}_CReward${IF_REWARD_CUM}.out
 
@@ -20,4 +20,5 @@ myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiont
 
 
 export OMP_NUM_THREADS=18
+
 nohup python3 -u run-vracer-turb.py --case=${case} --rewardtype=${rewardtype} --statetype=${statetype} --actiontype=${actiontype} --NLES=${NLES} --gensize=${gensize} --solver=${solver} --nagents=${nagents} --nconcurrent=${nconcurrent} --IF_REWARD_CUM=${IF_REWARD_CUM}>>${myoutfile}&

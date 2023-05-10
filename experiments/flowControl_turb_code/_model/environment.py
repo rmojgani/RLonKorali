@@ -26,7 +26,7 @@ def environment( args, s ):
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + int(10e3/10)*dt# 30e-3  #0.025*(2500*4+1000
+    tEnd = tInit + int(10e3)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
     print('Initlize sim.')
     sim  = turb(RL=IF_RL, 
@@ -46,19 +46,20 @@ def environment( args, s ):
     #print(sim.w1_hat.shape)
     #print(sim.psiPrevious_hat.shape)
     #print(sim.psi_hat.shape)
-    SYSMEM = os.system('cat /proc/meminfo | grep Mem | head -n 3')
+    cmd="(awk \'$3==\"kB\"{$2=$2/1024^2;$3=\"GB\";} 1\' /proc/meminfo | head -n 3 | grep Mem)"#| column -t 
+    SYSMEM = os.system(cmd)
     SYSDATE = os.system('date')
     print(SYSMEM, SYSDATE)
     #print('------------------')
-    #sim.myplot(casestr)    
-    print('PNG file saved')
+    #sim.myplot(casestr) 
+    #print('PNG file saved')
 
     ## get initial state
     s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
     ## run controlled simulation
-    nContolledSteps = int(10e3/10)#(tEnd-tInit)/dt)
+    nContolledSteps = int(10e3)#(tEnd-tInit)/dt)
     print('run controlled simulation with nControlledSteps=', nContolledSteps)
 
     step = 0
@@ -73,12 +74,10 @@ def environment( args, s ):
         # get reward
         s["Reward"] = sim.reward()
         #print("Reward", s["Reward"])
-        '''
         if not IF_REWARD_CUM or step == 0:
             cumulativeReward = sim.reward()
         else:
             cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
-        '''
         # get new state
         s["State"] = sim.state()#.tolist()
         # print("state:", sim.state())
@@ -89,10 +88,11 @@ def environment( args, s ):
 
         #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    '''
-    cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
-    s["Reward"] = cumulativeReward_normalized
-    '''
+    if not IF_REWARD_CUM:
+        s["Reward"] = cumulativeReward # which is already equal to sim.reward()
+    else:
+        cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
+        s["Reward"] = cumulativeReward_normalized
 
     #sim.myplot(casestr+'_RL')
     #sim.myplotforcing(casestr+'_RL_f')
