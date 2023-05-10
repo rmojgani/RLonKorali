@@ -16,10 +16,6 @@ from scipy.stats import multivariate_normal
 np.seterr(over='raise', invalid='raise')
 
 # ---------------------- Forced turb
-#import math
-
-#ts = int(SPIN_UP*2) # Total timesteps
-#tot_time = dt*ts    # Length of run
 #lim = int(SPIN_UP ) # Start saving
 #st = int( 1. / dt ) # How often to save data
 NNSAVE = 10 
@@ -64,8 +60,8 @@ class turb:
             self.rewardfunc = '1'
         elif rewardtype[1]=='e':
             self.rewardfunc = 'e'
-
-        self.statetype= statetype
+        elif rewardtype[1]=='c':
+            self.rewardfunc = 'c'
         self.actiontype= actiontype
         self.nagents= nagents
         self.nActions = nActions
@@ -184,9 +180,11 @@ class turb:
         if rewardfunc == '1' or rewardfunc == '3':
             myreward = 1/( np.linalg.norm( krange*(target-reference)  )**2 )
             #print(myreward)
+        elif rewardfunc == 'c':
+            myreward = - np.linalg.norm( (target-reference)  )**2
         elif rewardfunc == 'e':
-            print('not implemented')
-            stop_
+            myreward = - np.linalg.norm( np.exp( (np.log(target)-np.log(reference))**2) )
+
         return myreward
 
     def mySGS(self, action):
