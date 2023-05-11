@@ -62,6 +62,8 @@ class turb:
             self.rewardfunc = 'e'
         elif rewardtype[1]=='c':
             self.rewardfunc = 'c'
+
+        self.statetype= statetype
         self.actiontype= actiontype
         self.nagents= nagents
         self.nActions = nActions
@@ -154,7 +156,7 @@ class turb:
             spec_ref = self.ref_ens[0:kmax,1]
         elif rewardtype == 'energy':
             #print('Energy as reference')
-            spec_ref = self.ref_ens[0:kmax,1]
+            spec_ref = self.ref_tke[0:kmax,1]
         self.spec_ref = spec_ref
 
     def setup_target(self):
