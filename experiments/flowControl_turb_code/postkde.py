@@ -3,30 +3,42 @@
 """
 Last update : Dec 20
 """
-from PDE_KDE import myKDE
-import scipy.io as sio
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import sys
+import re
+try:
+    # os.chdir('/home/rm99/Mount/jetstream_volume/docker/RLonKoraliMA/experiments/flowControl_turb_code')
+    os.chdir('/home/rm99/Mount/jetstream_volume/docker/RLonKoraliMA/experiments/flowControl_turb_code')  
+except:
+    print('')
+
+import numpy as np
+import scipy.io as sio
+
+from PDE_KDE import myKDE
+# import matplotlib
+# matplotlib.use('Agg')
+import matplotlib.pylab as plt
 #%%
-NLES = 64
-nAgents = 64
-CASENO = 1; Fn = 4;
-# CASENO = 4; Fn = 25;
-# directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost_1ksave/'
+SPIN_UP = 50000
+NUM_DATA = 20#00#0
+#%%
+NLES = 32
+nAgents = 1
+CASENO = 1;
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
+directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
 
-# NLES = 64
-# nAgents = 64
-# CASENO = 1; Fn = 4;
-# directory = '_result_vracer_C1_N64_R_z1_State_enstrophy_Action_CL_nAgents64/CLpost_backupFeb20/'
-
-# NLES = 16
+# NLES = 32
 # nAgents = 16
-# CASENO = 1; Fn = 4;
-# directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CS_nAgents'+str(nAgents)+'/CSpost/'
-
+# CASENO = 1; 
+# directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
+'''
+NLES = 128
+nAgents = 144
+CASENO = 4;
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
+'''
 # sys.path.append(directory)
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
 METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
@@ -36,80 +48,75 @@ METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 # METHOD = 'smag0d17' # 'Leith' , 'Smag'
 
 CL = ''
-
 num_file = 0
 omega_M = []# np.zeros((NLES, NLES))
 for filename in sorted(os.listdir(directory)):
 
-    if METHOD in filename and str(NLES) in filename  and filename.endswith('.mat'):
-        print(str(num_file), filename)
-        if 't=1_xxx' not in filename:
+    if METHOD in filename and str(NLES) in filename and filename.endswith('.mat'):
+        
+        numbers_in_file = re.findall(r'\d+', filename)
+        file_numstep = int(numbers_in_file[-1])
+
+        if file_numstep>SPIN_UP:        
+        # if file_numstep>50000 and file_numstep%20000==1:
+            print(str(num_file), filename)
 
             mat_contents = sio.loadmat(directory+filename)
             w1_hat = mat_contents['w_hat']
             omega = np.real(np.fft.ifft2(w1_hat))
-            if omega.max() > 10:
-                print(omega.max())
+            #if omega.max() > 10:
+            #    print(omega.max())
             omega_M = np.append(omega_M, omega)
             # omega_M = np.append(omega_M, -omega)
     
             num_file += 1
-            if num_file==10: stop_
-        #     try:
-        #         mat_contents = sio.loadmat(filename)
-        #         w1_hat = mat_contents['w_hat']
-        #         omega = np.real(np.fft.ifft2(w1_hat))
-        #         omega_M = np.append(omega_M, omega)
-        #         num_file += 1
-        #         print(max(omega))
-        #     except:
-        #         print('none')
-        # else:
-        #     continue
+            if num_file==NUM_DATA: break
 #%%
 if CASENO == 4:
-    CASE_str = r'Case 4 ($Re = 20x10^3, k_f=25$)'+'$, n_{MARL}=$'+str(nAgents)
+    Fn = 25;
+    CASE_str = r'Case 4 ($Re = 20x10^3, k_f=25$)'+r', $N_{LES}=$'+str(NLES)+'$, n_{MARL}=$'+str(nAgents)
     pdf_DNS1 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     pdf_DNS2 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     std_omega_DNS = 12.85
     XMIN, XMAX = -8, 8
 
 elif CASENO == 1:
-    CASE_str = r'Case 1 ($Re = 20x10^3, k_f=4$)'+'$, n_{MARL}=$'+str(nAgents)
+    Fn = 4;
+    CASE_str = r'Case 1 ($Re = 20x10^3, k_f=4$)'+r', $N_{LES}=$'+str(NLES)+'$, n_{MARL}=$'+str(nAgents)
     pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
     pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
     std_omega_DNS = 6.0705
-    XMIN, XMAX = -6, 6
+    XMIN, XMAX = -7, 7
     
 std_omega = std_omega_DNS#np.std(omega_M)
 #%%
 omega_M_2D = omega_M.reshape(NLES*NLES, -1)
 #%%
 from PDE_KDE import mybandwidth_scott
-plt.figure(figsize=(6,4),dpi=400)
-BANDWIDTH = 0.5
+plt.figure(figsize=(6,4), dpi=450)
 
-div = 3#67
+BANDWIDTH = mybandwidth_scott(omega_M_2D)
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2)
+plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=1.0, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
+
+num_line = 10
+div = int(num_file/num_line)#67
 for icount in range(int(len(omega_M_2D.T)/div)):
-    omega_M = omega_M_2D[:,icount:icount+div]
-    BANDWIDTH = mybandwidth_scott(omega_M.reshape(-1,1))*5
-    Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH)
-    
-    # Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega)
-    # plt.semilogy(Vecpoints/std_omega, exp_log_kde)
-    
-    plt.plot(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.5, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
-    # plt.semilogy(pdf_DNS1[:,0], pdf_DNS1[:,1], 'k', linewidth=4.0, alpha=0.25, label='DNS')
+    print('line no:', icount+1)
+    omega_M_now = omega_M_2D[:,icount:icount+div]
+    Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M_now.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2) 
+    plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.1, linewidth=1, label=METHOD+r'($C=$'+str(CL)+r')')
 
 if CASENO == 1:
-    plt.plot(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.5, label='DNS')
-elif CASENO == 4:
-    plt.plot(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
+    plt.semilogy(pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.5, label='DNS')
+    plt.semilogy(-pdf_DNS2[:,0], pdf_DNS2[:,1], 'r', linewidth=4.0, alpha=0.5, label='DNS')
 
-hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 30, fc='gray', histtype='stepfilled', alpha=0.3,density=True)
+elif CASENO == 4:
+    plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
+
 
 # plt.legend(loc="upper left")
-plt.title(CASE_str)
+plt.title(CASE_str+', bw='+ str(np.round(BANDWIDTH,2)))
 
 plt.xlabel(r'$\omega / \sigma(\omega)$, $\sigma(\omega)$=' +
            str(np.round(std_omega, 2)))
@@ -120,27 +127,27 @@ plt.grid(which='major', linestyle='--',
 plt.grid(which='minor', linestyle='-',
          linewidth='0.5', color='red', alpha=0.25)
 
-# plt.ylim([1e-3, 1e-1])
-plt.ylim([1e-6, 1e-1])
+# minor_ticks = np.arange(-6, 7, 0.5)
+# plt.xticks(minor_ticks, minor=True)
+plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(0.5))
 
 plt.xlim([XMIN, XMAX])
+plt.ylim([1e-6, 1e-1])
+# plt.ylim([1e-4, 1e-1])
 
-filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)
+filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)+'_nAgents'+str(nAgents)
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
 plt.show()
-# stop
-5#%%
+#%%
 # pdf_dns_= np.hstack((pdf_DNS,pdf_DNS[:,0].reshape(-1,1)/std_omega_DNS))
 # np.savetxt(filename_save+"_pdfdns.dat", pdf_dns_, delimiter='\t')
 pdf_les_= np.stack((Vecpoints, exp_log_kde,Vecpoints/std_omega),axis=1)
 np.savetxt(filename_save+"_pdf.dat", pdf_les_, delimiter='\t')
 #%%
 # plt.hist(omega_M.reshape(-1,1), 30, fc='gray', histtype='stepfilled', alpha=0.3, normed=True)
-BANDWIDTH = mybandwidth_scott(omega_M.reshape(-1,1))*5
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH)
 
-
-fig = plt.figure()
+fig = plt.figure(figsize=(6,4),dpi=450)
 
 plt.plot(Vecpoints, exp_log_kde, 'k', alpha=0.5, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 300, fc='gray', histtype='stepfilled', alpha=0.3,density=True)
@@ -148,40 +155,54 @@ hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 300, fc='gray', histtype='
 plt.yscale('log')
 print((hist * np.diff(bins)).sum())
 plt.ylim([1e-6, 1e-1])
-
-# hist, bins, patches = plt.hist(omega_M.reshape(-1,1))
-
-
+plt.savefig(filename_save+'_pdfbin.png', bbox_inches='tight', dpi=450)
+plt.show()
 #%% Plot enstrophy
 col1, col2 = 0, 0
-ens_M = np.zeros((int(NLES/2)-1,num_file))
-tke_M = np.zeros((int(NLES/2)-1,num_file))
+ens_M = []#np.zeros((int(NLES/2)-1,num_file))
+tke_M = []#np.zeros((int(NLES/2)-1,num_file))
 
+num_file = 0
 for filename in sorted(os.listdir(directory)):
 
-    if '_1_' not in filename and filename.endswith("ens.out"):
-
-        ens_i = np.loadtxt(directory+filename)[:-1,1]
+    if METHOD in filename and filename.endswith('ens.out'):
         
-        if len(filename)<=10:
-            ens_dns = ens_i
-            Kplot =  np.loadtxt(directory+filename)[:-1,0]
-        else:
-            ens_M[:,col1] = ens_i
+        numbers_in_file = re.findall(r'\d+', filename)
+        file_numstep = int(numbers_in_file[-1])
+
+        if file_numstep>SPIN_UP:
+            print(str(num_file),':',str(col1),':',str(file_numstep))
+            ens_i = np.loadtxt(directory+filename)[:-1,1]
+            ens_i = np.asarray(ens_i).reshape((-1,))
+            #ens_M[:,col1] = ens_i
+            ens_M = np.append(ens_M, ens_i)
             col1 +=1
-    
-    if '_1_' not in filename and filename.endswith("tke.out"):
-        print(filename)
+            num_file += 1
 
-        tke_i = np.loadtxt(directory+filename)[:-1,1]
-        
-        if len(filename)<=10:
-            tke_dns = tke_i
-            Kplot =  np.loadtxt(directory+filename)[:-1,0]
-        else:
-            tke_M[:,col2] = tke_i
+        if num_file==NUM_DATA: break
+        if col1>=num_file: break
+
+num_file = 0
+for filename in sorted(os.listdir(directory)):
+
+    if METHOD in filename and filename.endswith('tke.out'):
+        numbers_in_file = re.findall(r'\d+', filename)
+        file_numstep = int(numbers_in_file[-1])
+
+        if file_numstep>SPIN_UP:   
+            tke_i = np.loadtxt(directory+filename)[:-1,1]
+            tke_i = np.asarray(tke_i).reshape((-1,))
+            tke_M = np.append(tke_M, tke_i)
+            #tke_M[:,col2] = tke_i
             col2 +=1
+            num_file += 1
+
+        if num_file==NUM_DATA: break
+        if col2>=num_file: break
+
 #%%
+ens_M = ens_M.reshape( int(NLES/2)-1,-1)
+tke_M = tke_M.reshape( int(NLES/2)-1,-1)
 ens_ave = np.mean(ens_M,axis=1)
 tke_ave = np.mean(tke_M,axis=1)
 #%%
@@ -200,34 +221,37 @@ Kplot = np.array(range(int(NLES/2)-1))
 #%%
 kplot_str = '\kappa_{x}'
 
-plt.figure(figsize=(10,14))
+plt.figure(figsize=(10,14),dpi=450)
 
 # Energy 
 plt.subplot(3,2,3)
 plt.loglog(Kplot,tke_ave,'k')
-plt.plot([Fn,Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
+plt.plot([Fn,Fn],[1e-12,1e6],':k', alpha=0.5, linewidth=2)
 plt.loglog(Kplot_dns,tke_dns,':k', alpha=0.5, linewidth=4)
 plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
 plt.xlabel(rf'${kplot_str}$')
-plt.xlim([1,1e3])
-plt.ylim([1e-4,1e0])
-if CASENO==4:
+
+if CASENO==1:
+    plt.xlim([1,512])
+    plt.ylim([1e-12,1e0])    
+elif CASENO==4:
+    plt.xlim([1,1e3])
     plt.ylim([1e-9,1e-1])
 
 
 # Enstrophy
 plt.subplot(3,2,4)
 plt.loglog(Kplot, ens_ave,'k')
-plt.plot([Fn,Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
+plt.plot([Fn,Fn],[1e-11,1e6],':k', alpha=0.5, linewidth=2)
 plt.loglog(Kplot_dns, ens_dns,':k', alpha=0.5, linewidth=4)
 plt.title(rf'$\varepsilon({kplot_str})$')
 plt.xlabel(rf'${kplot_str}$')
-plt.xlim([1,1e2])
-#plt.ylim([1e-5,1e0])
-plt.ylim([1e-4,1e1])
-if CASENO==4:
+if CASENO==1:
+    plt.xlim([1,512])
+    plt.ylim([1e-6,1e1])
+elif CASENO==4:
     plt.xlim([1,1e3])
-    plt.ylim([1e-4,1e1])
+    plt.ylim([1e-1,1e1])
 
 
 for i in [3,4]:
@@ -239,7 +263,7 @@ for i in [3,4]:
              linewidth='0.5', color='red', alpha=0.25)
     
     
-# plt.savefig(filename_save+'_spec.png', bbox_inches='tight', dpi=450)
+plt.savefig(filename_save+'_spec.png', bbox_inches='tight', dpi=450)
 #%%
 # stop
 tke_ave_=np.stack((Kplot,tke_ave)).T
@@ -247,7 +271,7 @@ np.savetxt(filename_save+"_tkeave.dat", tke_ave_,delimiter='\t')
 
 ens_ave_=np.stack((Kplot,ens_ave)).T
 np.savetxt(filename_save+"_ensave.dat", ens_ave_,delimiter='\t')
-
+stop_spec
 # ens_ave_=np.stack((Kplot,tke_dns)).T
 # np.savetxt(filename_save+"tkedns.dat", ens_ave_,delimiter='\t')
 
@@ -316,7 +340,7 @@ for filename in sorted(os.listdir(directory)):
         veRL_M = np.append(veRL_M, veRL)
         psi_M = np.append(psi_M, psi)
         num_file +=1
-        #if num_file==2: stop
+        if num_file==NUM_DATA: break
 #%%
 # meanveRL = veRL_M.mean()
 # Vecpoints, exp_log_kde, log_kde, kde = myKDE(veRL_M,BANDWIDTH=0.1)
@@ -381,7 +405,7 @@ Vecpoints, exp_log_kde, log_kde, kde = myKDE(incr,BANDWIDTH=0.1)
 plt.semilogy(Vecpoints, exp_log_kde, 'b', alpha=0.75, linewidth=2, label=r'$u$')
 plt.xlabel(r'$\delta u$',fontsize=16)
 plt.ylabel(r'$\mathcal{P}( \left( \delta u \right)$',fontsize=16)
-plt.ylim([1e-2,1e0])
+plt.ylim([1e-2,2e0])
 #%% Plot Dis
 xplot, xplot_str = veRL_M, '$C_S^2$'
 yplot, yplot_str= omega_M, '$\omega$'
@@ -560,7 +584,6 @@ for filename in sorted(os.listdir(directory)):
         print(filename)
         mat_contents = sio.loadmat(directory+filename)
         w1_hat = mat_contents['w_hat']
-        w1_hat = mat_contents['w_hat']
         omega = np.real(np.fft.ifft2(w1_hat))
         omega_M = np.append(omega_M, omega)
         veRL = mat_contents['veRL']
@@ -629,7 +652,7 @@ for filename in sorted(os.listdir(directory)):
      
         # plt.xlim([-0.1,0.1])
         # plt.ylim([-20,20])
-        stop
+        stop_2dplot
 meanx_M = meanxy_M.reshape(-1,2)[:,0]
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(meanx_M,BANDWIDTH=0.01,padding=0.1)
 plt.plot(Vecpoints, 0.01*exp_log_kde, 'r', alpha=0.75, linewidth=2, label='Model')
@@ -774,3 +797,70 @@ ax.set_zlim(-1,1)
 # for ii in range(1,360,30):
 #     ax.view_init(elev=20., azim=ii)
 #     plt.savefig("imovie%d.png" % ii)
+#%%
+
+plt.pcolor(veRL,cmap='bwr');plt.colorbar()
+#%%
+plt.pcolor(CS[:,:,0],cmap='bwr',vmin=-1,vmax=1);plt.colorbar()
+plt.title(r'$C_S^2$')
+#%%
+from scipy.interpolate import RectBivariateSpline
+#%%
+nagents = 1
+nActions = 25
+# temporary
+nActiongrid = int((nActions*nagents)**0.5)
+nActiongrid = nActiongrid
+# Initlize action
+X = np.linspace(0,Lx,nActiongrid, endpoint=True)
+Y = np.linspace(0,Lx,nActiongrid, endpoint=True)
+xaction = X
+yaction = Y
+
+
+def upsample(arr_action, xaction, yaction, Lx, NX):
+    upsample_action = RectBivariateSpline(xaction, yaction, arr_action, kx=1, ky=1)
+    
+    # Initlize action
+    upsamplesize = NX # 1 for testing, will be changed to grid size eventually
+    x2 = np.linspace(0,Lx, upsamplesize, endpoint=True)
+    y2 = np.linspace(0,Lx,  upsamplesize, endpoint=True)
+    forcing = upsample_action(x2, y2)
+    return forcing
+#%%
+arr_action_S = cs2_plot.reshape(128,128)[::26,::26]
+forcing_S = upsample((arr_action_S*2*np.pi/NX)**2, xaction, yaction, Lx, NX)
+
+arr_action_ve = ve[::26,::26]
+forcing_ve = upsample(arr_action_ve, xaction, yaction, Lx, NX)
+#%%
+cs = (0.17 * 2*np.pi/NX )**2
+S1 = np.real(np.fft.ifft2(-Ky*Kx*psi_hat)) # make sure .* 
+S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psi_hat))
+S  = 2.0*(S1*S1 + S2*S2)**0.5
+ve = cs*S
+
+Smean = (np.mean(S**2.0))**0.5;
+vemean = cs*Smean
+#%%
+plt.figure(figsize=(19,11), dpi=450)
+plt.subplot(2,3,1)
+plt.pcolor(ve,cmap='bwr'); plt.colorbar()
+plt.title(r'$\nu$',fontsize=30)
+
+plt.subplot(2,3,2)
+plt.pcolor(S,cmap='bwr'); plt.colorbar()
+plt.title(r'$S$',fontsize=30)
+
+plt.subplot(2,3,4)
+plt.pcolor(forcing_ve,cmap='bwr'); plt.colorbar()
+plt.title(r'$\bar{\nu}$ ',fontsize=20)
+
+
+plt.subplot(2,3,5)
+plt.pcolor(forcing_S,cmap='bwr'); plt.colorbar()
+plt.title(r'$\bar{C^2_S}$',fontsize=20)
+
+plt.subplot(2,3,6)
+plt.pcolor(forcing_ve*S,cmap='bwr'); plt.colorbar()
+plt.title(r'$\nu = \bar{C^2_S} \times S$',fontsize=20)
