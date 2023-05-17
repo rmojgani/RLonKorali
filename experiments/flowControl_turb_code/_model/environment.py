@@ -49,7 +49,7 @@ def environment( args, s ):
     cmd="(awk \'$3==\"kB\"{$2=$2/1024^2;$3=\"GB\";} 1\' /proc/meminfo | head -n 3 | grep Mem)"#| column -t 
     SYSMEM = os.system(cmd)
     SYSDATE = os.system('date')
-    print(SYSMEM, SYSDATE)
+    #print(SYSMEM, SYSDATE)
     #print('------------------')
     #sim.myplot(casestr) 
     #print('PNG file saved')
@@ -65,6 +65,7 @@ def environment( args, s ):
 
         step = 0
         while step < nContolledSteps:
+            #print(step)
             # Getting new action
             s.update()
 

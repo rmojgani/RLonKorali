@@ -302,7 +302,7 @@ class turb:
                 mystatelist1 =  pickcenter(s1, NX, NY, self.nActiongrid)
                 mystatelist2 =  pickcenter(s2, NY, NY, self.nActiongrid)
                 mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
-
+        if mystatelist[0][0]>1000: raise Exception("State diverged!")
         return mystatelist
 
    
