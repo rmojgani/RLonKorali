@@ -23,6 +23,8 @@ parser.add_argument('--runstrpost', help='nosgs, Leith, Smag,', type=str, defaul
 parser.add_argument('--nagents', help='Number of Agents', type=int, default=4)
 parser.add_argument('--nconcurrent', help='Number of concurrent jobs', type=int, default=1)
 parser.add_argument('--IF_REWARD_CUM', type=int, default=False, choices=[0, 1], help='If reward to accumalated?')
+parser.add_argument('--Tspinup',  help='number of time steps for spin up', type=float, default=1e4)
+parser.add_argument('--Thorizon', help='number of tiem steps for training horizon', type=float, default=1e4)
 
 args = vars(parser.parse_args())
 
@@ -31,6 +33,7 @@ args['runstrpost']=args['actiontype']+'post'
 NLES = args['NLES']
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
 casestr = casestr + '_CREWARD'+str(args['IF_REWARD_CUM'])
+casestr = casestr + '_Tspin'+str(args['IF_REWARD_CUM'])+'_Thor'+str(args['Thorizon'])
 
 print('args:', args)
 print ('case:', casestr)
