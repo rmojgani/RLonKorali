@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
-parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal] ', type=str, default='psiomegadiag')
+parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal, omegalocal, omega] ', type=str, default='psiomegadiag')
 parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
 parser.add_argument('--NLES', help='', type=int, default=32)
 parser.add_argument('--gensize', help='', type=int, default=10)
@@ -52,6 +52,9 @@ elif args['statetype'] == 'psiomegadiag':
 elif args['statetype'] == 'psiomega':
     nagents_h = np.sqrt(args['nagents'])
     state_size = int(2*(NLES/nagents_h)**2)
+elif args['statetype'] == 'psiomega':
+    nagents_h = np.sqrt(args['nagents'])
+    state_size = int((NLES/nagents_h)**2)
 elif args['statetype'] == 'psiomegalocal':
     state_size = 2 #np.sqrt(args['nagents'])
 

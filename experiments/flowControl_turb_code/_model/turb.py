@@ -281,6 +281,14 @@ class turb:
            s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
         # --------------------------
+        elif statetype=='omega':
+           '''
+           self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
+
+           '''
+           STATE_GLOBAL=False
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+        # --------------------------
         elif statetype=='psiomegalocal':
            STATE_GLOBAL=False
            s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
@@ -296,7 +304,9 @@ class turb:
                 mystatelist1 =  split2d(s1, self.nActiongrid)
                 mystatelist2 =  split2d(s2, self.nActiongrid)
                 mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
-            if statetype=='psiomegalocal':
+            elif statetype=='omega':
+                mystatelist =  split2d(s1, self.nActiongrid)
+            elif statetype=='psiomegalocal':
                 NX = self.NX
                 NY = self.NY
                 mystatelist1 =  pickcenter(s1, NX, NY, self.nActiongrid)
@@ -306,7 +316,6 @@ class turb:
         return mystatelist
 
    
-
     def reward(self):
         nagents=self.nagents
         # --------------------------------------

@@ -21,7 +21,7 @@ def environment( args, s ):
     Tspinup = args['Tspinup']
 
     casestr = '_C'+case+'_N'+str(N)+'_R_'+rewardtype+'_State_'+statetype+'_Action_'+actiontype+'_nAgents_'+str(nagents)
-    casestr = casestr + '_0CREWARD'+str( IF_REWARD_CUM )
+    casestr = casestr + '_CREWARD'+str( IF_REWARD_CUM )
 
     print(casestr)
 
