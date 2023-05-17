@@ -52,7 +52,7 @@ elif args['statetype'] == 'psiomegadiag':
 elif args['statetype'] == 'psiomega':
     nagents_h = np.sqrt(args['nagents'])
     state_size = int(2*(NLES/nagents_h)**2)
-elif args['statetype'] == 'psiomega':
+elif args['statetype'] == 'omega':
     nagents_h = np.sqrt(args['nagents'])
     state_size = int((NLES/nagents_h)**2)
 elif args['statetype'] == 'psiomegalocal':
