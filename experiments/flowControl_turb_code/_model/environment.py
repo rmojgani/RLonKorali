@@ -58,43 +58,48 @@ def environment( args, s ):
     s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
-    ## run controlled simulation
-    nContolledSteps = int(10e3)#(tEnd-tInit)/dt)
-    print('run controlled simulation with nControlledSteps=', nContolledSteps)
+    try:
+        ## run controlled simulation
+        nContolledSteps = int(10e3)#(tEnd-tInit)/dt)
+        print('run controlled simulation with nControlledSteps=', nContolledSteps)
 
-    step = 0
-    while step < nContolledSteps:
-        # Getting new action
-        s.update()
+        step = 0
+        while step < nContolledSteps:
+            # Getting new action
+            s.update()
 
-        # apply action and advance environment
-        sim.step( s["Action"] )
-        #print("action:", s["Action"])
+            # apply action and advance environment
+            sim.step( s["Action"] )
+            #print("action:", s["Action"])
 
-        # get reward
-        s["Reward"] = sim.reward()
-        #print("Reward", s["Reward"])
-        if not IF_REWARD_CUM or step == 0:
-            cumulativeReward = sim.reward()
-        else:
-            cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
-        # get new state
-        s["State"] = sim.state()#.tolist()
-        # print("state:", sim.state())
+            # get reward
+            s["Reward"] = sim.reward()
+            #print("Reward", s["Reward"])
+            if not IF_REWARD_CUM or step == 0:
+                cumulativeReward = sim.reward()
+            else:
+                cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
+            # get new state
+            s["State"] = sim.state()#.tolist()
+            # print("state:", sim.state())
         
-        # print()
-        #print(sim.veRL)    
-        step += 1
+            # print()
+            #print(sim.veRL)    
+            step += 1
 
-        #print( "Reward sum", np.sum(np.array(s["Reward"])) )
+            #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    if not IF_REWARD_CUM:
-        s["Reward"] = cumulativeReward # which is already equal to sim.reward()
-    else:
-        cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
-        s["Reward"] = cumulativeReward_normalized
+        if not IF_REWARD_CUM:
+            s["Reward"] = cumulativeReward # which is already equal to sim.reward()
+        else:
+            cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
+            s["Reward"] = cumulativeReward_normalized
 
-    #sim.myplot(casestr+'_RL')
-    #sim.myplotforcing(casestr+'_RL_f')
-    # TODO?: Termination in case of divergence
-    s["Termination"] = "Truncated"
+        s["Termination"] = "Terminal"
+
+        #sim.myplot(casestr+'_RL')
+        #sim.myplotforcing(casestr+'_RL_f')
+        # TODO?: Termination in case of divergence
+    except:
+        print('s["Termination"]: Truncated')
+        s["Termination"] = "Truncated"

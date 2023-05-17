@@ -50,7 +50,7 @@ elif args['statetype'] == 'psiomega':
     nagents_h = np.sqrt(args['nagents'])
     state_size = int(2*(NLES/nagents_h)**2)
 elif args['statetype'] == 'psiomegalocal':
-    state_size = np.sqrt(args['nagents'])
+    state_size = 2 #np.sqrt(args['nagents'])
 
 # Type of the action
 if args['actiontype'] == 'CL':

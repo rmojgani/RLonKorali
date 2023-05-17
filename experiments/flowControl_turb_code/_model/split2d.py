@@ -1,6 +1,6 @@
 import numpy as np
 
-def split2d(array,nAgents_v, nAgents_h=[]):
+def split2d(array, nAgents_v, nAgents_h=[]):
     if nAgents_h==[]:
         nAgents_h = nAgents_v
 
@@ -14,5 +14,19 @@ def split2d(array,nAgents_v, nAgents_h=[]):
 
             #print(subarr,'\n')
             mystatelist.append(subarr.reshape(-1,).tolist())
+
+    return mystatelist
+
+
+def pickcenter(array, Nx, Ny, nAgents_v, nAgents_h=[]):
+    if nAgents_h==[]:
+        nAgents_h = nAgents_v
+    
+    ix = np.linspace(0,Nx,nAgents_h,endpoint=False).astype('int')
+    iy = np.linspace(0,Ny,nAgents_v,endpoint=False).astype('int')
+
+    array_agents = array[ix,:][:,iy]
+    
+    mystatelist = array_agents.reshape(-1,1).tolist()
 
     return mystatelist

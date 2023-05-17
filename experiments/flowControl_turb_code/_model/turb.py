@@ -6,6 +6,7 @@ from scipy.io import loadmat,savemat
 import scipy as sp
 from scipy.interpolate import RectBivariateSpline
 from split2d import split2d
+from split2d import pickcenter
 
 import matplotlib
 matplotlib.use('Agg')
@@ -272,20 +273,36 @@ class turb:
             mystate= np.log(energy[0:kmax])
         # --------------------------
         elif statetype=='psiomega':
+           '''
+           self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
+
+           '''
            STATE_GLOBAL=False
-           s1 = np.real(np.fft.ifft2(self.sol[0]))
-           s2 = np.real(np.fft.ifft2(self.sol[1]))
-        
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+        # --------------------------
+        elif statetype=='psiomegalocal':
+           STATE_GLOBAL=False
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+
         if STATE_GLOBAL:
             mystatelist = [mystate.tolist()]
             for _ in range(nagents-1):
                 mystatelist.append(mystate.tolist())
 
         elif not STATE_GLOBAL:
-            mystatelist1 =  split2d(s1, self.nActiongrid)
-            mystatelist2 =  split2d(s2, self.nActiongrid)
-            mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
-            
+            if statetype=='psiomega':
+                mystatelist1 =  split2d(s1, self.nActiongrid)
+                mystatelist2 =  split2d(s2, self.nActiongrid)
+                mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
+            if statetype=='psiomegalocal':
+                NX = self.NX
+                NY = self.NY
+                mystatelist1 =  pickcenter(s1, NX, NY, self.nActiongrid)
+                mystatelist2 =  pickcenter(s2, NY, NY, self.nActiongrid)
+                mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
+
         return mystatelist
 
    

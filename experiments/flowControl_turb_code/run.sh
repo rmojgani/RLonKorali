@@ -1,13 +1,13 @@
 NLES=32
 case=1
 rewardtype=z1 # [k1,k2,k3,log,]
-statetype=enstrophy #psiomega # [enstrophy,energy,psidiag,psiomegadiag,] 
+statetype=psiomegalocal #psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomegalocal] 
 actiontype=CL
 gensize=10
 solver=training #postproces
 nagents=4
 nconcurrent=1
-IF_REWARD_CUM=0 #{0,1}
+IF_REWARD_CUM=1 #{0,1}
 
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}_nCCjobs${nconcurrent}_CReward${IF_REWARD_CUM}.out
 
