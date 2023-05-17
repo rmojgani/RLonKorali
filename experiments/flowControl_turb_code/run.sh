@@ -7,7 +7,7 @@ gensize=10
 solver=training #postproces
 nagents=4
 nconcurrent=1
-IF_REWARD_CUM=0 #{0,1}
+IF_REWARD_CUM=1 #{0,1}
 Tspinup=1e3
 Thorizon=1e3
 
