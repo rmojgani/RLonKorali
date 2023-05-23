@@ -2,7 +2,9 @@ import argparse
 import sys
 import os
 import numpy as np
+import time
 sys.path.append('_model')
+from turb import *
 #sys.path.append('_init')
 #from environment import *
 #from mpi4py import MPI
@@ -14,7 +16,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
-parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal] ', type=str, default='psiomegadiag')
+parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal] ', type=str, default='psiomega')
 parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
 parser.add_argument('--NLES', help='', type=int, default=32)
 parser.add_argument('--gensize', help='', type=int, default=10)
@@ -25,6 +27,7 @@ parser.add_argument('--nconcurrent', help='Number of concurrent jobs', type=int,
 parser.add_argument('--IF_REWARD_CUM', type=int, default=False, choices=[0, 1], help='If reward to accumalated?')
 parser.add_argument('--Tspinup',  help='number of time steps for spin up', type=float, default=1e4)
 parser.add_argument('--Thorizon', help='number of tiem steps for training horizon', type=float, default=1e4)
+parser.add_argument('--NumRLSteps', help='number of RL steps during simulation', type=float, default=1e3)
 
 args = vars(parser.parse_args())
 
@@ -64,6 +67,39 @@ else:
     action_size=8**2
 print('Racer: Action size is:', action_size)
 args['nActions']=action_size
+
+N    = args['NLES']
+case = args["case"]
+rewardtype = args["rewardtype"]
+statetype = args['statetype']
+actiontype = args['actiontype']
+nagents = args['nagents']
+Tspinup = args['Tspinup']
+
+dt   = 5.0e-4
+tInit = 0
+tEnd = tInit + int(Tspinup)*dt# 30e-3  #0.025*(2500*4+1000
+nInitialSteps = int(tEnd/dt)
+
+# Initialize simulation here
+startInit = time.time()
+print('Initlize sim.')
+sim  = turb(RL=True, 
+            NX=N, NY=N,
+            case=case,
+            nActions=action_size,
+            rewardtype=rewardtype,
+            statetype=statetype,
+            actiontype=actiontype,
+            nagents=nagents,
+            nsteps=nInitialSteps)
+print('================================')
+print('Simulate, nsteps=', nInitialSteps)
+sim.simulate( nsteps=nInitialSteps )
+endInit = time.time()
+print(f'Init time {(endInit-startInit):.3}s')
+
+
 ### Defining Korali Problem
 import korali
 k = korali.Engine()
@@ -88,7 +124,7 @@ else:
 
 ### Defining Problem Configuration
 e["Problem"]["Type"] = "Reinforcement Learning / Continuous"
-e["Problem"]["Environment Function"] = lambda x : environment( args, x )
+e["Problem"]["Environment Function"] = lambda x : environment( args, sim, x )
 e["Problem"]["Agents Per Environment"] = args['nagents']
 e["Problem"]["Policies Per Environment"] = 1
 print('Number of agents', args['nagents'])
