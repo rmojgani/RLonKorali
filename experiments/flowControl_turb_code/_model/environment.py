@@ -6,7 +6,14 @@ plt.rcParams['image.cmap'] = 'bwr_r'
 import numpy as np
 import os
 
-def environment( args, s ):
+import copy
+import time
+
+def environment( args, initSim, s ):
+
+    sim = copy.deepcopy(initSim)
+    startSim = time.time()
+
     L    = 2*np.pi
     N    = args['NLES'] #128# 64
     dt   = 5.0e-4
@@ -19,6 +26,7 @@ def environment( args, s ):
     IF_REWARD_CUM = args['IF_REWARD_CUM']
     Thorizon = args['Thorizon']
     Tspinup = args['Tspinup']
+    NumRLSteps = args['NumRLSteps']
 
     casestr = '_C'+case+'_N'+str(N)+'_R_'+rewardtype+'_State_'+statetype+'_Action_'+actiontype+'_nAgents_'+str(nagents)
     casestr = casestr + '_CREWARD'+str( IF_REWARD_CUM )
@@ -30,19 +38,6 @@ def environment( args, s ):
     tInit = 0
     tEnd = tInit + int(Tspinup)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
-    print('Initlize sim.')
-    sim  = turb(RL=IF_RL, 
-                NX=N, NY=N,
-                case=case,
-                nActions=action_size,
-                rewardtype=rewardtype,
-                statetype=statetype,
-                actiontype=actiontype,
-                nagents=nagents,
-                nsteps=nInitialSteps)
-    print('================================')
-    print('Simulate, nsteps=', nInitialSteps)
-    sim.simulate( nsteps=nInitialSteps )
 
     #print('------------------')
     #print(sim.w1_hat.shape)
@@ -62,17 +57,21 @@ def environment( args, s ):
 
     try:
         ## run controlled simulation
-        nContolledSteps = int(Thorizon)#(tEnd-tInit)/dt)
-        print('run controlled simulation with nControlledSteps=', nContolledSteps)
+        nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
+        nControlledSteps = int(NumRLSteps)
+        nIntermediateSteps = int(nSteps / nControlledSteps)
+        print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}')
 
         step = 0
-        while step < nContolledSteps:
+        while step < nControlledSteps:
             #print(step)
             # Getting new action
             s.update()
 
             # apply action and advance environment
-            sim.step( s["Action"] )
+            for i in range(nIntermediateSteps):
+                sim.step( s["Action"] )
+
             #print("action:", s["Action"])
 
             # get reward
@@ -95,7 +94,7 @@ def environment( args, s ):
         if not IF_REWARD_CUM:
             s["Reward"] = cumulativeReward # which is already equal to sim.reward()
         else:
-            cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
+            cumulativeReward_normalized =  [x/nControlledSteps for x in cumulativeReward]
             s["Reward"] = cumulativeReward_normalized
 
         s["Termination"] = "Terminal"
@@ -103,6 +102,12 @@ def environment( args, s ):
         #sim.myplot(casestr+'_RL')
         #sim.myplotforcing(casestr+'_RL_f')
         # TODO?: Termination in case of divergence
-    except:
+    except Exception as err:
+        print(f'Exception: {err}')
         print('s["Termination"]: Truncated')
         s["Termination"] = "Truncated"
+
+    endSim = time.time()
+    print(f'Sim loop {(endSim-startSim):.3}s')
+
+
