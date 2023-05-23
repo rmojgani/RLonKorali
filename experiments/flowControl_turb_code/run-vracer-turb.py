@@ -19,6 +19,7 @@ parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=st
 parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal] ', type=str, default='psiomega')
 parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
 parser.add_argument('--NLES', help='', type=int, default=32)
+parser.add_argument('--EPERU', help='Number of experiences per policy update', type=float, default=1.0) # This can be eg. 0.1, to have a policy update for every 10 experiences
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')
 parser.add_argument('--runstrpost', help='nosgs, Leith, Smag,', type=str, default='')
@@ -34,6 +35,7 @@ args = vars(parser.parse_args())
 args['runstrpost']=args['actiontype']+'post'
 
 NLES = args['NLES']
+EPERU = args['EPERU'] 
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
 casestr = casestr + '_CREWARD'+str(args['IF_REWARD_CUM'])
 casestr = casestr + '_Tspin'+str(args['Tspinup'])+'_Thor'+str(args['Thorizon'])
@@ -143,7 +145,7 @@ if args['nagents']>1:
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
 e["Solver"]["Episodes Per Generation"] = args['gensize'] #--> 10, 25, 50
-e["Solver"]["Experiences Between Policy Updates"] = 1
+e["Solver"]["Experiences Between Policy Updates"] = EPERU
 e["Solver"]["Learning Rate"] = 0.0001
 e["Solver"]["Discount Factor"] = 0.995
 e["Solver"]["Mini Batch"]["Size"] = 256
