@@ -71,7 +71,10 @@ def environment( args, initSim, s ):
             # apply action and advance environment
             for i in range(nIntermediateSteps):
                 sim.step( s["Action"] )
-
+                # print()
+                #print(sim.veRL)
+                step += 1
+        
             #print("action:", s["Action"])
 
             # get reward
@@ -81,14 +84,11 @@ def environment( args, initSim, s ):
                 cumulativeReward = sim.reward()
             else:
                 cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
+
             # get new state
             s["State"] = sim.state()#.tolist()
             # print("state:", sim.state())
         
-            # print()
-            #print(sim.veRL)    
-            step += 1
-
             #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
         if not IF_REWARD_CUM:
