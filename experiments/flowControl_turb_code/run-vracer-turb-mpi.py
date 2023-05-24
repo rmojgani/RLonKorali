@@ -5,9 +5,8 @@ import numpy as np
 import time
 sys.path.append('_model')
 from turb import *
-#sys.path.append('_init')
-#from environment import *
-#from mpi4py import MPI
+
+from mpi4py import MPI
 
 ## Parameters
 
@@ -130,9 +129,8 @@ e["Problem"]["Environment Function"] = lambda x : environment( args, sim, x )
 e["Problem"]["Agents Per Environment"] = args['nagents']
 e["Problem"]["Policies Per Environment"] = 1
 print('Number of agents', args['nagents'])
-if args['nagents']>1:
-    e["Solver"]["Multi Agent Relationship"] = "Individual" #"Individual" (or "Cooperation")
-    e["Solver"]["Multi Agent Correlation"] = False # (False or True)
+e["Solver"]["Multi Agent Relationship"] = "Individual"
+e["Solver"]["Multi Agent Correlation"] = False 
 
 ### Defining Agent Configuration 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
@@ -165,7 +163,7 @@ e["Solver"]["Experience Replay"]["Off Policy"]["Target"] = 0.1
 e["Solver"]["Experience Replay"]["Start Size"] = 10000
 e["Solver"]["Experience Replay"]["Maximum Size"] = 100000
 
-e["Solver"]["Policy"]["Distribution"] = "Clipped Normal"
+e["Solver"]["Policy"]["Distribution"] = "Clippd Normal"
 e["Solver"]["State Rescaling"]["Enabled"] = True
 e["Solver"]["Reward"]["Rescaling"]["Enabled"] = True
   
@@ -203,19 +201,13 @@ if args['solver'] == 'postprocess':
 #    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
 #    e["Solver"]["Mode"] = "Testing" #"Training / Testing"
 #    e["Solver"]["Testing"]["Sample Ids"] = [0]
-'''
-if args['nconcurrent'] > 1:
-    k["Conduit"]["Type"] = "Concurrent"
-    k["Conduit"]["Concurrent Jobs"] = 1#args['nconcurrent']
-    e["Solver"]["Concurrent Workers"] = args['nconcurrent'];
 
 if args['nconcurrent'] > 1:
-    print(MPI.COMM_WORLD)
     k.setMPIComm(MPI.COMM_WORLD)
     k["Conduit"]["Type"] = "Distributed";
-    k["Conduit"]["Ranks Per Worker"] = 1;
-    e["Solver"]["Concurrent Workers"] = 7;# args['nconcurrent'];
-'''
+    k["Conduit"]["Ranks Per Worker"] = 1
+    e["Solver"]["Concurrent Workers"] = args['nconcurrent']
+
 ### Running Experiment
 print("Running the experiment ---- ")
 k.run(e)
