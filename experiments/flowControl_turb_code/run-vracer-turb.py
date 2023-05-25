@@ -144,6 +144,7 @@ if args['nagents']>1:
 ### Defining Agent Configuration 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
+e["Solver"]["Concurrent Workers"] = 2
 e["Solver"]["Episodes Per Generation"] = args['gensize'] #--> 10, 25, 50
 e["Solver"]["Experiences Between Policy Updates"] = EPERU
 e["Solver"]["Learning Rate"] = 0.0001
