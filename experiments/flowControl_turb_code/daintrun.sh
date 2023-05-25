@@ -6,7 +6,7 @@ nconcurrent=3
 Tspinup=1e3
 Thorizon=1e4
 NumRLSteps=1e3
-EBRU=1
+EPERU=1
 
 export OMP_NUM_THREADS=12
-mpirun -n 4 python3 run-vracer-turb-mpi.py --statetype=${statetype} --NLES=${NLES} --gensize=${gensize} --nagents=${nagents} --nconcurrent=${nconcurrent} --Tspinup=${Tspinup} --Thorizon=${Thorizon} --numRLSteps=${NumRLSteps} --EBRU ${EBRU}
+srun --nodes=1 --ntasks-per-node=4 --cpus-per-task=1 --threads-per-core=1 python3 run-vracer-turb-mpi.py --statetype=${statetype} --NLES=${NLES} --gensize=${gensize} --nagents=${nagents} --nconcurrent=${nconcurrent} --Tspinup=${Tspinup} --Thorizon=${Thorizon} --NumRLSteps=${NumRLSteps} --EPERU ${EPERU}
