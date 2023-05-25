@@ -63,7 +63,7 @@ def environment( args, initSim, s ):
         print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}')
 
         step = 0
-        while step < nControlledSteps:
+        while step < nSteps:
             #print(step)
             # Getting new action
             s.update()
@@ -75,8 +75,6 @@ def environment( args, initSim, s ):
                 #print(sim.veRL)
                 step += 1
         
-            #print("action:", s["Action"])
-
             # get reward
             s["Reward"] = sim.reward()
             #print("Reward", s["Reward"])

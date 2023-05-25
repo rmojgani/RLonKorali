@@ -5,9 +5,8 @@ import numpy as np
 import time
 sys.path.append('_model')
 from turb import *
-#sys.path.append('_init')
-#from environment import *
-#from mpi4py import MPI
+
+from mpi4py import MPI
 
 ## Parameters
 
@@ -40,7 +39,6 @@ EPERU = args['EPERU']
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
 casestr = casestr + '_CREWARD'+str(args['IF_REWARD_CUM'])
 casestr = casestr + '_Tspin'+str(args['Tspinup'])+'_Thor'+str(args['Thorizon'])
-casestr = casestr + '_NumRLSteps'+str(args['NumRLSteps'])
 
 print('args:', args)
 print ('case:', casestr)
@@ -111,9 +109,6 @@ e = korali.Experiment()
 
 ### Defining results folder and loading previous results, if any
 resultFolder = '_result_vracer'+casestr+'/'
-found = e.loadState(resultFolder + '/latest')
-if found == True:
-	print("[Korali] Continuing execution from previous run...\n");
 
 # Mode settings
 if args['solver']=='training':
@@ -206,19 +201,10 @@ if args['solver'] == 'postprocess':
 #    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
 #    e["Solver"]["Mode"] = "Testing" #"Training / Testing"
 #    e["Solver"]["Testing"]["Sample Ids"] = [0]
-'''
-if args['nconcurrent'] > 1:
-    k["Conduit"]["Type"] = "Concurrent"
-    k["Conduit"]["Concurrent Jobs"] = 1#args['nconcurrent']
-    e["Solver"]["Concurrent Workers"] = args['nconcurrent'];
 
 if args['nconcurrent'] > 1:
-    print(MPI.COMM_WORLD)
-    k.setMPIComm(MPI.COMM_WORLD)
-    k["Conduit"]["Type"] = "Distributed";
-    k["Conduit"]["Ranks Per Worker"] = 1;
-    e["Solver"]["Concurrent Workers"] = 7;# args['nconcurrent'];
-'''
+    e["Solver"]["Concurrent Workers"] = args['nconcurrent']
+
 ### Running Experiment
 print("Running the experiment ---- ")
 k.run(e)

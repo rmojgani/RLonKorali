@@ -35,6 +35,7 @@ args['runstrpost']=args['actiontype']+'post'
 
 NLES = args['NLES']
 EPERU = args['EPERU'] 
+
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
 casestr = casestr + '_CREWARD'+str(args['IF_REWARD_CUM'])
 casestr = casestr + '_Tspin'+str(args['Tspinup'])+'_Thor'+str(args['Thorizon'])
@@ -108,9 +109,6 @@ e = korali.Experiment()
 
 ### Defining results folder and loading previous results, if any
 resultFolder = '_result_vracer'+casestr+'/'
-found = e.loadState(resultFolder + '/latest')
-if found == True:
-	print("[Korali] Continuing execution from previous run...\n");
 
 # Mode settings
 if args['solver']=='training':
@@ -129,12 +127,14 @@ e["Problem"]["Environment Function"] = lambda x : environment( args, sim, x )
 e["Problem"]["Agents Per Environment"] = args['nagents']
 e["Problem"]["Policies Per Environment"] = 1
 print('Number of agents', args['nagents'])
-e["Solver"]["Multi Agent Relationship"] = "Individual"
-e["Solver"]["Multi Agent Correlation"] = False 
+if args['nagents']>1:
+    e["Solver"]["Multi Agent Relationship"] = "Individual" #"Individual" (or "Cooperation")
+    e["Solver"]["Multi Agent Correlation"] = False # (False or True)
 
 ### Defining Agent Configuration 
 e["Solver"]["Type"] = "Agent / Continuous / VRACER"
 e["Solver"]["Mode"] = "Training"
+e["Solver"]["Concurrent Workers"] = 2
 e["Solver"]["Episodes Per Generation"] = args['gensize'] #--> 10, 25, 50
 e["Solver"]["Experiences Between Policy Updates"] = EPERU
 e["Solver"]["Learning Rate"] = 0.0001
@@ -163,7 +163,7 @@ e["Solver"]["Experience Replay"]["Off Policy"]["Target"] = 0.1
 e["Solver"]["Experience Replay"]["Start Size"] = 10000
 e["Solver"]["Experience Replay"]["Maximum Size"] = 100000
 
-e["Solver"]["Policy"]["Distribution"] = "Clippd Normal"
+e["Solver"]["Policy"]["Distribution"] = "Clipped Normal"
 e["Solver"]["State Rescaling"]["Enabled"] = True
 e["Solver"]["Reward"]["Rescaling"]["Enabled"] = True
   
@@ -198,13 +198,10 @@ e["File Output"]["Path"] = resultFolder
 if args['solver'] == 'postprocess':
     print('Postprocess ---> Generation ........... ')
     e["Solver"]["Episodes Per Generation"] = 1
-#    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
-#    e["Solver"]["Mode"] = "Testing" #"Training / Testing"
-#    e["Solver"]["Testing"]["Sample Ids"] = [0]
 
 if args['nconcurrent'] > 1:
     k.setMPIComm(MPI.COMM_WORLD)
-    k["Conduit"]["Type"] = "Distributed";
+    k["Conduit"]["Type"] = "Distributed"
     k["Conduit"]["Ranks Per Worker"] = 1
     e["Solver"]["Concurrent Workers"] = args['nconcurrent']
 
