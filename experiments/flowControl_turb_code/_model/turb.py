@@ -296,7 +296,7 @@ class turb:
            # --------------------------
         elif statetype=='invariantlocal':
            STATE_GLOBAL=False
-           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
 
 
@@ -324,22 +324,28 @@ class turb:
                 Kx = self.Kx
                 Ky = self.Ky
 
-                psi_hat = self.psiCurrent_hat
+                mystatelist2 =  pickcenter(s2, NX, NY, self.nActiongrid)
 
-                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
-                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
-                dudx_hat = self.D_dir(u1_hat,Kx)
-                dudy_hat = self.D_dir(u1_hat,Ky)
+                lambdalist = []
+
+                for psi_hat in mystatelist2:
+                    u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
+                    v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+
+                    dudx_hat = self.D_dir(u1_hat,Kx)
+                    dudy_hat = self.D_dir(u1_hat,Ky)
     
-                dvdx_hat = self.D_dir(v1_hat,Kx)
-                dvdy_hat = self.D_dir(v1_hat,Ky)
+                    dvdx_hat = self.D_dir(v1_hat,Kx)
+                    dvdy_hat = self.D_dir(v1_hat,Ky)
+                    
+                    dudx = np.fft.ifft2(dudx_hat)
+                    dudy = np.fft.ifft2(dudy_hat)
+                    dvdx = np.fft.ifft2(dvdx_hat)
+                    dvdy = np.fft.ifft2(dvdy_hat)
 
-                mystatelist1 =  pickcenter(s1, NX, NY, self.nActiongrid)
-                mystatelist2 =  pickcenter(s2, NY, NY, self.nActiongrid)
-                mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
-
-
-
+                    gradV = np.array([[dudx,dudy],[dvdx,dvdy]])
+                    
+                    lambdalist.append(self.invariant(gradV))
 
         if mystatelist[0][0]>1000: raise Exception("State diverged!")
         return mystatelist
@@ -837,14 +843,14 @@ class turb:
         Du_Ddir = 1j*K_dir*u_hat
         return Du_Ddir  
     #-----------------------------------------
-    def decompose_sym(A)
+    def decompose_sym(A):
         S = 0.5*(A+A.T)
         R = 0.5*(A-A.T)
         return S, R
     #-----------------------------------------
-    def invariant(A)
-        S, R = decompose_sym(A)
+    def invariant(A):
+        S, R = self.decompose_sym(A)
         lambda1 = np.trace(S)
         lambda2 = np.trace(S@S)
         lambda3 = np.trace(R@R)
-        return lambda1, lambda2, lambda3
+        return [lambda1, lambda2, lambda3]
