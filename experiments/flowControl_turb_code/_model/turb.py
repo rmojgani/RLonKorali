@@ -327,6 +327,14 @@ class turb:
                 u_hat = -(1j*Ky)*psiCurrent_hat
                 v_hat = (1j*Kx)*psiCurrent_hat
 
+                u1_hat = D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
+                v1_hat = -D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+                dudx_hat = D_dir(u1_hat,Kx)
+                dudy_hat = D_dir(u1_hat,Ky)
+    
+                dvdx_hat = D_dir(v1_hat,Kx)
+                dvdy_hat = D_dir(v1_hat,Ky)
+
                 mystatelist1 =  pickcenter(s1, NX, NY, self.nActiongrid)
                 mystatelist2 =  pickcenter(s2, NY, NY, self.nActiongrid)
                 mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
@@ -825,4 +833,7 @@ class turb:
         from PDE_KDE import myKDE
         Vecpoints, exp_log_kde, logkde, kde = myKDE(u)
         return Vecpoints, exp_log_kde, logkde, kde
-
+    #-----------------------------------------
+    def D_dir(u_hat, K_dir):
+        Du_Ddir = 1j*K_dir*u_hat
+        return Du_Ddir  
