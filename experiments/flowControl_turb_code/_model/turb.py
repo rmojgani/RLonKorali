@@ -334,22 +334,43 @@ class turb:
 
                 dvdx_hat = self.D_dir(v1_hat,Kx)
                 dvdy_hat = self.D_dir(v1_hat,Ky)
+                
+                dudxx_hat = self.D_dir(dudx_hat,Kx)
+                dudxy_hat = self.D_dir(dudx_hat,Ky)
+
+                dvdyx_hat = self.D_dir(dvdy_hat,Kx)
+                dvdyy_hat = self.D_dir(dvdy_hat,Ky)
+
 
                 dudx = np.fft.ifft2(dudx_hat).real
                 dudy = np.fft.ifft2(dudy_hat).real
                 dvdx = np.fft.ifft2(dvdx_hat).real
                 dvdy = np.fft.ifft2(dvdy_hat).real
 
+                dudxx = np.fft.ifft2(dudxx_hat).real
+                dudxy = np.fft.ifft2(dudyy_hat).real
+                dvdyx = np.fft.ifft2(dvdyx_hat).real
+                dvdyy = np.fft.ifft2(dvdyy_hat).real
+
+
                 list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
                 list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
                 list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
                 list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
+                
+                list5 =  pickcenter(dudxx, NX, NY, self.nActiongrid)
+                list6 =  pickcenter(dudxy, NX, NY, self.nActiongrid)
+                list7 =  pickcenter(dvdyx, NX, NY, self.nActiongrid)
+                list8 =  pickcenter(dvdyy, NX, NY, self.nActiongrid)
 
                 mystatelist = []
-                for dudx,dudy,dvdx,dvdy in zip(list1, list2, list3, list4):
+                for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
                     gradV = np.array([[dudx[0], dudy[0]],
                                       [dvdx[0], dvdy[0]]])
-                    mystatelist.append(self.invariant(gradV))
+                    hessV = np.array([[dudxx[0], dudxy[0]],
+                                      [dvdyx[0], dvdyy[0]]])
+                    allinvariants = self.invariant(gradV)+self.invariant(hessV)
+                    mystatelist.append(allinvariants)
         if mystatelist[0][0]>1000: raise Exception("State diverged!")
         return mystatelist
 
