@@ -324,29 +324,32 @@ class turb:
                 Kx = self.Kx
                 Ky = self.Ky
 
-                mystatelist2 =  pickcenter(s2, NX, NY, self.nActiongrid)
+                psi_hat = self.sol[1]
 
-                lambdalist = []
+                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
+                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
 
-                for psi_hat in mystatelist2:
-                    u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
-                    v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+                dudx_hat = self.D_dir(u1_hat,Kx)
+                dudy_hat = self.D_dir(u1_hat,Ky)
 
-                    dudx_hat = self.D_dir(u1_hat,Kx)
-                    dudy_hat = self.D_dir(u1_hat,Ky)
-    
-                    dvdx_hat = self.D_dir(v1_hat,Kx)
-                    dvdy_hat = self.D_dir(v1_hat,Ky)
-                    
-                    dudx = np.fft.ifft2(dudx_hat)
-                    dudy = np.fft.ifft2(dudy_hat)
-                    dvdx = np.fft.ifft2(dvdx_hat)
-                    dvdy = np.fft.ifft2(dvdy_hat)
+                dvdx_hat = self.D_dir(v1_hat,Kx)
+                dvdy_hat = self.D_dir(v1_hat,Ky)
 
-                    gradV = np.array([[dudx,dudy],[dvdx,dvdy]])
-                    
-                    lambdalist.append(self.invariant(gradV))
+                dudx = np.fft.ifft2(dudx_hat).real
+                dudy = np.fft.ifft2(dudy_hat).real
+                dvdx = np.fft.ifft2(dvdx_hat).real
+                dvdy = np.fft.ifft2(dvdy_hat).real
 
+                list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
+                list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
+                list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
+                list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
+
+                mystatelist = []
+                for dudx,dudy,dvdx,dvdy in zip(list1, list2, list3, list4):
+                    gradV = np.array([[dudx[0], dudy[0]],
+                                      [dvdx[0], dvdy[0]]])
+                    mystatelist.append(self.invariant(gradV))
         if mystatelist[0][0]>1000: raise Exception("State diverged!")
         return mystatelist
 
@@ -839,16 +842,16 @@ class turb:
         Vecpoints, exp_log_kde, logkde, kde = myKDE(u)
         return Vecpoints, exp_log_kde, logkde, kde
     #-----------------------------------------
-    def D_dir(u_hat, K_dir):
+    def D_dir(self, u_hat, K_dir):
         Du_Ddir = 1j*K_dir*u_hat
         return Du_Ddir  
     #-----------------------------------------
-    def decompose_sym(A):
+    def decompose_sym(self, A):
         S = 0.5*(A+A.T)
         R = 0.5*(A-A.T)
         return S, R
     #-----------------------------------------
-    def invariant(A):
+    def invariant(self, A):
         S, R = self.decompose_sym(A)
         lambda1 = np.trace(S)
         lambda2 = np.trace(S@S)

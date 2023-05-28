@@ -57,6 +57,8 @@ elif args['statetype'] == 'omega':
     state_size = int((NLES/nagents_h)**2)
 elif args['statetype'] == 'psiomegalocal':
     state_size = 2 #np.sqrt(args['nagents'])
+elif args['statetype'] == 'invariantlocal':
+    state_size = 3
 
 # Type of the action
 if args['actiontype'] == 'CL':
