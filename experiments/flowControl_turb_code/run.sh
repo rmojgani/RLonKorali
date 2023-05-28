@@ -8,8 +8,8 @@ solver=training #postproces
 nagents=4
 nconcurrent=1
 IF_REWARD_CUM=1 #{0,1}
-Tspinup=1e3
-Thorizon=1e3
+Tspinup=1e4
+Thorizon=1e4
 
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}_nCCjobs${nconcurrent}_CReward${IF_REWARD_CUM}_Ts${Tspinup}_Thor${Thorizon}.out
 
