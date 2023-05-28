@@ -21,13 +21,13 @@ from PDE_KDE import myKDE
 import matplotlib.pylab as plt
 #%%
 SPIN_UP = 50000
-NUM_DATA = 20#00#0
+NUM_DATA = 2000#0
 #%%
 NLES = 32
 nAgents = 1
 CASENO = 1;
 directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
-directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
+directory = '_result_vracer_C1_N32_R_z1_State_invariantlocal_Action_CL_nAgents4_CREWARD1_Tspin1000.0_Thor10000.0/CLpost/'
 
 # NLES = 32
 # nAgents = 16
