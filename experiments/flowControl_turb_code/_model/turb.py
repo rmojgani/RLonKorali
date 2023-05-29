@@ -348,7 +348,7 @@ class turb:
                 dvdy = np.fft.ifft2(dvdy_hat).real
 
                 dudxx = np.fft.ifft2(dudxx_hat).real
-                dudxy = np.fft.ifft2(dudyy_hat).real
+                dudxy = np.fft.ifft2(dudxy_hat).real
                 dvdyx = np.fft.ifft2(dvdyx_hat).real
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 

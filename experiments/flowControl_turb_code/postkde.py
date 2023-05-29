@@ -21,13 +21,14 @@ from PDE_KDE import myKDE
 import matplotlib.pylab as plt
 #%%
 SPIN_UP = 50000
-NUM_DATA = 20#00#0
+NUM_DATA = 2000#0
 #%%
-NLES = 32
+NLES = 64
 nAgents = 1
 CASENO = 1;
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
-directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
+#directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
+#directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
+directory = '_result_vracer_C1_N'+str(NLES)+'_R_z1_State_invariantlocal_Action_CL_nAgents16_CREWARD1_Tspin10000.0_Thor10000.0/CLpost/'
 
 # NLES = 32
 # nAgents = 16
@@ -99,7 +100,7 @@ BANDWIDTH = mybandwidth_scott(omega_M_2D)
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=1.0, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
-num_line = 10
+num_line = 3
 div = int(num_file/num_line)#67
 for icount in range(int(len(omega_M_2D.T)/div)):
     print('line no:', icount+1)

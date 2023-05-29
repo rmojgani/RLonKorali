@@ -66,7 +66,6 @@ def environmentpost( args, s ):
 
     step = 0
     while step < nContolledSteps:
-        print(step)
         if step % int(5e3) == 1 :
             print('Save at time step=', step)
             sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
