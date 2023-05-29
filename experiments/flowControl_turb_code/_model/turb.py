@@ -293,13 +293,19 @@ class turb:
            STATE_GLOBAL=False
            s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
-           # --------------------------
+        # --------------------------
         elif statetype=='invariantlocal':
            STATE_GLOBAL=False
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
-
-
+        # --------------------------
+        elif statetype=='invariantlocalandglobalz':
+           STATE_GLOBAL=False
+           #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+           enstrophy= self.enstrophy_spectrum()
+           mystateglobal = np.log(enstrophy[0:kmax])
+            
         if STATE_GLOBAL:
             mystatelist = [mystate.tolist()]
             for _ in range(nagents-1):
@@ -348,7 +354,7 @@ class turb:
                 dvdy = np.fft.ifft2(dvdy_hat).real
 
                 dudxx = np.fft.ifft2(dudxx_hat).real
-                dudxy = np.fft.ifft2(dudyy_hat).real
+                dudxy = np.fft.ifft2(dudxy_hat).real
                 dvdyx = np.fft.ifft2(dvdyx_hat).real
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 
@@ -371,6 +377,63 @@ class turb:
                                       [dvdyx[0], dvdyy[0]]])
                     allinvariants = self.invariant(gradV)+self.invariant(hessV)
                     mystatelist.append(allinvariants)
+                    
+            elif statetype=='invariantlocalandglobalz':
+                NX = self.NX
+                NY = self.NY
+                Kx = self.Kx
+                Ky = self.Ky
+
+                psi_hat = self.sol[1]
+
+                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
+                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+
+                dudx_hat = self.D_dir(u1_hat,Kx)
+                dudy_hat = self.D_dir(u1_hat,Ky)
+
+                dvdx_hat = self.D_dir(v1_hat,Kx)
+                dvdy_hat = self.D_dir(v1_hat,Ky)
+                
+                dudxx_hat = self.D_dir(dudx_hat,Kx)
+                dudxy_hat = self.D_dir(dudx_hat,Ky)
+
+                dvdyx_hat = self.D_dir(dvdy_hat,Kx)
+                dvdyy_hat = self.D_dir(dvdy_hat,Ky)
+
+
+                dudx = np.fft.ifft2(dudx_hat).real
+                dudy = np.fft.ifft2(dudy_hat).real
+                dvdx = np.fft.ifft2(dvdx_hat).real
+                dvdy = np.fft.ifft2(dvdy_hat).real
+
+                dudxx = np.fft.ifft2(dudxx_hat).real
+                dudxy = np.fft.ifft2(dudxy_hat).real
+                dvdyx = np.fft.ifft2(dvdyx_hat).real
+                dvdyy = np.fft.ifft2(dvdyy_hat).real
+
+
+                list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
+                list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
+                list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
+                list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
+                
+                list5 =  pickcenter(dudxx, NX, NY, self.nActiongrid)
+                list6 =  pickcenter(dudxy, NX, NY, self.nActiongrid)
+                list7 =  pickcenter(dvdyx, NX, NY, self.nActiongrid)
+                list8 =  pickcenter(dvdyy, NX, NY, self.nActiongrid)
+
+                mystatelist = []
+                for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
+                    gradV = np.array([[dudx[0], dudy[0]],
+                                      [dvdx[0], dvdy[0]]])
+                    hessV = np.array([[dudxx[0], dudxy[0]],
+                                      [dvdyx[0], dvdyy[0]]])
+                    
+                    allinvariants = self.invariant(gradV)+self.invariant(hessV)+mystateglobal.tolist()
+                    mystatelist.append(allinvariants)
+                    
+                    
         if mystatelist[0][0]>1000: raise Exception("State diverged!")
         return mystatelist
 
