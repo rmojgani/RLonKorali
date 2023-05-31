@@ -390,18 +390,20 @@ class turb:
                 u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
                 v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
 
+                # first derivative of velocity
                 dudx_hat = self.D_dir(u1_hat,Kx)
                 dudy_hat = self.D_dir(u1_hat,Ky)
 
                 dvdx_hat = self.D_dir(v1_hat,Kx)
                 dvdy_hat = self.D_dir(v1_hat,Ky)
-                
-                dudxx_hat = self.D_dir(dudx_hat,Kx)
-                dudxy_hat = self.D_dir(dudx_hat,Ky)
+                #  
+                dudx = np.fft.ifft2(dudx_hat).real
+                dudy = np.fft.ifft2(dudy_hat).real
 
-                dvdyx_hat = self.D_dir(dvdy_hat,Kx)
-                dvdyy_hat = self.D_dir(dvdy_hat,Ky)
-                
+                dvdx = np.fft.ifft2(dvdx_hat).real
+                dvdy = np.fft.ifft2(dvdy_hat).real
+
+
                 # first derivative of vorticity
                 dwdx_hat = self.D_dir(w_hat,Kx)
                 dwdy_hat = self.D_dir(w_hat,Ky)
