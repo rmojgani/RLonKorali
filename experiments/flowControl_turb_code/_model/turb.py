@@ -301,7 +301,7 @@ class turb:
         # --------------------------
         elif statetype=='invariantlocalandglobalz':
            STATE_GLOBAL=False
-           #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
            enstrophy= self.enstrophy_spectrum()
            mystateglobal = np.log(enstrophy[0:kmax])
@@ -384,6 +384,7 @@ class turb:
                 Kx = self.Kx
                 Ky = self.Ky
 
+                w_hat = self.sol[0]
                 psi_hat = self.sol[1]
 
                 u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
@@ -400,17 +401,24 @@ class turb:
 
                 dvdyx_hat = self.D_dir(dvdy_hat,Kx)
                 dvdyy_hat = self.D_dir(dvdy_hat,Ky)
+                
+                # first derivative of vorticity
+                dwdx_hat = self.D_dir(w_hat,Kx)
+                dwdy_hat = self.D_dir(w_hat,Ky)
+                # 
+                dwdx = np.fft.ifft2(dwdx_hat).real
+                dwdy = np.fft.ifft2(dwdy_hat).real
 
-
-                dudx = np.fft.ifft2(dudx_hat).real
-                dudy = np.fft.ifft2(dudy_hat).real
-                dvdx = np.fft.ifft2(dvdx_hat).real
-                dvdy = np.fft.ifft2(dvdy_hat).real
-
-                dudxx = np.fft.ifft2(dudxx_hat).real
-                dudxy = np.fft.ifft2(dudxy_hat).real
-                dvdyx = np.fft.ifft2(dvdyx_hat).real
-                dvdyy = np.fft.ifft2(dvdyy_hat).real
+                # second derivative of vorticity 
+                dwdxx_hat = self.D_dir(dwdx_hat,Kx)
+                dwdxy_hat = self.D_dir(dwdx_hat,Ky)
+                dwdyx_hat = self.D_dir(dwdy_hat,Kx)
+                dwdyy_hat = self.D_dir(dwdy_hat,Ky)
+                #
+                dwdxx = np.fft.ifft2(dwdxx_hat).real
+                dwdxy = np.fft.ifft2(dwdxy_hat).real
+                dwdyx = np.fft.ifft2(dwdyx_hat).real
+                dwdyy = np.fft.ifft2(dwdyy_hat).real
 
 
                 list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
@@ -418,19 +426,19 @@ class turb:
                 list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
                 list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
                 
-                list5 =  pickcenter(dudxx, NX, NY, self.nActiongrid)
-                list6 =  pickcenter(dudxy, NX, NY, self.nActiongrid)
-                list7 =  pickcenter(dvdyx, NX, NY, self.nActiongrid)
-                list8 =  pickcenter(dvdyy, NX, NY, self.nActiongrid)
+                list5 =  pickcenter(dwdxx, NX, NY, self.nActiongrid)
+                list6 =  pickcenter(dwdxy, NX, NY, self.nActiongrid)
+                list7 =  pickcenter(dwdyx, NX, NY, self.nActiongrid)
+                list8 =  pickcenter(dwdyy, NX, NY, self.nActiongrid)
 
                 mystatelist = []
-                for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
+                for dudx,dudy,dvdx,dvdy, dwdxx,dwdxy,dwdyx,dwdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
                     gradV = np.array([[dudx[0], dudy[0]],
                                       [dvdx[0], dvdy[0]]])
-                    hessV = np.array([[dudxx[0], dudxy[0]],
-                                      [dvdyx[0], dvdyy[0]]])
+                    hessW = np.array([[dwdxx[0], dwdxy[0]],
+                                      [dwdyx[0], dwdyy[0]]])
                     
-                    allinvariants = self.invariant(gradV)+self.invariant(hessV)+mystateglobal.tolist()
+                    allinvariants = self.invariant(gradV)+self.invariant(hessW)+mystateglobal.tolist()
                     mystatelist.append(allinvariants)
                     
                     
