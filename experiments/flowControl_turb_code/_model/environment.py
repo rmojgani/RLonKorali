@@ -63,7 +63,7 @@ def environment( args, initSim, s ):
         print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}')
 
         step = 0
-        while step < nControlledSteps:
+        while step < nSteps:
             #print(step)
             # Getting new action
             s.update()
@@ -71,7 +71,7 @@ def environment( args, initSim, s ):
             # apply action and advance environment
             for i in range(nIntermediateSteps):
                 sim.step( s["Action"] )
-
+                step += 1
             #print("action:", s["Action"])
 
             # get reward
@@ -85,11 +85,6 @@ def environment( args, initSim, s ):
             s["State"] = sim.state()#.tolist()
             # print("state:", sim.state())
         
-            # print()
-            #print(sim.veRL)    
-            step += 1
-
-            #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
         if not IF_REWARD_CUM:
             s["Reward"] = cumulativeReward # which is already equal to sim.reward()
