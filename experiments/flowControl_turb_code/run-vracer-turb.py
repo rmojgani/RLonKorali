@@ -36,9 +36,11 @@ args['runstrpost']=args['actiontype']+'post'
 
 NLES = args['NLES']
 EPERU = args['EPERU'] 
+
 casestr = '_C'+args['case']+'_N'+str(NLES)+'_R_'+args['rewardtype']+'_State_'+args['statetype']+'_Action_'+args['actiontype']+'_nAgents'+str(args['nagents'])
 casestr = casestr + '_CREWARD'+str(args['IF_REWARD_CUM'])
 casestr = casestr + '_Tspin'+str(args['Tspinup'])+'_Thor'+str(args['Thorizon'])
+casestr = casestr + '_EPERU'+str(EPERU)
 
 print('args:', args)
 print ('case:', casestr)
