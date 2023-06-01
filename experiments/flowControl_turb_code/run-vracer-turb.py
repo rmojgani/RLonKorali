@@ -212,7 +212,7 @@ e["File Output"]["Path"] = resultFolder
 if args['solver'] == 'postprocess':
     print('Postprocess ---> Generation ........... ')
     e["Solver"]["Episodes Per Generation"] = 1
-#    e["Solver"]["Termination Criteria"]["Max Generations"] += 1
+    e["Solver"]["Termination Criteria"]["Max Generations"] = 201
 #    e["Solver"]["Mode"] = "Testing" #"Training / Testing"
 #    e["Solver"]["Testing"]["Sample Ids"] = [0]
 '''
