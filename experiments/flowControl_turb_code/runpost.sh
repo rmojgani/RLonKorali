@@ -4,14 +4,14 @@ rewardtype=z1 # [k1,k2,k3,log,]
 statetype=invariantlocalandglobalz #psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomegalocal,omegalocal] 
 actiontype=CL
 gensize=1
-solver=postproces
-nagents=4
+solver=postprocess
+nagents=16
 nconcurrent=1
 IF_REWARD_CUM=1 #{0,1}
 Tspinup=1e4
 Thorizon=1e4
 NumRLSteps=1e4
-EPERU=1
+EPERU=1.0
 
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}_nCCjobs${nconcurrent}_CReward${IF_REWARD_CUM}_Ts${Tspinup}_Thor${Thorizon}_NumRLSteps${NumRLSteps}_EPERU${EPERU}.out
 
@@ -25,4 +25,4 @@ myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiont
 
 export OMP_NUM_THREADS=8
 
-nohup python3 -u run-vracer-turb.py --case=${case} --rewardtype=${rewardtype} --statetype=${statetype} --actiontype=${actiontype} --NLES=${NLES} --gensize=${gensize} --solver=${solver} --nagents=${nagents} --nconcurrent=${nconcurrent} --IF_REWARD_CUM=${IF_REWARD_CUM} --Tspinup=${Tspinup} --Thorizon=${Thorizon} --EPERU=${EPERU}>>${myoutfile}&
+nohup python3 -u run-vracer-turb.py --case=${case} --rewardtype=${rewardtype} --statetype=${statetype} --actiontype=${actiontype} --NLES=${NLES} --gensize=${gensize} --solver=${solver} --nagents=${nagents} --nconcurrent=${nconcurrent} --IF_REWARD_CUM=${IF_REWARD_CUM} --Tspinup=${Tspinup} --Thorizon=${Thorizon} --NumRLSteps=${NumRLSteps} --EPERU=${EPERU}>>${myoutfile}&

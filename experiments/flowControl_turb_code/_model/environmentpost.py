@@ -6,7 +6,14 @@ plt.rcParams['image.cmap'] = 'bwr_r'
 import numpy as np
 import os
 
-def environmentpost( args, s ):
+import copy
+import time
+
+def environmentpost( args, initSim, s ):
+
+    sim = copy.deepcopy(initSim)
+    startSim = time.time()
+    
     L    = 2*np.pi
     N    = args['NLES'] #128# 64
     dt   = 5.0e-4
@@ -17,7 +24,10 @@ def environmentpost( args, s ):
     actiontype = args['actiontype']
     nagents = args['nagents']
     IF_REWARD_CUM = args['IF_REWARD_CUM']
-
+    Thorizon = args['Thorizon']
+    Tspinup = args['Tspinup']
+    NumRLSteps = args['NumRLSteps']
+    
     runFolder = args["runFolder"]
 
     casestr = '_C'+case+'_N'+str(N)+'_R_'+rewardtype+'_State_'+statetype+'_Action_'+actiontype+'_nAgents_'+str(nagents)
@@ -28,44 +38,33 @@ def environmentpost( args, s ):
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + int(10e3)*dt# 30e-3  #0.025*(2500*4+1000
+    tEnd = tInit + int(Tspinup)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
-    print('Initlize sim.')
-    sim  = turb(RL=IF_RL, 
-                NX=N, NY=N,
-                case=case,
-                nActions=action_size,
-                rewardtype=rewardtype,
-                statetype=statetype,
-                actiontype=actiontype,
-                nagents=nagents,
-                nsteps=nInitialSteps)
-    print('================================')
-    print('Simulate, nsteps=', nInitialSteps)
-    sim.simulate( nsteps=nInitialSteps )
-
+    
     #print('------------------')
-    #print(sim.w1_hat.shape)
-    #print(sim.psiPrevious_hat.shape)
-    #print(sim.psi_hat.shape)
-    SYSMEM = os.system('cat /proc/meminfo | grep Mem | head -n 3')
+    cmd="(awk \'$3==\"kB\"{$2=$2/1024^2;$3=\"GB\";} 1\' /proc/meminfo | head -n 3 | grep Mem)"#| column -t 
+    SYSMEM = os.system(cmd);
     SYSDATE = os.system('date')
-    print(SYSMEM, SYSDATE)
     #print('------------------')
     #sim.myplot(casestr)    
-    print('PNG file saved')
+    #print('PNG file saved')
 
     ## get initial state
     s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
     ## run controlled simulation
-    nContolledSteps = int(1e7)#(tEnd-tInit)/dt)
-    print('run controlled simulation with nControlledSteps=', nContolledSteps)
+    nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
+    nControlledSteps = int(NumRLSteps)
+    nIntermediateSteps = int(nSteps / nControlledSteps)
+    nSteps = int(1e7)
+    print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}, updating state every {nIntermediateSteps}')
+        
     mystr = "smagRL"#'smag0d17'
 
     step = 0
-    while step < nContolledSteps:
+    while step < nSteps:
+        
         if step % int(5e3) == 1 :
             print('Save at time step=', step)
             sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
@@ -88,32 +87,17 @@ def environmentpost( args, s ):
         s.update()
 
         # apply action and advance environment
-        sim.step( s["Action"] )
-        #print("action:", s["Action"])
+        for i in range(nIntermediateSteps):
+            sim.step( s["Action"] )
+            step += 1
 
         # get reward
-        s["Reward"] = sim.reward()
-        #print("Reward", s["Reward"])
-        '''
-        if not IF_REWARD_CUM or step == 0:
-            cumulativeReward = sim.reward()
-        else:
-            cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
-        '''
+        #s["Reward"] = sim.reward()
+
         # get new state
         s["State"] = sim.state()#.tolist()
         # print("state:", sim.state())
         
-        # print()
-        #print(sim.veRL)    
-        step += 1
-
-        #print( "Reward sum", np.sum(np.array(s["Reward"])) )
-
-    '''
-    cumulativeReward_normalized =  [x/nContolledSteps for x in cumulativeReward]
-    s["Reward"] = cumulativeReward_normalized
-    '''
 
     #sim.myplot(casestr+'_RL')
     #sim.myplotforcing(casestr+'_RL_f')

@@ -77,7 +77,7 @@ def environment( args, initSim, s ):
             # get reward
             s["Reward"] = sim.reward()
             #print("Reward", s["Reward"])
-            if not IF_REWARD_CUM or step == 1:
+            if not IF_REWARD_CUM or 'cumulativeReward' not in locals():
                 cumulativeReward = sim.reward()
             else:
                 cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
