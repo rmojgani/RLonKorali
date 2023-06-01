@@ -60,7 +60,7 @@ def environment( args, initSim, s ):
         nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
         nControlledSteps = int(NumRLSteps)
         nIntermediateSteps = int(nSteps / nControlledSteps)
-        print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}')
+        print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}, updating state every {nIntermediateSteps}')
 
         step = 0
         while step < nSteps:
@@ -78,7 +78,7 @@ def environment( args, initSim, s ):
             # get reward
             s["Reward"] = sim.reward()
             #print("Reward", s["Reward"])
-            if not IF_REWARD_CUM or step == 1:
+            if not IF_REWARD_CUM or 'cumulativeReward' not in locals():
                 cumulativeReward = sim.reward()
             else:
                 cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
