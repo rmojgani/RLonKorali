@@ -44,8 +44,8 @@ def environment( args, initSim, s ):
     #print(sim.psiPrevious_hat.shape)
     #print(sim.psi_hat.shape)
     cmd="(awk \'$3==\"kB\"{$2=$2/1024^2;$3=\"GB\";} 1\' /proc/meminfo | head -n 3 | grep Mem)"#| column -t 
-    SYSMEM = os.system(cmd)
-    SYSDATE = os.system('date')
+    SYSMEM = os.system(cmd);
+    SYSDATE = os.system('date');
     #print(SYSMEM, SYSDATE)
     #print('------------------')
     #sim.myplot(casestr) 
@@ -60,11 +60,11 @@ def environment( args, initSim, s ):
         nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
         nControlledSteps = int(NumRLSteps)
         nIntermediateSteps = int(nSteps / nControlledSteps)
-        print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}')
+        print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}, updating state every {nIntermediateSteps}')
 
         step = 0
         while step < nSteps:
-            #print(step)
+            # print('step:', step)
             # Getting new action
             s.update()
 
@@ -77,10 +77,11 @@ def environment( args, initSim, s ):
             # get reward
             s["Reward"] = sim.reward()
             #print("Reward", s["Reward"])
-            if not IF_REWARD_CUM or step == 0:
+            if not IF_REWARD_CUM or step == 1:
                 cumulativeReward = sim.reward()
             else:
                 cumulativeReward = [x + y for x, y in zip(cumulativeReward, sim.reward())]
+
             # get new state
             s["State"] = sim.state()#.tolist()
             # print("state:", sim.state())
