@@ -65,16 +65,21 @@ def environmentpost( args, initSim, s ):
     step = 0
     while step < nSteps:
         
-        if step % int(5e3) == 1 :
-            print('Save at time step=', step)
-            sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
-            '''
-            try:
-                sim.myplotforcing('_ctrled_'+mystr+'_'+str(step), runFolder)
-            except:
-                print("not plotted")
-            '''
-            savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
+        # Getting new action
+        s.update()
+
+        # apply action and advance environment
+        for i in range(nIntermediateSteps):
+            if step % int(5e3) == 1:
+                print('Save at time step=', step)
+                sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
+                '''
+                try:
+                    sim.myplotforcing('_ctrled_'+mystr+'_'+str(step), runFolder)
+                except:
+                    print("not plotted")
+                '''
+                savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
                      dict([
                            ('psi_hat', sim.psiCurrent_hat),
                            ('w_hat', sim.w1_hat),
@@ -83,11 +88,6 @@ def environmentpost( args, initSim, s ):
                         ])
                      )
 
-        # Getting new action
-        s.update()
-
-        # apply action and advance environment
-        for i in range(nIntermediateSteps):
             sim.step( s["Action"] )
             step += 1
 

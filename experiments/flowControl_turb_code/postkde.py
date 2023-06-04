@@ -20,15 +20,18 @@ from PDE_KDE import myKDE
 # matplotlib.use('Agg')
 import matplotlib.pylab as plt
 #%%
+NumRLSteps = 1e4
+EPERU = 0.1
 SPIN_UP = 50000
 NUM_DATA = 2000#0
 #%%
-NLES = 16
-nAgents = 4
-CASENO = 1;
+NLES = 32
+nAgents = 16
+CASENO = 1
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 #directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0/CLpost/'
+#directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0/CLpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0_NumRLSteps'+str(NumRLSteps)+'_EPERU'+str(EPERU)+'/CLpost/'
 
 # NLES = 32
 # nAgents = 16
@@ -96,7 +99,7 @@ omega_M_2D = omega_M.reshape(NLES*NLES, -1)
 from PDE_KDE import mybandwidth_scott
 plt.figure(figsize=(6,4), dpi=450)
 
-BANDWIDTH = mybandwidth_scott(omega_M_2D)
+BANDWIDTH = mybandwidth_scott(omega_M_2D)*10
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=1.0, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
@@ -133,10 +136,10 @@ plt.grid(which='minor', linestyle='-',
 plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(0.5))
 
 plt.xlim([XMIN, XMAX])
-plt.ylim([1e-6, 1e-1])
+plt.ylim([1e-5, 1e-1])
 # plt.ylim([1e-4, 1e-1])
 
-filename_save = '2Dturb_N'+str(NLES)+'_'+METHOD+str(CL)+'_nAgents'+str(nAgents)
+filename_save = '2Dturb_C'+str(CASENO)+'_N'+str(NLES)+'_'+METHOD+str(CL)+'_nAgents'+str(nAgents)
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
 plt.show()
 #%%
