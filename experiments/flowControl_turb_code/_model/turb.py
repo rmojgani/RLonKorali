@@ -299,7 +299,7 @@ class turb:
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
         # --------------------------
-        elif statetype=='invariantlocalandglobalz':
+        elif statetype=='invariantlocalandglobalgradgrad':
            STATE_GLOBAL=False
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
@@ -378,7 +378,7 @@ class turb:
                     allinvariants = self.invariant(gradV)+self.invariant(hessV)
                     mystatelist.append(allinvariants)
                     
-            elif statetype=='invariantlocalandglobalz':
+            elif statetype=='invariantlocalandglobalgradgrad':
                 NX = self.NX
                 NY = self.NY
                 Kx = self.Kx
@@ -396,9 +396,9 @@ class turb:
                 dvdy_hat = self.D_dir(v1_hat,Ky)
                 
                 dudxx_hat = self.D_dir(dudx_hat,Kx)
-                dudxy_hat = self.D_dir(dudx_hat,Ky)
+                dudyy_hat = self.D_dir(dudy_hat,Ky)
 
-                dvdyx_hat = self.D_dir(dvdy_hat,Kx)
+                dvdxx_hat = self.D_dir(dvdx_hat,Kx)
                 dvdyy_hat = self.D_dir(dvdy_hat,Ky)
 
 
@@ -408,8 +408,8 @@ class turb:
                 dvdy = np.fft.ifft2(dvdy_hat).real
 
                 dudxx = np.fft.ifft2(dudxx_hat).real
-                dudxy = np.fft.ifft2(dudxy_hat).real
-                dvdyx = np.fft.ifft2(dvdyx_hat).real
+                dudyy = np.fft.ifft2(dudxy_hat).real
+                dvdxx = np.fft.ifft2(dvdyx_hat).real
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 
 
@@ -427,10 +427,10 @@ class turb:
                 for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
                     gradV = np.array([[dudx[0], dudy[0]],
                                       [dvdx[0], dvdy[0]]])
-                    hessV = np.array([[dudxx[0], dudxy[0]],
-                                      [dvdyx[0], dvdyy[0]]])
+                    gradgradV = np.array([[dudxx[0], dudyy[0]],
+                                         [dvdxx[0], dvdyy[0]]])
                     
-                    allinvariants = self.invariant(gradV)+self.invariant(hessV)+mystateglobal.tolist()
+                    allinvariants = self.invariant(gradV)+self.invariant(gradgrad/V)+mystateglobal.tolist()
                     mystatelist.append(allinvariants)
                     
                     
