@@ -430,7 +430,7 @@ class turb:
                     gradgradV = np.array([[dudxx[0], dvdxx[0]],
                                          [dudyy[0], dvdyy[0]]])
                     
-                    allinvariants = self.invariant(gradV)+self.invariant(gradgrad/V)+mystateglobal.tolist()
+                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()
                     mystatelist.append(allinvariants)
                     
                     
