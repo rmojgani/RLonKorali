@@ -419,12 +419,12 @@ class turb:
                 list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
                 
                 list5 =  pickcenter(dudxx, NX, NY, self.nActiongrid)
-                list6 =  pickcenter(dudxy, NX, NY, self.nActiongrid)
-                list7 =  pickcenter(dvdyx, NX, NY, self.nActiongrid)
+                list6 =  pickcenter(dudyy, NX, NY, self.nActiongrid)
+                list7 =  pickcenter(dvdxx, NX, NY, self.nActiongrid)
                 list8 =  pickcenter(dvdyy, NX, NY, self.nActiongrid)
 
                 mystatelist = []
-                for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
+                for dudx,dudy,dvdx,dvdy, dudxx,dudyy,dvdxx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
                     gradV = np.array([[dudx[0], dudy[0]],
                                       [dvdx[0], dvdy[0]]])
                     gradgradV = np.array([[dudxx[0], dvdxx[0]],
