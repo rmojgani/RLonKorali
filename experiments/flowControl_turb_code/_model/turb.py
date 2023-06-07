@@ -408,8 +408,8 @@ class turb:
                 dvdy = np.fft.ifft2(dvdy_hat).real
 
                 dudxx = np.fft.ifft2(dudxx_hat).real
-                dudyy = np.fft.ifft2(dudxy_hat).real
-                dvdxx = np.fft.ifft2(dvdyx_hat).real
+                dudyy = np.fft.ifft2(dudyy_hat).real
+                dvdxx = np.fft.ifft2(dvdxx_hat).real
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 
 
@@ -427,8 +427,8 @@ class turb:
                 for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
                     gradV = np.array([[dudx[0], dudy[0]],
                                       [dvdx[0], dvdy[0]]])
-                    gradgradV = np.array([[dudxx[0], dudyy[0]],
-                                         [dvdxx[0], dvdyy[0]]])
+                    gradgradV = np.array([[dudxx[0], dvdxx[0]],
+                                         [dudyy[0], dvdyy[0]]])
                     
                     allinvariants = self.invariant(gradV)+self.invariant(gradgrad/V)+mystateglobal.tolist()
                     mystatelist.append(allinvariants)

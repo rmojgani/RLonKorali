@@ -66,7 +66,7 @@ elif args['statetype'] == 'psiomegalocal':
     state_size = 2 #np.sqrt(args['nagents'])
 elif args['statetype'] == 'invariantlocal':
     state_size = 6
-elif args['statetype'] == 'invariantlocalandglobalz':
+elif args['statetype'] == 'invariantlocalandglobalgradgrad':
     state_size = 6 +  int(NLES/2)
 
 # Type of the action
