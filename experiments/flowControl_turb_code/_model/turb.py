@@ -37,7 +37,7 @@ class turb:
     def __init__(self, 
                 Lx=2.0*np.pi, Ly=2.0*np.pi, 
                 NX=128,       NY=128, 
-                dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, 
+                dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, beta=0.0, 
 				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
                 RL=False, 
                 nActions=1, sigma=0.4,
@@ -102,6 +102,7 @@ class turb:
         self.dt     = dt
         self.nu     = 1/(20e3)
         self.alpha  = 0.1
+        self.beta   = beta
         self.nsteps = nsteps
         self.iout   = iout
         self.nout   = int(nsteps/iout)
@@ -483,6 +484,7 @@ class turb:
         dt = self.dt
         nu = self.nu
         alpha = self.alpha
+        beta = self.beta
         Fk = self.Fk
         # ---------------
         psiCurrent_hat = self.psiCurrent_hat
@@ -560,8 +562,13 @@ class turb:
         # Forcing
         if self.case=='1':
             n = 4
+            beta = 0.0
+        elif self.case=='2':
+            n = 4
+            beta = 20.0
         elif self.case=='4':
             n = 25
+            beta = 0.0
 
         Xi = 1
         Fk = -n*Xi*np.cos(n*Y)-n*Xi*np.cos(n*X)
@@ -582,7 +589,8 @@ class turb:
         if self.case =='4':
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
-
+        if self.case == '2':
+            print('NO DATA')
         if self.case == '1':
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
@@ -607,6 +615,7 @@ class turb:
         # 
         self.Fk = Fk
         self.Fn = n # Forcing k
+        self.beta = beta # Coriolis β
         # Aux reward 
         kmax = self.kmax
         krange = np.array(range(0, kmax))
