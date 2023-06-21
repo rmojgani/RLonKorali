@@ -20,18 +20,18 @@ from PDE_KDE import myKDE
 # matplotlib.use('Agg')
 import matplotlib.pylab as plt
 #%%
-NumRLSteps = 1e4
-EPERU = 0.1
+NumRLSteps = 1e2
+EPERU = 1.0
 SPIN_UP = 50000
 NUM_DATA = 2000#0
 #%%
-NLES = 32
+NLES = 128
 nAgents = 16
-CASENO = 1
+CASENO = 2
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 #directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0/CLpost/'
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0_NumRLSteps'+str(NumRLSteps)+'_EPERU'+str(EPERU)+'/CLpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalgradgrad_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0_NumRLSteps'+str(NumRLSteps)+'_EPERU'+str(EPERU)+'/CLpost/'
 
 # NLES = 32
 # nAgents = 16
@@ -91,6 +91,14 @@ elif CASENO == 1:
     pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
     std_omega_DNS = 6.0705
     XMIN, XMAX = -7, 7
+elif CASENO == 2:
+    Fn = 4;
+    CASE_str = r'Case 2 ($Re = 20x10^3, k_f=4, beta=20$)'+r', $N_{LES}=$'+str(NLES)+'$, n_{MARL}=$'+str(nAgents)
+    #pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')  # to be updated 
+    pdf_DNS1 = np.loadtxt('_init/pdf_case02_FDNS_shading.dat')
+    pdf_DNS2 = np.loadtxt('_init/pdf_case02_FDNS.dat') 
+    std_omega_DNS = 10.378936
+    XMIN, XMAX = -5, 5# to be updated 
     
 std_omega = std_omega_DNS#np.std(omega_M)
 #%%
@@ -117,7 +125,14 @@ if CASENO == 1:
 
 elif CASENO == 4:
     plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
-
+elif CASENO == 2:
+    # To be updated
+    plt.semilogy(pdf_DNS2[:,0]/std_omega_DNS, pdf_DNS2[:,1], 'c', linewidth=4.0, alpha=0.25, label='DNS')
+    plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,2], 'c', linewidth=4.0, alpha=0.25, label='DNS')
+    plt.fill_between(pdf_DNS1[:,0]/std_omega_DNS,
+                 pdf_DNS1[:,1],
+                 pdf_DNS1[:,3],
+                 color='c', alpha=0.1)
 
 # plt.legend(loc="upper left")
 plt.title(CASE_str+', bw='+ str(np.round(BANDWIDTH,2)))
@@ -216,6 +231,11 @@ if CASENO == 4:
     ens_dns =  np.loadtxt('_init/Re20kf25/'+'enstrophy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,1]
 
 elif CASENO == 1:
+    tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+    Kplot_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,0]
+    ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
+elif CASENO == 2:
+    # TO BE UPDATED
     tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
     Kplot_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,0]
     ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]

@@ -1,7 +1,7 @@
-NLES=32
-case=1
+NLES=64
+case=2
 rewardtype=z1 # [k1,k2,k3,log,]
-statetype=invariantlocalandglobalz #psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomegalocal,omegalocal] 
+statetype=invariantlocalandglobalgradgrad #psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomegalocal,omegalocal] 
 actiontype=CL
 gensize=1
 solver=postprocess
@@ -10,8 +10,8 @@ nconcurrent=1
 IF_REWARD_CUM=1 #{0,1}
 Tspinup=1e4
 Thorizon=1e4
-NumRLSteps=1e4
-EPERU=0.1
+NumRLSteps=1e2
+EPERU=1.0
 
 myoutfile=${solver}_CASE${case}_N${NLES}_R${rewardtype}_S${statetype}_A${actiontype}_nAgents${nagents}_nCCjobs${nconcurrent}_CReward${IF_REWARD_CUM}_Ts${Tspinup}_Thor${Thorizon}_NumRLSteps${NumRLSteps}_EPERU${EPERU}.out
 
