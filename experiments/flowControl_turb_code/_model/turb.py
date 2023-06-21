@@ -480,6 +480,7 @@ class turb:
         #psiCurrent_hat = self.psiCurrent_hat
         #w1_hat = self.w1_hat
        	Ksq = self.Ksq
+        Ky = self.Ky
         invKsq = self.invKsq
         dt = self.dt
         nu = self.nu
@@ -579,7 +580,9 @@ class turb:
         
         if self.case =='1':
             folder_path = '_init/Re20kf4/iniWor_Re20kf4_'
-        elif self.case == '4':
+        elif self.case =='2':
+            folder_path = '_init/Re20kf4beta20/iniWor_Re20kf4beta20_'
+        elif self.case =='4':
             folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
         filenum_str=str(1)
@@ -590,7 +593,8 @@ class turb:
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
         if self.case == '2':
-            print('NO DATA')
+            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_xy.dat")
+            ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy.dat")
         if self.case == '1':
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")

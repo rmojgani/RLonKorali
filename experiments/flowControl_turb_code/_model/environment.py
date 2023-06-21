@@ -95,8 +95,8 @@ def environment( args, initSim, s ):
 
         s["Termination"] = "Terminal"
 
-        #sim.myplot(casestr+'_RL')
-        #sim.myplotforcing(casestr+'_RL_f')
+        sim.myplot(casestr+'_RL')
+        sim.myplotforcing(casestr+'_RL_f')
         # TODO?: Termination in case of divergence
     except Exception as err:
         print(f'Exception: {err}')
