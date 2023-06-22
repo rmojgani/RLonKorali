@@ -6,7 +6,12 @@ Last update : Dec 20
 import os
 import sys
 import re
-from natsort import natsorted, ns
+try:
+    from natsort import natsorted, ns
+else:
+    os.system("pip3 install natsort")
+    from natsort import natsorted, ns
+
 try:
     # os.chdir('/home/rm99/Mount/jetstream_volume/docker/RLonKoraliMA/experiments/flowControl_turb_code')
     os.chdir('/home/rm99/Mount/jetstream_volume/docker/RLonKoraliMA/experiments/flowControl_turb_code')  
