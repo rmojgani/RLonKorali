@@ -6,6 +6,19 @@ Last update : Dec 20
 import os
 import sys
 import re
+
+from postkdearg import postkdearg
+args = postkdearg()
+
+locals().update(vars(args))
+print(args)
+
+try:
+    from natsort import natsorted, ns
+except:
+    os.system("pip3 install natsort")
+    from natsort import natsorted, ns
+
 try:
     # os.chdir('/home/rm99/Mount/jetstream_volume/docker/RLonKoraliMA/experiments/flowControl_turb_code')
     os.chdir('/home/rm99/Mount/jetstream_volume/docker/RLonKoraliMA/experiments/flowControl_turb_code')  
@@ -16,22 +29,14 @@ import numpy as np
 import scipy.io as sio
 
 from PDE_KDE import myKDE
-# import matplotlib
-# matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 #%%
-NumRLSteps = 1e4
-EPERU = 0.1
-SPIN_UP = 50000
-NUM_DATA = 2000#0
-#%%
-NLES = 32
-nAgents = 16
-CASENO = 1
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 #directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0/CLpost/'
-directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0_NumRLSteps'+str(NumRLSteps)+'_EPERU'+str(EPERU)+'/CLpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalgradgrad_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0_NumRLSteps'+str(NumRLSteps)+'_EPERU'+str(EPERU)+'/CLpost/'
 
 # NLES = 32
 # nAgents = 16
@@ -45,7 +50,7 @@ directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy
 '''
 # sys.path.append(directory)
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
-METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
+#METHOD = 'DLeith'#'smag' # 'Leith' , 'Smag'
 
 # sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/')
 # directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/'
@@ -54,9 +59,10 @@ METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
 CL = ''
 num_file = 0
 omega_M = []# np.zeros((NLES, NLES))
-for filename in sorted(os.listdir(directory)):
+#for filename in sorted(os.listdir(directory)):
+for filename in natsorted(os.listdir(directory), alg=ns.PATH | ns.IGNORECASE):
 
-    if METHOD in filename and str(NLES) in filename and filename.endswith('.mat'):
+    if str(NLES) in filename and filename.endswith('.mat'):
         
         numbers_in_file = re.findall(r'\d+', filename)
         file_numstep = int(numbers_in_file[-1])
@@ -83,6 +89,7 @@ if CASENO == 4:
     pdf_DNS2 = np.loadtxt('_init/Re20kf25/pdf_DNS_Re20kf25.dat')
     std_omega_DNS = 12.85
     XMIN, XMAX = -8, 8
+    YMIN, YMAX = 1e-5, 1e-1
 
 elif CASENO == 1:
     Fn = 4;
@@ -90,7 +97,21 @@ elif CASENO == 1:
     pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
     pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
     std_omega_DNS = 6.0705
-    XMIN, XMAX = -7, 7
+    XMIN, XMAX = -5, 5
+    YMIN, YMAX = 1e-5, 1e-1
+
+elif CASENO == 2:
+    Fn = 4;
+    if METHOD[0:2]=='RL':
+        CASE_str = r'Case 2 ($Re = 20x10^3, k_f=4, \beta=20$)'+r', $N_{LES}=$'+str(NLES)+'$, n_{MARL}=$'+str(nAgents)
+    else:
+        CASE_str = r'Case 2 ($Re = 20x10^3, k_f=4, \beta=20$)'+r', $N_{LES}=$'+str(NLES)+METHOD
+    #pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')  # to be updated 
+    pdf_DNS1 = np.loadtxt('_init/pdf_case02_FDNS_shading.dat')
+    pdf_DNS2 = np.loadtxt('_init/pdf_case02_FDNS.dat') 
+    std_omega_DNS = 10.378936
+    XMIN, XMAX = -5, 5
+    YMIN, YMAX = 1e-7, 1e-1
     
 std_omega = std_omega_DNS#np.std(omega_M)
 #%%
@@ -99,7 +120,7 @@ omega_M_2D = omega_M.reshape(NLES*NLES, -1)
 from PDE_KDE import mybandwidth_scott
 plt.figure(figsize=(6,4), dpi=450)
 
-BANDWIDTH = mybandwidth_scott(omega_M_2D)*10
+BANDWIDTH = mybandwidth_scott(omega_M_2D)#*10
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=1.0, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
@@ -117,7 +138,14 @@ if CASENO == 1:
 
 elif CASENO == 4:
     plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,1], 'b', linewidth=4.0, alpha=0.25, label='DNS')
-
+elif CASENO == 2:
+    # To be updated
+    plt.semilogy(pdf_DNS2[:,0]/std_omega_DNS, pdf_DNS2[:,1], 'c', linewidth=4.0, alpha=0.25, label='DNS')
+    plt.semilogy(pdf_DNS1[:,0]/std_omega_DNS, pdf_DNS1[:,2], 'c', linewidth=4.0, alpha=0.25, label='DNS')
+    plt.fill_between(pdf_DNS1[:,0]/std_omega_DNS,
+                 pdf_DNS1[:,1],
+                 pdf_DNS1[:,3],
+                 color='c', alpha=0.1)
 
 # plt.legend(loc="upper left")
 plt.title(CASE_str+', bw='+ str(np.round(BANDWIDTH,2)))
@@ -136,8 +164,7 @@ plt.grid(which='minor', linestyle='-',
 plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(0.5))
 
 plt.xlim([XMIN, XMAX])
-plt.ylim([1e-5, 1e-1])
-# plt.ylim([1e-4, 1e-1])
+plt.ylim([YMIN, YMAX])
 
 filename_save = '2Dturb_C'+str(CASENO)+'_N'+str(NLES)+'_'+METHOD+str(CL)+'_nAgents'+str(nAgents)
 plt.savefig(filename_save+'_pdf.png', bbox_inches='tight', dpi=450)
@@ -159,23 +186,28 @@ hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 300, fc='gray', histtype='
 plt.yscale('log')
 print((hist * np.diff(bins)).sum())
 plt.ylim([1e-6, 1e-1])
-plt.savefig(filename_save+'_pdfbin.png', bbox_inches='tight', dpi=450)
+#plt.savefig(filename_save+'_pdfbin.png', bbox_inches='tight', dpi=450)
 plt.show()
 #%% Plot enstrophy
 col1, col2 = 0, 0
 ens_M = []#np.zeros((int(NLES/2)-1,num_file))
 tke_M = []#np.zeros((int(NLES/2)-1,num_file))
+#
+from natsort import natsorted, ns
+#dirlist = natsorted(dirlist, alg=ns.PATH | ns.IGNORECASE)
+#
 
 num_file = 0
-for filename in sorted(os.listdir(directory)):
+#for filename in sorted(os.listdir(directory)):
+for filename in natsorted(os.listdir(directory), alg=ns.PATH | ns.IGNORECASE):
 
-    if METHOD in filename and filename.endswith('ens.out'):
-        
+    if filename.endswith('ens.out'):
+
         numbers_in_file = re.findall(r'\d+', filename)
         file_numstep = int(numbers_in_file[-1])
 
         if file_numstep>SPIN_UP:
-            print(str(num_file),':',str(col1),':',str(file_numstep))
+            print('Ens files',str(num_file),':',str(col1),':',str(file_numstep))
             ens_i = np.loadtxt(directory+filename)[:-1,1]
             ens_i = np.asarray(ens_i).reshape((-1,))
             #ens_M[:,col1] = ens_i
@@ -184,16 +216,19 @@ for filename in sorted(os.listdir(directory)):
             num_file += 1
 
         if num_file==NUM_DATA: break
-        if col1>=num_file: break
+        if col1==NUM_DATA: break
 
 num_file = 0
-for filename in sorted(os.listdir(directory)):
+#for filename in sorted(os.listdir(directory)):
+for filename in natsorted(os.listdir(directory), alg=ns.PATH | ns.IGNORECASE):
 
-    if METHOD in filename and filename.endswith('tke.out'):
+    if filename.endswith('tke.out'):
+
         numbers_in_file = re.findall(r'\d+', filename)
         file_numstep = int(numbers_in_file[-1])
 
         if file_numstep>SPIN_UP:   
+            print('TKE files',str(num_file),':',str(col2),':',str(file_numstep))
             tke_i = np.loadtxt(directory+filename)[:-1,1]
             tke_i = np.asarray(tke_i).reshape((-1,))
             tke_M = np.append(tke_M, tke_i)
@@ -202,13 +237,13 @@ for filename in sorted(os.listdir(directory)):
             num_file += 1
 
         if num_file==NUM_DATA: break
-        if col2>=num_file: break
+        if col2==NUM_DATA: break
 
 #%%
-ens_M = ens_M.reshape( int(NLES/2)-1,-1)
-tke_M = tke_M.reshape( int(NLES/2)-1,-1)
-ens_ave = np.mean(ens_M,axis=1)
-tke_ave = np.mean(tke_M,axis=1)
+ens_M = ens_M.reshape(-1, int(NLES/2)-1)
+tke_M = tke_M.reshape(-1, int(NLES/2)-1)
+ens_ave = np.mean(ens_M,axis=0)
+tke_ave = np.mean(tke_M,axis=0)
 #%%
 if CASENO == 4:
     tke_dns =  np.loadtxt('_init/Re20kf25/'+'energy_spectrum_Re20kf25_DNS1024_xy.dat')[:-1,1]
@@ -219,7 +254,11 @@ elif CASENO == 1:
     tke_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
     Kplot_dns =  np.loadtxt('_init/Re20kf4/'+'energy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,0]
     ens_dns =  np.loadtxt('_init/Re20kf4/'+'enstrophy_spectrum_Re20kf4_DNS1024_xy.dat')[:-1,1]
-
+    
+elif CASENO == 2:
+    tke_dns =  np.loadtxt('_init/Re20kf4beta20/'+'energy_spectrum_Re20kf4beta20_DNS1024_xy.dat')[:-1,1]
+    Kplot_dns =  np.loadtxt('_init/Re20kf4beta20/'+'energy_spectrum_Re20kf4beta20_DNS1024_xy.dat')[:-1,0]
+    ens_dns =  np.loadtxt('_init/Re20kf4beta20/'+'enstrophy_spectrum_Re20kf4beta20_DNS1024_xy.dat')[:-1,1]
 #%%
 Kplot = np.array(range(int(NLES/2)-1))
 #%%
@@ -228,7 +267,7 @@ kplot_str = '\kappa_{x}'
 plt.figure(figsize=(10,14),dpi=450)
 
 # Energy 
-plt.subplot(3,2,3)
+plt.subplot(3,2,4)
 plt.loglog(Kplot,tke_ave,'k')
 plt.plot([Fn,Fn],[1e-12,1e6],':k', alpha=0.5, linewidth=2)
 plt.loglog(Kplot_dns,tke_dns,':k', alpha=0.5, linewidth=4)
@@ -241,10 +280,12 @@ if CASENO==1:
 elif CASENO==4:
     plt.xlim([1,1e3])
     plt.ylim([1e-9,1e-1])
-
-
+elif CASENO==2:
+    plt.xlim([1,1e3])
+    plt.ylim([1e-10,1e1])
+    
 # Enstrophy
-plt.subplot(3,2,4)
+plt.subplot(3,2,3)
 plt.loglog(Kplot, ens_ave,'k')
 plt.plot([Fn,Fn],[1e-11,1e6],':k', alpha=0.5, linewidth=2)
 plt.loglog(Kplot_dns, ens_dns,':k', alpha=0.5, linewidth=4)
@@ -256,7 +297,9 @@ if CASENO==1:
 elif CASENO==4:
     plt.xlim([1,1e3])
     plt.ylim([1e-1,1e1])
-
+elif CASENO==2:
+    plt.xlim([1,1e3])
+    plt.ylim([1e-6,1e1])
 
 for i in [3,4]:
     plt.subplot(3,2,i)
