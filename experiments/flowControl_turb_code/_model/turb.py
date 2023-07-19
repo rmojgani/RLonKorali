@@ -45,7 +45,8 @@ class turb:
                 rewardtype='k1', 
                 statetype='enstrophy',
                 actiontype='CL',
-                nagents=2):
+                nagents=2,
+                spec_type = 'xy'):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
@@ -63,12 +64,16 @@ class turb:
             self.rewardfunc = 'e'
         elif rewardtype[1]=='c':
             self.rewardfunc = 'c'
-
+            
+        self.spec_type = spec_type # 'x', 'y', 'xy', 'circle', 'both'
+        
         self.statetype= statetype
         self.actiontype= actiontype
         self.nagents= nagents
         self.nActions = nActions
+        
 
+        
         # Choose reward type function
         #if rewardtype[0] =='k':
         #    order = int(rewardtype[1])
@@ -151,26 +156,37 @@ class turb:
     
     def setup_reference(self):
         NX = self.NX
-        kmax = self.kmax
+        kmax = self.kmax       
         rewardtype = self.rewardtype
+        spec_type = self.spec_type
+        
         if rewardtype == 'enstrophy':
             #print('Enstrophy as reference')
-            spec_ref = self.ref_ens[0:kmax,1]
+            spec_refx = self.refx_ens[0:kmax,1]
+            spec_refy = self.refy_ens[0:kmax,1]
         elif rewardtype == 'energy':
             #print('Energy as reference')
-            spec_ref = self.ref_tke[0:kmax,1]
+            spec_refx = self.refx_tke[0:kmax,1]
+	        spec_refy = self.refy_tke[0:kmax,1]
+            
+        spec_ref = np.vstackv(spec_refx,spec_refy)
         self.spec_ref = spec_ref
 
     def setup_target(self):
         NX = self.NX
         kmax = self.kmax
         rewardtype = self.rewardtype
+        spec_type = self.spec_type
+        
         if rewardtype == 'enstrophy':
             #print('Enstrophy as reference')
-            spec_now = self.enstrophy_spectrum()
+            spec_nowx = self.enstrophy_spectrum(dir_x=2, dir_y=0)
+            spec_nowy = self.enstrophy_spectrum(dir_x=0, dir_y=2)
         elif rewardtype == 'energy':
             #print('Energy as reference')
-            spec_now = self.energy_spectrum()
+            spec_nowx = self.energy_spectrum(dir_x=2, dir_y=0)
+            spec_nowy = self.energy_spectrum(dir_x=0, dir_y=2)
+        spec_now = np.vstackv(spec_nowx,spec_nowy)
         return spec_now
 
     def setup_reward(self):
@@ -593,12 +609,27 @@ class turb:
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
         if self.case == '2':
-            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy.dat")
+        	spec_type = self.spec_type
+        	if spec_type == 'both':
+	            refx_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_"+'x'+".dat")
+    	        refx_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_"+'x'+".dat")
+	            refy_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_"+'y'+".dat")
+    	        refy_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_"+'y'+".dat")
+        	else:
+	            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_"+spec_type+".dat")
+    	        ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_"+spec_type+".dat")
         if self.case == '1':
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
  
+ 		if spec_type =='x':
+			DIR_X, DIR_Y = 2, 0
+		elif spec_type =='y':
+			DIR_X, DIR_Y = 0, 2
+		elif spec_type =='xy':
+			DIR_X, DIR_Y = 1, 1
+    	self.DIR_X, self.DIR_Y = DIR_X, DIR_Y
+    	
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
@@ -739,37 +770,40 @@ class turb:
         ve = cs*S
         return ve
     #-----------------------------------------
-    def enstrophy_spectrum(self):
+    def enstrophy_spectrum(self, dir_x=1, dir_y=1):
         NX = self.NX
         NY = self.NY # Square for now
         w1_hat = self.w1_hat
-        #-----------------------------------
-        signal = np.power(abs(w1_hat),2)/2;
-    
-        spec_x = np.mean(np.abs(signal),axis=0)
-        spec_y = np.mean(np.abs(signal),axis=1)
-        spec = (spec_x + spec_y)/2
-        spec = spec/ (NX**2)/NX
-        spec = spec[0:int(NX/2)]
+		#-----------------------------------
+		signal = np.power(abs(w1_hat),2)/2;
+
+		spec_x = np.mean(np.abs(signal),axis=0)
+		spec_y = np.mean(np.abs(signal),axis=1)
+		spec = (dir_x*spec_x + dir_y*spec_y)/2
+		spec = spec/ (NX**2)/NX
+		spec = spec[0:int(NX/2)]
+	  
+		arr_len = int(NX/2)
+		kplot = np.array(range(arr_len))
     
         self.enstrophy_spec = spec
         return spec
     #-----------------------------------------
-    def energy_spectrum(self):
+    def energy_spectrum(self, dir_x=1, dir_y=1):
         NX = self.NX
         NY = self.NY # Square for now
         Ksq = self.Ksq
         w1_hat = self.w1_hat
     
-        Ksq[0,0]=1
-        w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
-        w_hat[0,0]=0;
-        spec_x = np.mean(np.abs(w_hat),axis=0)
-        spec_y = np.mean(np.abs(w_hat),axis=1)
-        spec = (spec_x + spec_y)/2
-        spec = spec /NX
-        
-        spec=spec[0:int(NX/2)]
+		Ksq[0,0]=1
+		w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
+		w_hat[0,0]=0;
+		spec_x = np.mean(np.abs(w_hat),axis=0)
+		spec_y = np.mean(np.abs(w_hat),axis=1)
+		spec = (dir_x*spec_x + dir_y*spec_y)/2
+		spec = spec /NX
+		
+		spec=spec[0:int(NX/2)]
         return  spec
     #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
