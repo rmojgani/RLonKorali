@@ -1,5 +1,11 @@
 from scipy import stats
-from sklearn.neighbors import KernelDensity
+#from sklearn.neighbors import KernelDensity
+try:
+    from sklearn.neighbors import KernelDensity
+except:
+    import os
+    os.system("pip3 install scikit-learn")
+    from sklearn.neighbors import KernelDensity
 import numpy as np
 
 def myKDE(uM, BANDWIDTH=1, Nx=100, padding=0):
