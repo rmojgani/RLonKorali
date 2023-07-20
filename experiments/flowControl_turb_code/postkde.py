@@ -6,9 +6,16 @@ Last update : Dec 20
 import os
 import sys
 import re
+
+from postkdearg import postkdearg
+args = postkdearg()
+
+locals().update(vars(args))
+print(args)
+
 try:
     from natsort import natsorted, ns
-else:
+except:
     os.system("pip3 install natsort")
     from natsort import natsorted, ns
 
@@ -22,18 +29,10 @@ import numpy as np
 import scipy.io as sio
 
 from PDE_KDE import myKDE
-# import matplotlib
-# matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 #%%
-NumRLSteps = 1e3
-EPERU = 1.0
-SPIN_UP = 50000
-NUM_DATA = 100#900#0
-#%%
-NLES = 64
-nAgents = 16
-CASENO = 2
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy_Action_CL_nAgents'+str(nAgents)+'/CLpost/'
 #directory = '_result_vracer_C1_N32_R_z1_State_enstrophy_Action_CL_nAgents4_CREWARD0/CLpost/'
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_invariantlocalandglobalz_Action_CL_nAgents'+str(nAgents)+'_CREWARD1_Tspin10000.0_Thor10000.0/CLpost/'
@@ -51,7 +50,7 @@ directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_z1_State_enstrophy
 '''
 # sys.path.append(directory)
 # METHOD = 'smagRL' # 'Leith' , 'Smag'
-METHOD = 'smagRL'#'smag' # 'Leith' , 'Smag'
+#METHOD = 'DLeith'#'smag' # 'Leith' , 'Smag'
 
 # sys.path.append('_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/')
 # directory = '_result_vracer_C1_N'+str(NLES)+'_R_k1_State_enstrophy_Action_CL/smag/'
@@ -63,7 +62,7 @@ omega_M = []# np.zeros((NLES, NLES))
 #for filename in sorted(os.listdir(directory)):
 for filename in natsorted(os.listdir(directory), alg=ns.PATH | ns.IGNORECASE):
 
-    if METHOD in filename and str(NLES) in filename and filename.endswith('.mat'):
+    if str(NLES) in filename and filename.endswith('.mat'):
         
         numbers_in_file = re.findall(r'\d+', filename)
         file_numstep = int(numbers_in_file[-1])
@@ -98,12 +97,15 @@ elif CASENO == 1:
     pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')
     pdf_DNS2 = np.loadtxt('_init/pdf_case01_FDNS.dat')
     std_omega_DNS = 6.0705
-    XMIN, XMAX = -7, 7
+    XMIN, XMAX = -5, 5
     YMIN, YMAX = 1e-5, 1e-1
 
 elif CASENO == 2:
     Fn = 4;
-    CASE_str = r'Case 2 ($Re = 20x10^3, k_f=4, \beta=20$)'+r', $N_{LES}=$'+str(NLES)+'$, n_{MARL}=$'+str(nAgents)
+    if METHOD[0:2]=='RL':
+        CASE_str = r'Case 2 ($Re = 20x10^3, k_f=4, \beta=20$)'+r', $N_{LES}=$'+str(NLES)+'$, n_{MARL}=$'+str(nAgents)
+    else:
+        CASE_str = r'Case 2 ($Re = 20x10^3, k_f=4, \beta=20$)'+r', $N_{LES}=$'+str(NLES)+METHOD
     #pdf_DNS1 = np.loadtxt('_init/pdf_DNS.dat')  # to be updated 
     pdf_DNS1 = np.loadtxt('_init/pdf_case02_FDNS_shading.dat')
     pdf_DNS2 = np.loadtxt('_init/pdf_case02_FDNS.dat') 
@@ -118,8 +120,9 @@ omega_M_2D = omega_M.reshape(NLES*NLES, -1)
 from PDE_KDE import mybandwidth_scott
 plt.figure(figsize=(6,4), dpi=450)
 
-BANDWIDTH = mybandwidth_scott(omega_M_2D)*1#*10
-Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2)
+BANDWIDTH = mybandwidth_scott(omega_M_2D)*2
+PADDING = 0
+Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=PADDING)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=1.0, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
 
 num_line = 5
@@ -127,7 +130,7 @@ div = int(num_file/num_line)#67
 for icount in range(int(len(omega_M_2D.T)/div)):
     print('line no:', icount+1)
     omega_M_now = omega_M_2D[:,icount:icount+div]
-    Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M_now.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=2) 
+    Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M_now.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=PADDING) 
     plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=0.1, linewidth=1, label=METHOD+r'($C=$'+str(CL)+r')')
 
 if CASENO == 1:
@@ -184,7 +187,7 @@ hist, bins, patches = plt.hist(omega_M.reshape(-1,1), 300, fc='gray', histtype='
 plt.yscale('log')
 print((hist * np.diff(bins)).sum())
 plt.ylim([1e-6, 1e-1])
-plt.savefig(filename_save+'_pdfbin.png', bbox_inches='tight', dpi=450)
+#plt.savefig(filename_save+'_pdfbin.png', bbox_inches='tight', dpi=450)
 plt.show()
 #%% Plot enstrophy
 col1, col2 = 0, 0
@@ -199,7 +202,7 @@ num_file = 0
 #for filename in sorted(os.listdir(directory)):
 for filename in natsorted(os.listdir(directory), alg=ns.PATH | ns.IGNORECASE):
 
-    if METHOD in filename and filename.endswith('ens.out'):
+    if filename.endswith('ens.out'):
 
         numbers_in_file = re.findall(r'\d+', filename)
         file_numstep = int(numbers_in_file[-1])
@@ -220,7 +223,7 @@ num_file = 0
 #for filename in sorted(os.listdir(directory)):
 for filename in natsorted(os.listdir(directory), alg=ns.PATH | ns.IGNORECASE):
 
-    if METHOD in filename and filename.endswith('tke.out'):
+    if filename.endswith('tke.out'):
 
         numbers_in_file = re.findall(r'\d+', filename)
         file_numstep = int(numbers_in_file[-1])
