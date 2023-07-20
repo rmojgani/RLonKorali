@@ -38,7 +38,7 @@ class turb:
                 Lx=2.0*np.pi, Ly=2.0*np.pi, 
                 NX=128,       NY=128, 
                 dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, beta=0.0, 
-				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
+                nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
                 RL=False, 
                 nActions=1, sigma=0.4,
                 case='1', 
@@ -46,7 +46,7 @@ class turb:
                 statetype='enstrophy',
                 actiontype='CL',
                 nagents=2,
-                spec_type = 'xy'):
+                spec_type = 'both'):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
@@ -103,7 +103,7 @@ class turb:
         self.Ly     = Ly
         self.NX     = NX
         self.NY     = NY
-    	# ----------
+        # ----------
         self.dt     = dt
         self.nu     = 1/(20e3)
         self.alpha  = 0.1
@@ -117,7 +117,7 @@ class turb:
         print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
         self.operatorgen()
-	#
+        #
         # Grid gen
         self.v=0
 
@@ -167,9 +167,9 @@ class turb:
         elif rewardtype == 'energy':
             #print('Energy as reference')
             spec_refx = self.refx_tke[0:kmax,1]
-	        spec_refy = self.refy_tke[0:kmax,1]
-            
-        spec_ref = np.vstackv(spec_refx,spec_refy)
+            spec_refy = self.refy_tke[0:kmax,1]
+
+        spec_ref = np.vstack((spec_refx,spec_refy))
         self.spec_ref = spec_ref
 
     def setup_target(self):
@@ -186,7 +186,7 @@ class turb:
             #print('Energy as reference')
             spec_nowx = self.energy_spectrum(dir_x=2, dir_y=0)
             spec_nowy = self.energy_spectrum(dir_x=0, dir_y=2)
-        spec_now = np.vstackv(spec_nowx,spec_nowy)
+        spec_now = np.vstack((spec_nowx,spec_nowy))
         return spec_now
 
     def setup_reward(self):
@@ -495,7 +495,7 @@ class turb:
     def stepturb(self, action):
         #psiCurrent_hat = self.psiCurrent_hat
         #w1_hat = self.w1_hat
-       	Ksq = self.Ksq
+        Ksq = self.Ksq
         Ky = self.Ky
         invKsq = self.invKsq
         dt = self.dt
@@ -509,7 +509,7 @@ class turb:
         convec0_hat = self.convec1_hat
         # 2 Adam bash forth Crank Nicolson
         convec1_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
-       	diffu_hat = -Ksq*w1_hat
+        diffu_hat = -Ksq*w1_hat
        
         # Calculate SGS diffusion 
         ve = self.mySGS(action)
@@ -517,9 +517,9 @@ class turb:
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
         u1_hat = -(1j*Ky)*psiCurrent_hat
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
-       	RHS[0,0] = 0
+        RHS[0,0] = 0
     
-       	psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
+        psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
     
         w0_hat = w1_hat
         w1_hat = psiTemp
@@ -570,7 +570,7 @@ class turb:
         perturb[0:NX//2+1, NX//2+1:] = coef1[0:NX//2+1, NX//2-1:0:-1] - coef2[0:NX//2+1, NX//2-1:0:-1]
         perturb[NX//2+1:, NX//2+1:] = -(coef1[NX//2-1:0:-1, NX//2-1:0:-1] + coef2[NX//2-1:0:-1, NX//2-1:0:-1])
         perturb = np.exp(1j*perturb)
-	    # omega
+        # omega
         w1_hat = np.sqrt(absK/np.pi*Ek)*perturb*np.power(NX,2)
         # psi
         psi_hat         = -w1_hat*invKsq
@@ -609,27 +609,34 @@ class turb:
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
         if self.case == '2':
-        	spec_type = self.spec_type
-        	if spec_type == 'both':
-	            refx_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_"+'x'+".dat")
-    	        refx_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_"+'x'+".dat")
-	            refy_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_"+'y'+".dat")
-    	        refy_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_"+'y'+".dat")
-        	else:
-	            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_"+spec_type+".dat")
-    	        ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_"+spec_type+".dat")
+            spec_type = self.spec_type
+            print('Loading spectra, spectra type: ',spec_type)
+            if spec_type == 'both':
+                refx_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_x.dat")
+                refx_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_x.dat")
+                refy_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_y.dat")
+                refy_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_y.dat")
+                self.refx_tke=refx_tke
+                self.refx_ens=refx_ens
+                self.refy_tke=refy_tke
+                self.refy_ens=refy_ens
+            #else:
+            print('..., averaged in x-y directions')
+            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
+            ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
+
         if self.case == '1':
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
  
- 		if spec_type =='x':
-			DIR_X, DIR_Y = 2, 0
-		elif spec_type =='y':
-			DIR_X, DIR_Y = 0, 2
-		elif spec_type =='xy':
-			DIR_X, DIR_Y = 1, 1
-    	self.DIR_X, self.DIR_Y = DIR_X, DIR_Y
-    	
+        if spec_type =='x':
+            DIR_X, DIR_Y = 2, 0
+        elif spec_type =='y':
+            DIR_X, DIR_Y = 0, 2
+        else:
+            DIR_X, DIR_Y = 1, 1
+        self.DIR_X, self.DIR_Y = DIR_X, DIR_Y
+
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
@@ -774,17 +781,17 @@ class turb:
         NX = self.NX
         NY = self.NY # Square for now
         w1_hat = self.w1_hat
-		#-----------------------------------
-		signal = np.power(abs(w1_hat),2)/2;
+        #-----------------------------------
+        signal = np.power(abs(w1_hat),2)/2;
 
-		spec_x = np.mean(np.abs(signal),axis=0)
-		spec_y = np.mean(np.abs(signal),axis=1)
-		spec = (dir_x*spec_x + dir_y*spec_y)/2
-		spec = spec/ (NX**2)/NX
-		spec = spec[0:int(NX/2)]
-	  
-		arr_len = int(NX/2)
-		kplot = np.array(range(arr_len))
+        spec_x = np.mean(np.abs(signal),axis=0)
+        spec_y = np.mean(np.abs(signal),axis=1)
+        spec = (dir_x*spec_x + dir_y*spec_y)/2
+        spec = spec/ (NX**2)/NX
+        spec = spec[0:int(NX/2)]
+
+        arr_len = int(NX/2)
+        kplot = np.array(range(arr_len))
     
         self.enstrophy_spec = spec
         return spec
@@ -795,15 +802,15 @@ class turb:
         Ksq = self.Ksq
         w1_hat = self.w1_hat
     
-		Ksq[0,0]=1
-		w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
-		w_hat[0,0]=0;
-		spec_x = np.mean(np.abs(w_hat),axis=0)
-		spec_y = np.mean(np.abs(w_hat),axis=1)
-		spec = (dir_x*spec_x + dir_y*spec_y)/2
-		spec = spec /NX
-		
-		spec=spec[0:int(NX/2)]
+        Ksq[0,0]=1
+        w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
+        w_hat[0,0]=0;
+        spec_x = np.mean(np.abs(w_hat),axis=0)
+        spec_y = np.mean(np.abs(w_hat),axis=1)
+        spec = (dir_x*spec_x + dir_y*spec_y)/2
+        spec = spec /NX
+        
+        spec=spec[0:int(NX/2)]
         return  spec
     #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
