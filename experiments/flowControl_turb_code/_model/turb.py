@@ -170,6 +170,8 @@ class turb:
             spec_refy = self.refy_tke[0:kmax,1]
 
         spec_ref = np.vstack((spec_refx,spec_refy))
+        self.spec_refx = spec_refx
+        self.spec_refy = spec_refy
         self.spec_ref = spec_ref
 
     def setup_target(self):
@@ -187,6 +189,10 @@ class turb:
             spec_nowx = self.energy_spectrum(dir_x=2, dir_y=0)
             spec_nowy = self.energy_spectrum(dir_x=0, dir_y=2)
         spec_now = np.vstack((spec_nowx,spec_nowy))
+        
+        self.spec_nowx=spec_nowx
+        self.spec_nowy=spec_nowy
+        self.spec_now=spec_now
         return spec_now
 
     def setup_reward(self):
@@ -826,6 +832,11 @@ class turb:
         energy = self.energy_spectrum()
         enstrophy = self.enstrophy_spectrum()
         #
+        spec_nowx = self.spec_nowx
+        spec_refx = self.spec_refx
+        spec_nowy = self.spec_nowy
+        spec_refy = self.spec_refy
+        #
         plt.figure(figsize=(8,14))
  
         omega = np.real(np.fft.ifft2(self.sol[0]))
@@ -834,9 +845,10 @@ class turb:
         VMIN = -VMAX
         levels = np.linspace(VMIN,VMAX,100)
 
-        plt.subplot(3,2,1)
+        ax = plt.subplot(3,2,1)
         plt.contourf(omega, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\omega$')
+        ax.set_aspect('equal', adjustable='box')
 
         psi = np.real(np.fft.ifft2(self.sol[1]))
         VMAX, VMIN = np.max(psi), np.min(psi)
@@ -844,10 +856,11 @@ class turb:
         VMIN = -VMAX
         levels = np.linspace(VMIN,VMAX,100)
  
-        plt.subplot(3,2,2)
+        ax = plt.subplot(3,2,2)
         plt.contourf(psi, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\psi$')
-        
+        ax.set_aspect('equal', adjustable='box')
+
         ref_tke = self.ref_tke#np.loadtxt("tke.dat")
         # Energy 
         plt.subplot(3,2,3)
@@ -855,10 +868,11 @@ class turb:
         plt.loglog(Kplot[0:kmax,0], energy[0:kmax],'k')
         plt.plot([self.Fn,self.Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
         plt.plot(ref_tke[:,0],ref_tke[:,1],':k', alpha=0.25, linewidth=4)
+               
         plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
         plt.xlabel(rf'${kplot_str}$')
         plt.xlim([1,1e3])
-        plt.ylim([1e-6,1e0])
+        plt.ylim([1e-6,1e1])#plt.ylim([1e-6,1e0])
         
         ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
@@ -874,6 +888,15 @@ class turb:
         plt.ylim([1e-3,1e1])
         #plt.pcolor(np.real(sim.w1_hat));plt.colorbar()
         
+        if self.rewardtype=='energy':
+            plt.subplot(3,2,3)
+        else:
+            plt.subplot(3,2,4)
+            
+        plt.loglog(Kplot[0:kmax,0], spec_nowx,'-.r')
+        plt.loglog(Kplot[0:kmax,0], spec_refx,'-r', alpha=0.5)
+        plt.loglog(Kplot[0:kmax,0], spec_nowy,'-.c')
+        plt.loglog(Kplot[0:kmax,0], spec_refy,'-c', alpha=0.5)
         #plt.subplot(3,2,5)
         #omega = np.real(np.fft.ifft2(self.w1_hat))
         #Vecpoints, exp_log_kde, log_kde, kde = self.KDEof(omega)
