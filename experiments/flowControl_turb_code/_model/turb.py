@@ -17,6 +17,8 @@ from scipy.stats import multivariate_normal
 np.seterr(over='raise', invalid='raise')
 
 # ---------------------- Forced turb
+#from DSMAG import smag_dynamic_cs
+from DLeith import leith_dynamic_cl
 #lim = int(SPIN_UP ) # Start saving
 #st = int( 1. / dt ) # How often to save data
 NNSAVE = 10 
@@ -696,6 +698,34 @@ class turb:
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
         '''
+        '''
+        nagents = self.nagents
+        #print('action is:', action_leith)
+        w1_hat = self.w1_hat
+
+        invKsq = self.invKsq
+        NX = self.NX
+        NY = self.NY
+        Kx = self.Kx
+        Ky = self.Ky
+        Ksq = self.Ksq
+
+        w1x_hat = -(1j*Kx)*w1_hat
+        w1y_hat = (1j*Ky)*w1_hat
+        w1x = np.real(np.fft.ifft2(w1x_hat))
+        w1y = np.real(np.fft.ifft2(w1y_hat))
+        abs_grad_omega = np.sqrt( w1x**2+w1y**2)
+
+        if action != None: # veRL <- NN
+            CL3 = self.veRL#action_leith[0]
+        elif (action is None) and (nagents == 0): # Constant Leith
+            CL3 = 0.17**3# (Lit)
+            print('CL cte = ', CL3)
+        elif (action is None) and (nagents == 1): # Dynamic Leith
+            CL, _, _, _ = leith_dynamic_cl(w1_hat, invKsq, NX, NY, Kx, Ky, Ksq, abs_grad_omega)
+            CL3 = CL**3
+            print('DCL cte = ', CL3)
+        '''
         #print('action is:', action_leith)
         if action != None:
         #    if self.veRL !=0:
@@ -712,29 +742,45 @@ class turb:
         w1x = np.real(np.fft.ifft2(w1x_hat))
         w1y = np.real(np.fft.ifft2(w1y_hat))
         abs_grad_omega = np.mean(np.sqrt( w1x**2+w1y**2  ))
-        # 
+        #
         delta3 = (2*np.pi/self.NX)**3
         ve = CL3*delta3*abs_grad_omega
         return ve
+    #-----------------------------------------
+    def dsmag_cs(self):
+        #https://github.com/rmojgani/RLonKorali/blob/30ee60570568c779237fc33d81b095666bb45d0e/experiments/flowControl_turb_code/DSMAG.py#L1 
+        w1_hat = self.w1_hat
+        invKsq = self.invKsq
+        NX = self.NX
+        NY = self.NY
+        Kx = self.Kx
+        Ky = self.Ky
+        cs_Local_SM, cs_local_SM_withClipping, cs_Averaged_SM, cs_Averaged_SM_withClipping, _ = smag_dynamic_cs(w1_hat, invKsq, NX, NY, Kx, Ky)
 
+        return cs_local_SM_withClipping
+    #-----------------------------------------
     def smag_cs(self, action=None):
+        nagents = self.nagents
+
         Kx = self.Kx
         Ky = self.Ky
         NX = self.NX
+
         psiCurrent_hat = self.psiCurrent_hat
         w1_hat = self.w1_hat
 
         if action != None:
             cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
-        else:
-            #self.veRL = 0.17 * 2
-            #cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+        elif (action is None) and (nagents == 0): # Constant Smag 
             cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
+            print('CS cte = ', cs)
+        elif (action is None) and (nagents == 1): # Dynamic Smag.
+            cs = self.dsmag_cs()
+            print('DCS cte = ', cs)
 
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
         S  = 2.0*(S1*S1 + S2*S2)**0.5
-#        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
         S = (np.mean(S**2.0))**0.5;
         ve = cs*S
         return ve

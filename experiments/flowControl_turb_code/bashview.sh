@@ -1,6 +1,6 @@
 pip install scikit-learn
 pip install seaborn
-for d in _result*/ ; do
+for d in _result*128*/ ; do
     echo "$d"
     python3 -m korali.rlview --dir $d --output $d/history.png
 done
