@@ -113,7 +113,7 @@ class turb:
         self.nout   = int(nsteps/iout)
         self.RL     = RL
         # ----------
-        self.stepsave = 15000
+        self.stepsave = 150_000 #15000
         print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
         self.operatorgen()
@@ -832,10 +832,10 @@ class turb:
         energy = self.energy_spectrum()
         enstrophy = self.enstrophy_spectrum()
         #
-        spec_nowx = self.spec_nowx
-        spec_refx = self.spec_refx
-        spec_nowy = self.spec_nowy
-        spec_refy = self.spec_refy
+        #spec_nowx = self.spec_nowx
+        #spec_refx = self.spec_refx
+        #spec_nowy = self.spec_nowy
+        #spec_refy = self.spec_refy
         #
         plt.figure(figsize=(8,14))
  
@@ -892,11 +892,12 @@ class turb:
             plt.subplot(3,2,3)
         else:
             plt.subplot(3,2,4)
-            
+        '''    
         plt.loglog(Kplot[0:kmax,0], spec_nowx,'-.r')
         plt.loglog(Kplot[0:kmax,0], spec_refx,'-r', alpha=0.5)
         plt.loglog(Kplot[0:kmax,0], spec_nowy,'-.c')
         plt.loglog(Kplot[0:kmax,0], spec_refy,'-c', alpha=0.5)
+        '''
         #plt.subplot(3,2,5)
         #omega = np.real(np.fft.ifft2(self.w1_hat))
         #Vecpoints, exp_log_kde, log_kde, kde = self.KDEof(omega)
