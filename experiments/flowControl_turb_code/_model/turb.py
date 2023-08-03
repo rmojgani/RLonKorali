@@ -162,16 +162,25 @@ class turb:
         
         if rewardtype == 'enstrophy':
             #print('Enstrophy as reference')
-            spec_refx = self.refx_ens[0:kmax,1]
-            spec_refy = self.refy_ens[0:kmax,1]
+            if spec_type != 'both':
+                spec_refx = self.refx_ens[0:kmax,1]
+                spec_refy = self.refy_ens[0:kmax,1]
+            else:
+                spec_ref = self.ref_ens[0:kmax,1]
+
         elif rewardtype == 'energy':
             #print('Energy as reference')
-            spec_refx = self.refx_tke[0:kmax,1]
-            spec_refy = self.refy_tke[0:kmax,1]
+            if spec_type != 'both':
+                spec_refx = self.refx_tke[0:kmax,1]
+                spec_refy = self.refy_tke[0:kmax,1]
+            else:
+                spec_ref = self.ref_tke[0:kmax,1]
 
-        spec_ref = np.vstack((spec_refx,spec_refy))
-        self.spec_refx = spec_refx
-        self.spec_refy = spec_refy
+        if spec_type != 'both':
+            spec_ref = np.vstack((spec_refx,spec_refy))
+            self.spec_refx = spec_refx
+            self.spec_refy = spec_refy
+
         self.spec_ref = spec_ref
 
     def setup_target(self):
@@ -502,6 +511,7 @@ class turb:
         #psiCurrent_hat = self.psiCurrent_hat
         #w1_hat = self.w1_hat
         Ksq = self.Ksq
+        Kx = self.Kx
         Ky = self.Ky
         invKsq = self.invKsq
         dt = self.dt
@@ -519,8 +529,17 @@ class turb:
        
         # Calculate SGS diffusion 
         ve = self.mySGS(action)
+              
 #        ve = 0
-        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
+#        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
+
+        Grad_Omega_hat_dirx = Kx*np.fft.fft2( ve * np.fft.ifft2(Kx*w1_hat) )
+        Grad_Omega_hat_diry = Ky*np.fft.fft2( ve * np.fft.ifft2(Ky*w1_hat) )
+        PiOmega_hat = Grad_Omega_hat_dirx + Grad_Omega_hat_diry
+        # pass to --------------------#|
+        self.PiOmega_hat = PiOmega_hat#| 
+        # ----------------------------#|
+        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
         u1_hat = -(1j*Ky)*psiCurrent_hat
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
         RHS[0,0] = 0
@@ -611,11 +630,13 @@ class turb:
         data_Poi = loadmat(folder_path+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
         
+
+        spec_type = self.spec_type
         if self.case =='4':
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
         if self.case == '2':
-            spec_type = self.spec_type
+        #    spec_type = self.spec_type
             print('Loading spectra, spectra type: ',spec_type)
             if spec_type == 'both':
                 refx_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_x.dat")
@@ -634,7 +655,7 @@ class turb:
         if self.case == '1':
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
- 
+
         if spec_type =='x':
             DIR_X, DIR_Y = 2, 0
         elif spec_type =='y':
@@ -832,10 +853,10 @@ class turb:
         energy = self.energy_spectrum()
         enstrophy = self.enstrophy_spectrum()
         #
-        spec_nowx = self.spec_nowx
-        spec_refx = self.spec_refx
-        spec_nowy = self.spec_nowy
-        spec_refy = self.spec_refy
+        #spec_nowx = self.spec_nowx
+        #spec_refx = self.spec_refx
+        #spec_nowy = self.spec_nowy
+        #spec_refy = self.spec_refy
         #
         plt.figure(figsize=(8,14))
  
@@ -892,11 +913,12 @@ class turb:
             plt.subplot(3,2,3)
         else:
             plt.subplot(3,2,4)
-            
+        '''   
         plt.loglog(Kplot[0:kmax,0], spec_nowx,'-.r')
         plt.loglog(Kplot[0:kmax,0], spec_refx,'-r', alpha=0.5)
         plt.loglog(Kplot[0:kmax,0], spec_nowy,'-.c')
         plt.loglog(Kplot[0:kmax,0], spec_refy,'-c', alpha=0.5)
+        '''
         #plt.subplot(3,2,5)
         #omega = np.real(np.fft.ifft2(self.w1_hat))
         #Vecpoints, exp_log_kde, log_kde, kde = self.KDEof(omega)
@@ -985,6 +1007,15 @@ class turb:
         plt.xlabel(r'$forcing$')
         plt.ylabel(r'$\nabla \omega$')
         plt.grid(color='gray', linestyle='dashed')
+
+        PiOmega_hat = self.PiOmega_hat#| 
+        PiOmega = np.fft.ifft2(PiOmega_hat).real
+        VMIN = np.min(np.min(PiOmega))
+        VMAX = np.max(np.max(PiOmega))
+        plt.subplot(3,2,5)
+        plt.contourf(PiOmega,levels=21)#, vmin=VMIN, vmax=VMAX) 
+        plt.colorbar()
+        plt.title(r'$\Pi = \nabla .( \nu \nabla \omega)$')
 
         filename = prepend_str+'2Dturb_'+str(stepnum)+'forcing'+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)

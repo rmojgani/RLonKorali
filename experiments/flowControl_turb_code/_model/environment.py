@@ -55,8 +55,8 @@ def environment( args, initSim, s ):
     s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
-    if 1==1:
-    #try:
+    #if 1==1:
+    try:
         ## run controlled simulation
         nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
         nControlledSteps = int(NumRLSteps)
@@ -99,9 +99,9 @@ def environment( args, initSim, s ):
         sim.myplot(casestr+'_RL')
         sim.myplotforcing(casestr+'_RL_f')
         # TODO?: Termination in case of divergence
-    #except Exception as err:
+    except:# Exception as err:
     #    print(f'Exception: {err}')
-    #    print('s["Termination"]: Truncated')
+        print('s["Termination"]: Truncated')
     #    s["Termination"] = "Truncated"
 
     endSim = time.time()

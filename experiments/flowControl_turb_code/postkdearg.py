@@ -1,4 +1,3 @@
-
 def postkdearg():
 
     import argparse
@@ -16,7 +15,7 @@ def postkdearg():
                         choices=['Smag', 'Leith', 'DLeith', 'DSmag', 'RLLeith','RLSmag'], \
                         help='Method for SGS')
 
-    parser.add_argument('--SPIN_UP', type=int, default=50_000, \
+    parser.add_argument('--SPIN_UP', type=float, default=50_000, \
                         help='Spin up ')
 
     parser.add_argument('--NUM_DATA', type=int, default=2_000, \
@@ -30,5 +29,11 @@ def postkdearg():
 
     parser.add_argument('--nAgents', type=int, default=16, \
                         help='Number of agents')
+
+    parser.add_argument('--Thor', type=float, default=10_000, \
+                        help='Time steps of training horizon')
+
+    parser.add_argument('--filenameappendix', type=str, default='', \
+                        help='Appendix to filename')
 
     return parser.parse_args()

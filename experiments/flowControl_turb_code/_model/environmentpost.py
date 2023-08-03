@@ -70,7 +70,7 @@ def environmentpost( args, initSim, s ):
 
         # apply action and advance environment
         for i in range(nIntermediateSteps):
-            if step % int(5e3) == 1:
+            if step % int(5e3) == 1 and step>2:
                 print('Save at time step=', step)
                 sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
                 '''
