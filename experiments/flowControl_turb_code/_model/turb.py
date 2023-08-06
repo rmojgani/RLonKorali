@@ -16,6 +16,9 @@ from scipy.stats import multivariate_normal
 
 np.seterr(over='raise', invalid='raise')
 
+from py2d.eddy_viscosity_models import Tau_eddy_viscosity 
+from py2d.convert import Tau2PiOmega_2DFHIT
+
 # ---------------------- Forced turb
 #lim = int(SPIN_UP ) # Start saving
 #st = int( 1. / dt ) # How often to save data
@@ -533,9 +536,16 @@ class turb:
 #        ve = 0
 #        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
 
-        Grad_Omega_hat_dirx = Kx*np.fft.fft2( ve * np.fft.ifft2(Kx*w1_hat) )
-        Grad_Omega_hat_diry = Ky*np.fft.fft2( ve * np.fft.ifft2(Ky*w1_hat) )
-        PiOmega_hat = Grad_Omega_hat_dirx + Grad_Omega_hat_diry
+
+        # ----------------------------#|
+        # Calculate the PI term for local: ∇×∇.(-2 ν_e S_{ij} )
+        Tau11, Tau12, Tau22 = Tau_eddy_viscosity(ve, psiCurrent_hat, Kx, Ky)
+        
+        Tau11_hat = np.fft.fft2(Tau11)
+        Tau12_hat = np.fft.fft2(Tau12)
+        Tau22_hat = np.fft.fft2(Tau22)
+        
+        PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky, spectral=True)
         # pass to --------------------#|
         self.PiOmega_hat = PiOmega_hat#| 
         # ----------------------------#|
