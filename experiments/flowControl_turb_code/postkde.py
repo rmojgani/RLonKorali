@@ -107,7 +107,7 @@ omega_M_2D = omega_M.reshape(NLES*NLES, -1)
 from PDE_KDE import mybandwidth_scott
 plt.figure(figsize=(6,4), dpi=450)
 
-BANDWIDTH = mybandwidth_scott(omega_M_2D)#*2
+BANDWIDTH = mybandwidth_scott(omega_M_2D)*10
 PADDING = 2.0
 Vecpoints, exp_log_kde, log_kde, kde = myKDE(omega_M.reshape(-1,1), BANDWIDTH=BANDWIDTH, padding=PADDING)
 plt.semilogy(Vecpoints/std_omega, exp_log_kde, 'k', alpha=1.0, linewidth=2, label=METHOD+r'($C=$'+str(CL)+r')')
