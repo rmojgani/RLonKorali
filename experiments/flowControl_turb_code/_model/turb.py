@@ -192,18 +192,28 @@ class turb:
         rewardtype = self.rewardtype
         spec_type = self.spec_type
         
-        if rewardtype == 'enstrophy':
-            #print('Enstrophy as reference')
-            spec_nowx = self.enstrophy_spectrum(dir_x=2, dir_y=0)
-            spec_nowy = self.enstrophy_spectrum(dir_x=0, dir_y=2)
-        elif rewardtype == 'energy':
-            #print('Energy as reference')
-            spec_nowx = self.energy_spectrum(dir_x=2, dir_y=0)
-            spec_nowy = self.energy_spectrum(dir_x=0, dir_y=2)
-        spec_now = np.vstack((spec_nowx,spec_nowy))
-        
-        self.spec_nowx=spec_nowx
-        self.spec_nowy=spec_nowy
+        if spec_type == 'both':
+            if rewardtype == 'enstrophy':
+                #print('Enstrophy as reference')
+                spec_nowx = self.enstrophy_spectrum(dir_x=2, dir_y=0)
+                spec_nowy = self.enstrophy_spectrum(dir_x=0, dir_y=2)
+            elif rewardtype == 'energy':
+                #print('Energy as reference')
+                spec_nowx = self.energy_spectrum(dir_x=2, dir_y=0)
+                spec_nowy = self.energy_spectrum(dir_x=0, dir_y=2)
+
+            spec_now = np.vstack((spec_nowx,spec_nowy))   
+            self.spec_nowx=spec_nowx
+            self.spec_nowy=spec_nowy
+            
+        elif spec_type == 'xy':
+            if rewardtype == 'enstrophy':
+                #print('Enstrophy as reference')
+                spec_now = self.enstrophy_spectrum(dir_x=1, dir_y=1)
+            elif rewardtype == 'energy':
+                #print('Energy as reference')
+                spec_now = self.energy_spectrum(dir_x=1, dir_y=1)
+
         self.spec_now=spec_now
         return spec_now
 
@@ -334,13 +344,13 @@ class turb:
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
         # --------------------------
-        elif statetype=='invariantlocalandglobalgradgrad':
+        elif statetype=='invariantlocalandglobalgradgradeps':
            STATE_GLOBAL=False
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
            enstrophy= self.enstrophy_spectrum()
            mystateglobal = np.log(enstrophy[0:kmax])
-            
+
         if STATE_GLOBAL:
             mystatelist = [mystate.tolist()]
             for _ in range(nagents-1):
@@ -413,7 +423,7 @@ class turb:
                     allinvariants = self.invariant(gradV)+self.invariant(hessV)
                     mystatelist.append(allinvariants)
                     
-            elif statetype=='invariantlocalandglobalgradgrad':
+            elif statetype=='invariantlocalandglobalgradgradeps':
                 NX = self.NX
                 NY = self.NY
                 Kx = self.Kx
@@ -423,7 +433,7 @@ class turb:
 
                 u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
                 v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
-
+                
                 dudx_hat = self.D_dir(u1_hat,Kx)
                 dudy_hat = self.D_dir(u1_hat,Ky)
 
@@ -448,6 +458,8 @@ class turb:
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 
 
+                mystateglobaleps = np.sum(np.sum( np.power(dudx,2)+np.power(dvdy,2)))
+
                 list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
                 list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
                 list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
@@ -465,7 +477,7 @@ class turb:
                     gradgradV = np.array([[dudxx[0], dvdxx[0]],
                                          [dudyy[0], dvdyy[0]]])
                     
-                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()
+                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()+mystateglobaleps.tolist()
                     mystatelist.append(allinvariants)
                     
                     
@@ -643,6 +655,7 @@ class turb:
 
         spec_type = self.spec_type
         if self.case =='4':
+            spec_type =='xy'
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
         if self.case == '2':
@@ -663,17 +676,24 @@ class turb:
             ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
 
         if self.case == '1':
+            spec_type =='xy'
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
 
+        '''
         if spec_type =='x':
             DIR_X, DIR_Y = 2, 0
         elif spec_type =='y':
             DIR_X, DIR_Y = 0, 2
-        else:
+        elif spec_type =='xy':
             DIR_X, DIR_Y = 1, 1
-        self.DIR_X, self.DIR_Y = DIR_X, DIR_Y
+        else:
+            print(spec_type, ' not implemented')
 
+        self.DIR_X, self.DIR_Y = DIR_X, DIR_Y
+        '''
+        self.spec_type = spec_type
+        
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
