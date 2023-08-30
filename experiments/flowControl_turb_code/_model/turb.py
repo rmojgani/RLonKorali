@@ -458,7 +458,8 @@ class turb:
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 
 
-                mystateglobaleps = np.sum(np.sum( np.power(dudx,2)+np.power(dvdy,2)))
+                mystateglobaleps =[ (np.power(dudx,2)+np.power(dvdy,2) ).sum() ]
+
 
                 list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
                 list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
@@ -477,7 +478,7 @@ class turb:
                     gradgradV = np.array([[dudxx[0], dvdxx[0]],
                                          [dudyy[0], dvdyy[0]]])
                     
-                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()+mystateglobaleps.tolist()
+                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()+mystateglobaleps#.tolist()
                     mystatelist.append(allinvariants)
                     
                     
