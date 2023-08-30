@@ -344,7 +344,7 @@ class turb:
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
         # --------------------------
-        elif statetype=='invariantlocalandglobalgradgradepsz':
+        elif statetype=='invariantlocalandglobalgradgradepszSS':
            STATE_GLOBAL=False
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
@@ -423,7 +423,7 @@ class turb:
                     allinvariants = self.invariant(gradV)+self.invariant(hessV)
                     mystatelist.append(allinvariants)
                     
-            elif statetype=='invariantlocalandglobalgradgradepsz':
+            elif statetype=='invariantlocalandglobalgradgradepszSS':
                 NX = self.NX
                 NY = self.NY
                 Kx = self.Kx
@@ -460,6 +460,12 @@ class turb:
 
                 mystateglobaleps = [ (np.power(dudx,2)+np.power(dvdy,2) ).sum() ]
                 mystateglobalepsz = [ (np.power(dudxx,2)+np.power(dvdyy,2) ).sum() ]
+                # copied from Smag
+                S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
+                S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
+                S  = 2.0*(S1*S1 + S2*S2)**0.5
+                S = (np.mean(S**2.0))**0.5;
+                mystateglobalepsSS = [ S ]
 
 
                 list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
@@ -479,7 +485,7 @@ class turb:
                     gradgradV = np.array([[dudxx[0], dvdxx[0]],
                                          [dudyy[0], dvdyy[0]]])
                     
-                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()+mystateglobaleps+mystateglobalepsz
+                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()+mystateglobaleps+mystateglobalepsz+mystateglobalepsSS
                     mystatelist.append(allinvariants)
                     
                     
