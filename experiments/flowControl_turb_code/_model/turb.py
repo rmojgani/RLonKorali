@@ -344,7 +344,7 @@ class turb:
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
         # --------------------------
-        elif statetype=='invariantlocalandglobalgradgradeps':
+        elif statetype=='invariantlocalandglobalgradgradepsz':
            STATE_GLOBAL=False
            #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
            s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
@@ -423,7 +423,7 @@ class turb:
                     allinvariants = self.invariant(gradV)+self.invariant(hessV)
                     mystatelist.append(allinvariants)
                     
-            elif statetype=='invariantlocalandglobalgradgradeps':
+            elif statetype=='invariantlocalandglobalgradgradepsz':
                 NX = self.NX
                 NY = self.NY
                 Kx = self.Kx
@@ -458,8 +458,8 @@ class turb:
                 dvdyy = np.fft.ifft2(dvdyy_hat).real
 
 
-                mystateglobaleps =[ (np.power(dudx,2)+np.power(dvdy,2) ).sum() ]
-                mystateglobalz =[ (np.power(dudxx,2)+np.power(dvdyy,2) ).sum() ]
+                mystateglobaleps = [ (np.power(dudx,2)+np.power(dvdy,2) ).sum() ]
+                mystateglobalepsz = [ (np.power(dudxx,2)+np.power(dvdyy,2) ).sum() ]
 
 
                 list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
