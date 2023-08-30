@@ -70,6 +70,8 @@ elif args['statetype'] == 'invariantlocalandglobalgradgrad':
     state_size = 6 +  int(NLES/2)
 elif args['statetype'] == 'invariantlocalandglobalgradgradeps':
     state_size = 6 +  int(NLES/2) + 1
+elif args['statetype'] == 'invariantlocalandglobalgradgradepsz':
+    state_size = 6 +  int(NLES/2) + 1+1
 
 # Type of the action
 if args['actiontype'] == 'CL':
