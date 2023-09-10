@@ -539,12 +539,16 @@ class turb:
         # pass to --------------------#|
         self.PiOmega_hat = PiOmega_hat#| 
         # ----------------------------#|
-        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
+        #RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
+        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*nu*diffu_hat+dt*Fk-dt*PiOmega_hat
+
         u1_hat = -(1j*Ky)*psiCurrent_hat
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
         RHS[0,0] = 0
     
-        psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
+        #psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
+        psiTemp = RHS/(1+dt*alpha+0.5*dt*nu*Ksq)
+
     
         w0_hat = w1_hat
         w1_hat = psiTemp
