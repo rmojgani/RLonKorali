@@ -102,7 +102,7 @@ def environment( args, initSim, s ):
     except:# Exception as err:
     #    print(f'Exception: {err}')
         print('s["Termination"]: Truncated')
-    #    s["Termination"] = "Truncated"
+        s["Termination"] = "Truncated"
         pass
 
     endSim = time.time()
