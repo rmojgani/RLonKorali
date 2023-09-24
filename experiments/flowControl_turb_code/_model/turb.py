@@ -239,8 +239,14 @@ class turb:
         forcing  = np.zeros(self.nActions)
         if (action is not None):
             #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
-            forcing = self.upsample(action)
-            self.veRL = forcing#forcing[0]# For test
+            
+            # Interpolate ve
+            #forcing = self.upsample(action)
+            #self.veRL = forcing#forcing[0]# For test
+            
+            # interpolation of CS2/CL3
+            self.veRL = action
+            
             #print(self.veRL)
             #stop_veRL
         #else:
@@ -718,6 +724,10 @@ class turb:
         self.yaction = Y
 
     def upsample(self, action): 
+        '''
+        action: list of lenght  ... 
+        forcing: np.array Nx x Nx
+        '''
         action_flat = [item for sublist in action for item in sublist]
         arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
         upsample_action = RectBivariateSpline(self.xaction, self.yaction, arr_action, kx=1, ky=1)
@@ -768,7 +778,8 @@ class turb:
         #print('action is:', action_leith)
         if action != None:
         #    if self.veRL !=0:
-            CL3 = self.veRL#action_leith[0]
+            CL3 = self.upsample(action)
+            #CL3 = self.veRL#action_leith[0]
         else:
             CL3 = 0.17**3# (Lit)
         #else:
@@ -794,7 +805,8 @@ class turb:
         w1_hat = self.w1_hat
 
         if action != None:
-            cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+            #cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+            cs = self.upsample(action) * ((2*np.pi/NX )**2)
         else:
             #self.veRL = 0.17 * 2
             #cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
