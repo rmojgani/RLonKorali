@@ -738,15 +738,18 @@ class turb:
         nActiongrid = int((self.nActions*self.nagents)**0.5)
         self.nActiongrid = nActiongrid
         # Initlize action
-        X = np.linspace(0,self.L,nActiongrid, endpoint=True)
-        Y = np.linspace(0,self.L,nActiongrid, endpoint=True)
+        # endpoints are repeated left column and bottow row, using np.pad(A, 1, mode='wrap')[1:,1:]
+        X = np.linspace(0,self.L,nActiongrid+1, endpoint=True)
+        Y = np.linspace(0,self.L,nActiongrid+1, endpoint=True)
         self.xaction = X
         self.yaction = Y
 
-    def upsample(self, action): 
+    def upsample(self, action, degree=1): 
         action_flat = [item for sublist in action for item in sublist]
         arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
-        upsample_action = RectBivariateSpline(self.xaction, self.yaction, arr_action, kx=1, ky=1)
+        # repeating left column on right, and bottom row on top
+        arr_action = np.pad(arr_action, 1, mode='wrap')[1:,1:]
+        upsample_action = RectBivariateSpline(self.xaction, self.yaction, arr_action, kx=degree, ky=degree)
 
         # Initlize action
         upsamplesize = self.NX # 1 for testing, will be changed to grid size eventually
