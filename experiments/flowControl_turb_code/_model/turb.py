@@ -742,7 +742,7 @@ class turb:
         Y = np.linspace(0,self.L,nActiongrid+1, endpoint=True)
         self.xaction = X
         self.yaction = Y
-
+'''
     def upsample(self, action, degree=1): 
         action_flat = [item for sublist in action for item in sublist]
         arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
@@ -756,6 +756,19 @@ class turb:
         y2 = np.linspace(0,self.L,  upsamplesize, endpoint=True)
         forcing = upsample_action(x2, y2)
         return forcing
+'''
+    def upsample(self, action):
+        action_flat = [item for sublist in action for item in sublist]
+        arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
+
+        Nfine = self.NX
+        Ncoarse = self.nActiongrid
+
+        Ahat = np.zeros((Nfine,Nfine), dtype=np.complex128)
+        Ahat[:Ncoarse,:Ncoarse] = np.fft.fft2(arr_action)
+        forcing = np.fft.ifft2(Ahat).real*(NX/nAgents)*(NX/nAgents)
+
+       return forcing
 
     def operatorgen(self):
         Lx = self.Lx
