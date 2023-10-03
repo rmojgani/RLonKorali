@@ -55,8 +55,8 @@ def environment( args, initSim, s ):
     s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
-    if 1==1:
-    #try:
+    #if 1==1:
+    try:
         ## run controlled simulation
         nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
         nControlledSteps = int(NumRLSteps)

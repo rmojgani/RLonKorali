@@ -14,6 +14,7 @@ except:
 
 import numpy as np
 import scipy.io as sio
+from scipy.interpolate import RectBivariateSpline
 
 from PDE_KDE import myKDE
 import matplotlib
@@ -38,7 +39,9 @@ CASENO = 1;
 nAgents = 1
 #CASENO = 4;
 #directory = '_result_vracer_C'+str(CASENO)+'_N'+str(NLES)+'_R_ke_State_energy_Action_CS/dsmag_save/'
-directory = '_result_vracer_C'+str(CASENO)+'_N32_R_z1_State_invariantlocalandglobalgradgrad_Action_CL_nAgents16_CREWARD1_Tspin10000.0_Thor10000.0_NumRLSteps100.0_EPERU1.0/CLpost/'
+directory = '_result_vracer_C'+str(CASENO)+'_N32_R_z1_State_invariantlocalandglobalgradgrad_Action_CS_nAgents16_CREWARD1_Tspin0.0_Thor10000.0_NumRLSteps100.0_EPERU1.0/CSpost/'
+directory = '_result_vracer_C1_N32_R_z1_State_invariantlocalandglobalgradgrad_Action_CS_nAgents16_CREWARD1_Tspin0.0_Thor10000.0_NumRLSteps1000.0_EPERU1.0/CSpost/'
+
 # sys.path.append(directory)
 METHOD = 'smagRL' # 'Leith' , 'Smag'
 #METHOD = 'dsmag'#'smag' # 'Leith' , 'Smag'
@@ -87,6 +90,11 @@ import numpy as np
 import matplotlib.animation as animation
 from IPython import display
 
+L = 2*np.pi
+xcoarse = np.linspace(0,L,NLES, endpoint=True)
+ycoarse = np.linspace(0,L,NLES, endpoint=True)
+xfine = np.linspace(0,L,1024, endpoint=True)
+yfine = np.linspace(0,L,1024, endpoint=True)
 
 fig,ax = plt.subplots()
 
@@ -95,6 +103,8 @@ def animate(i,LEVELS=100):
     print(i)
     ax.clear()
     w1Python = omega_M_2D[:,:,i]#mat_contents['slnWorDNS'][:,:,i]
+    #upsample_action = RectBivariateSpline(xcoarse, ycoarse, w1Python, kx=2, ky=2)
+    #w1Python = upsample_action(xfine, yfine)
     plt.contourf(w1Python,vmin=-26,vmax=26,levels=LEVELS, cmap='bwr');plt.axis('square')
     #ax.set_title('%03d'%(i))
     ax.grid(False)
