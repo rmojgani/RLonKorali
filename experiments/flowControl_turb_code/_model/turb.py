@@ -743,7 +743,7 @@ class turb:
         self.xaction = X
         self.yaction = Y
 
-    def upsample(self, action, degree=1): 
+    def upsample(self, action, degree=2): 
         action_flat = [item for sublist in action for item in sublist]
         arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
         # repeating left column on right, and bottom row on top
