@@ -3,8 +3,11 @@
 # From Py2D: 2bf0933
 # ----------------------------------------------------------------------
 
-import numpy as np
+#import numpy as np
+import jax.numpy as np
+from jax import jit
 
+@jit
 def Omega2Psi_2DFHIT(Omega, invKsq, spectral=False):
     """
     Calculate the stream function from vorticity.
@@ -45,7 +48,7 @@ def Omega2Psi_2DFHIT(Omega, invKsq, spectral=False):
         Psi_hat = Omega2Psi_2DFHIT_spectral(Omega_hat, invKsq)
         return Psi_hat
 
-
+@jit
 def Psi2Omega_2DFHIT(Psi, Ksq, spectral=False):
     """
     Calculate the vorticity from the stream function.
@@ -85,6 +88,7 @@ def Psi2Omega_2DFHIT(Psi, Ksq, spectral=False):
         Omega_hat = Psi2Omega_2DFHIT_spectral(Psi_hat, Ksq)
         return Omega_hat
 
+@jit
 def Psi2UV_2DFHIT(Psi, Kx, Ky, spectral = False):
     """
     Calculate the velocity components U and V from the stream function.
@@ -125,7 +129,7 @@ def Psi2UV_2DFHIT(Psi, Kx, Ky, spectral = False):
         U_hat, V_hat = Psi2UV_2DFHIT_spectral(Psi_hat, Kx, Ky)
         return U_hat, V_hat
 
-
+@jit
 def Tau2PiOmega_2DFHIT(Tau11, Tau12, Tau22, Kx, Ky, spectral=False):
     """
     Calculate PiOmega, the curl of the divergence of Tau, where Tau is a 2D symmetric tensor.
@@ -167,7 +171,7 @@ def Tau2PiOmega_2DFHIT(Tau11, Tau12, Tau22, Kx, Ky, spectral=False):
         PiOmega_hat = Tau2PiOmega_2DFHIT_spectral(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky)
         return PiOmega_hat
     
-
+@jit
 def Tau2PiUV_2DFHIT(Tau11, Tau12, Tau22, Kx, Ky, spectral=False):
     """
     Calculate PiUV, the divergence of Tau, where Tau is a 2D symmetric tensor.
@@ -213,7 +217,7 @@ def Tau2PiUV_2DFHIT(Tau11, Tau12, Tau22, Kx, Ky, spectral=False):
         PiUV1_hat, PiUV2_hat = Tau2PiUV_2DFHIT_spectral(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky)
         return PiUV1_hat, PiUV2_hat
 
-
+@jit
 def PiUV2PiOmega(PiUV1, PiUV2, Kx, Ky, spectral = False):
     """
     Compute the Curl of PiUV, referred to as PiOmega, in either physical or spectral space.
@@ -250,7 +254,7 @@ def PiUV2PiOmega(PiUV1, PiUV2, Kx, Ky, spectral = False):
         PiOmega_hat = PiUV2PiOmega_spectral(PiUV1_hat, PiUV2_hat, Kx, Ky)
         return PiOmega_hat
 
-
+@jit
 def Sigma2PiOmega(Sigma1, Sigma2, Kx, Ky, spectral = False):
     """
     Compute the divergence of Sigma, referred to as PiOmega, in either physical or spectral space.
@@ -287,7 +291,7 @@ def Sigma2PiOmega(Sigma1, Sigma2, Kx, Ky, spectral = False):
         PiOmega_hat = Sigma2PiOmega_spectral(Sigma1_hat, Sigma2_hat, Kx, Ky)
         return PiOmega_hat
 
-
+@jit
 def strain_rate_2DFHIT(Psi, Kx, Ky, spectral=False):
     """
     Calculate the Strain rate components S11, S12, and S22 from the stream function.
@@ -344,7 +348,7 @@ def strain_rate_2DFHIT(Psi, Kx, Ky, spectral=False):
 #     PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11CNN_hat, Tau12CNN_hat, Tau22CNN_hat, Kx, Ky, Ksq)
 #     print(type(PiOmega_hat))
 #     return PiOmega_hat
-
+@jit
 def prepare_data_cnn(Psi1_hat, Kx, Ky, Ksq):
     U_hat, V_hat = Psi2UV_2DFHIT(Psi1_hat, Kx, Ky, Ksq)
     # I am using a Transpose here which I should not. After fixing CNN, this should be removed
@@ -352,24 +356,24 @@ def prepare_data_cnn(Psi1_hat, Kx, Ky, Ksq):
     V = np.real(np.fft.ifft2(V_hat))
     input_data = np.stack((U, V), axis=0)
     return input_data
-
+@jit
 def postproccess_data_cnn(Tau11CNN, Tau12CNN, Tau22CNN, Kx, Ky, Ksq):
     Tau11CNN_hat = np.fft.fft2(Tau11CNN)
     Tau12CNN_hat = np.fft.fft2(Tau12CNN)
     Tau22CNN_hat = np.fft.fft2(Tau22CNN)
     PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11CNN_hat, Tau12CNN_hat, Tau22CNN_hat, Kx, Ky, Ksq)
     return PiOmega_hat
-
+@jit
 def postproccess_data_cnn_mcwiliams_ani(Tau1, Tau2, Kx, Ky, Ksq):
     Tau1_hat = np.fft.fft2(Tau1)
     Tau2_hat = np.fft.fft2(Tau2)
     PiOmega_hat = Tau2PiOmega_2DFHIT(Tau1_hat, Tau2_hat, -1*Tau1_hat, Kx, Ky, Ksq)
     return PiOmega_hat
-
+@jit
 def postproccess_data_cnn_PiOmega(PiOmega, Kx, Ky, Ksq):
     PiOmega_hat = np.fft.fft2(PiOmega)
     return PiOmega_hat
-        
+@jit        
 def preprocess_data_cnn_PsiVor_PiOmega(Psi1_hat, Kx, Ky, Ksq):
     Omega_hat = Psi2Omega_2DFHIT(Psi1_hat, Kx, Ky, Ksq)
     Omega = np.real(np.fft.ifft2(Omega_hat)) # This should be removed after I fixed CNN code loading data
@@ -388,7 +392,7 @@ def normalize_data(data):
     normalized_data = (data - mean) / (std)
     
     return normalized_data
-
+@jit
 def denormalize_data(data, mean, std):
     # Denormalize data
     denormalized_data = data * std + mean
@@ -399,7 +403,7 @@ def denormalize_data(data, mean, std):
 ############################################################################################################
 ############################################################################################################
 #  Rewriting the functions to be used JAX code
-
+@jit
 def Omega2Psi_2DFHIT_spectral(Omega_hat, invKsq):
     """
     Calculate the stream function from vorticity in spectral space
@@ -434,7 +438,7 @@ def Omega2Psi_2DFHIT_spectral(Omega_hat, invKsq):
 
     # Return the stream function in spectral space.
     return Psi_hat
-
+@jit
 def Omega2Psi_2DFHIT_physical(Omega, invKsq):
     """
     Calculate the stream function from vorticity in physical space
@@ -465,7 +469,7 @@ def Omega2Psi_2DFHIT_physical(Omega, invKsq):
     return np.real(np.fft.ifft2(Psi_hat))
 
 ############################################################################################################
-
+@jit
 def Psi2Omega_2DFHIT_spectral(Psi_hat, Ksq):
     """
     Calculate the vorticity from the stream function in spectral space
@@ -498,7 +502,7 @@ def Psi2Omega_2DFHIT_spectral(Psi_hat, Ksq):
 
     # Return the vorticity in spectral space.
     return Omega_hat
-
+@jit
 def Psi2Omega_2DFHIT_physical(Psi, Ksq):
     """
     Calculate the vorticity from the stream function in physical space.
@@ -534,7 +538,7 @@ def Psi2Omega_2DFHIT_physical(Psi, Ksq):
     return np.real(np.fft.ifft2(Omega_hat))
 
 ############################################################################################################
-
+@jit
 def Psi2UV_2DFHIT_spectral(Psi_hat, Kx, Ky):
     """
     Calculate the velocity components U and V from the stream function in spectral space
@@ -573,6 +577,7 @@ def Psi2UV_2DFHIT_spectral(Psi_hat, Kx, Ky):
 
     return U_hat, V_hat
 
+@jit
 def Psi2UV_2DFHIT_physical(Psi, Kx, Ky):
     """
     Calculate the velocity components U and V from the stream function in physical space
@@ -609,7 +614,7 @@ def Psi2UV_2DFHIT_physical(Psi, Kx, Ky):
     return np.real(np.fft.ifft2(U_hat)), np.real(np.fft.ifft2(V_hat))
 
 ############################################################################################################
-
+@jit
 def Tau2PiOmega_2DFHIT_spectral(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky):
     """
     Calculate PiOmega, the curl of the divergence of Tau, where Tau is a 2D symmetric tensor in spectral space.
@@ -638,7 +643,7 @@ def Tau2PiOmega_2DFHIT_spectral(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky):
 
     return PiOmega_hat
 
-
+@jit
 def Tau2PiOmega_2DFHIT_physical(Tau11, Tau12, Tau22, Kx, Ky):
     """
     Calculate PiOmega, the curl of the divergence of Tau, where Tau is a 2D symmetric tensor in physical space
@@ -674,7 +679,7 @@ def Tau2PiOmega_2DFHIT_physical(Tau11, Tau12, Tau22, Kx, Ky):
     return np.real(np.fft.ifft2(PiOmega_hat))
 
 ############################################################################################################
-
+@jit
 def Tau2PiUV_2DFHIT_spectral(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky):
     """
     Compute the divergence of Tau, where Tau is a 2D symmetric tensor in spectral space, and return PiUV in spectral space.
@@ -705,6 +710,7 @@ def Tau2PiUV_2DFHIT_spectral(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky):
 
     return PiUV1_hat, PiUV2_hat
 
+@jit
 def Tau2PiUV_2DFHIT_physical(Tau11, Tau12, Tau22, Kx, Ky):
     """
     Compute the divergence of Tau in physical space, where Tau is a 2D symmetric tensor, 
@@ -742,7 +748,7 @@ def Tau2PiUV_2DFHIT_physical(Tau11, Tau12, Tau22, Kx, Ky):
     return PiUV1, PiUV2
 
 ############################################################################################################
-
+@jit
 def Sigma2PiOmega_spectral(Sigma1_hat, Sigma2_hat, Kx, Ky):
     """
     Compute the divergence of Sigma, referred to as PiOmega, in spectral space.
@@ -763,7 +769,7 @@ def Sigma2PiOmega_spectral(Sigma1_hat, Sigma2_hat, Kx, Ky):
     PiOmega_hat = (1j*Kx)*Sigma1_hat + (1j*Ky)*Sigma2_hat
     return PiOmega_hat
 
-
+@jit
 def Sigma2PiOmega_physical(Sigma1, Sigma2, Kx, Ky):
     """
     Compute the divergence of Sigma, referred to as PiOmega, in physical space.
@@ -789,7 +795,7 @@ def Sigma2PiOmega_physical(Sigma1, Sigma2, Kx, Ky):
     return PiOmega
 
 ############################################################################################################
-
+@jit
 def PiUV2PiOmega_spectral(PiUV1_hat, PiUV2_hat, Kx, Ky):
     """
     Compute the Curl of PiUV, referred to as PiOmega, in spectral space.
@@ -810,7 +816,7 @@ def PiUV2PiOmega_spectral(PiUV1_hat, PiUV2_hat, Kx, Ky):
     PiOmega_hat = (1j*Ky)*PiUV1_hat - (1j*Kx)*PiUV2_hat
     return PiOmega_hat
 
-
+@jit
 def PiUV2PiOmega_physical(PiUV1, PiUV2, Kx, Ky):
     """
     Compute the Curl of PiUV, referred to as PiOmega, in physical space.
@@ -836,7 +842,7 @@ def PiUV2PiOmega_physical(PiUV1, PiUV2, Kx, Ky):
     return PiOmega
 
 ############################################################################################################
-
+@jit
 def strain_rate_2DFHIT_spectral(Psi_hat, Kx, Ky):
     """
     Calculate the Strain rate components S11_hat, S12_hat, and S22_hat from the stream function in spectral space
@@ -874,6 +880,7 @@ def strain_rate_2DFHIT_spectral(Psi_hat, Kx, Ky):
 
     return S11_hat, S12_hat, S22_hat
 
+@jit
 def strain_rate_2DFHIT_physical(Psi, Kx, Ky):
     """
     Calculate the Strain rate components S11, S12, and S22 from the stream function in physical space

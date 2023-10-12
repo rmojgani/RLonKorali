@@ -1,6 +1,14 @@
 #from numpy import pi
 from scipy.fftpack import fft, ifft
-import numpy as np
+#----------------------------------
+#import numpy as np
+import numpy as nnp
+import jax.numpy as np
+from jax import grad, jit, vmap, pmap
+from jax.lib import xla_bridge
+import jax
+jax.config.update("jax_enable_x64", True)
+#================================
 import time as time
 from scipy.io import loadmat,savemat
 import scipy as sp
@@ -19,6 +27,9 @@ np.seterr(over='raise', invalid='raise')
 from py2d.eddy_viscosity_models import Tau_eddy_viscosity 
 from py2d.convert import Tau2PiOmega_2DFHIT
 
+from convection_conserved import *
+Tau_eddy_viscosity = jit(Tau_eddy_viscosity)
+Tau2PiOmega_2DFHIT = jit(Tau2PiOmega_2DFHIT)
 # ---------------------- Forced turb
 #lim = int(SPIN_UP ) # Start saving
 #st = int( 1. / dt ) # How often to save data
@@ -496,7 +507,7 @@ class turb:
         for _ in range(nagents-1):
             myrewardlist.append(myreward.tolist())
         return myrewardlist 
-
+'''
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
         Kx = self.Kx
         Ky = self.Ky
@@ -520,7 +531,7 @@ class turb:
   
         convec_hat = 0.5*(convec_hat + convecN_hat)
         return convec_hat
-
+'''
     def stepturb(self, action):
         #psiCurrent_hat = self.psiCurrent_hat
         #w1_hat = self.w1_hat

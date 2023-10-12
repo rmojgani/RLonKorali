@@ -5,15 +5,15 @@
 # Eddy Viscosity SGS Models for 2D Turbulence solver
 
 
-import numpy as np
-#import jax.numpy as np
-#from jax import jit
+#import numpy as np
+import jax.numpy as np
+from jax import jit
 
 from py2d.convert import strain_rate_2DFHIT_spectral
 
 #strain_rate_2DFHIT_spectral = jit(strain_rate_2DFHIT_spectral)
 
-#@jit
+@jit
 def Tau_eddy_viscosity(eddy_viscosity, Psi_hat, Kx, Ky):
     '''
     Calculate the eddy viscosity term (Tau) in the momentum equation 
