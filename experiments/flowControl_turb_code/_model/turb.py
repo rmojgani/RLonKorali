@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr'
 from scipy.stats import multivariate_normal
 
-np.seterr(over='raise', invalid='raise')
+nnp.seterr(over='raise', invalid='raise')
 
 from py2d.eddy_viscosity_models import Tau_eddy_viscosity 
 from py2d.convert import Tau2PiOmega_2DFHIT
@@ -507,7 +507,7 @@ class turb:
         for _ in range(nagents-1):
             myrewardlist.append(myreward.tolist())
         return myrewardlist 
-'''
+    '''
     def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
         Kx = self.Kx
         Ky = self.Ky
@@ -531,7 +531,7 @@ class turb:
   
         convec_hat = 0.5*(convec_hat + convecN_hat)
         return convec_hat
-'''
+    '''
     def stepturb(self, action):
         #psiCurrent_hat = self.psiCurrent_hat
         #w1_hat = self.w1_hat
@@ -549,14 +549,15 @@ class turb:
         w1_hat = self.w1_hat
         convec0_hat = self.convec1_hat
         # 2 Adam bash forth Crank Nicolson
-        convec1_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        #convec1_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        convec1_hat = convection_conserved(psiCurrent_hat, w1_hat, Kx, Ky)
         diffu_hat = -Ksq*w1_hat
        
         # Calculate SGS diffusion 
         ve = self.mySGS(action)
               
-#        ve = 0
-#        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
+        #        ve = 0
+        #        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
 
 
         # ----------------------------#|
@@ -567,14 +568,14 @@ class turb:
         Tau12_hat = np.fft.fft2(Tau12)
         Tau22_hat = np.fft.fft2(Tau22)
         
-        PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky, spectral=True)
+        PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky)#, spectral=True)
         # pass to --------------------#|
         self.PiOmega_hat = PiOmega_hat#| 
         # ----------------------------#|
         RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
         u1_hat = -(1j*Ky)*psiCurrent_hat
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
-        RHS[0,0] = 0
+        #RHS[0,0] = 0
     
         psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
     
@@ -610,6 +611,7 @@ class turb:
         Kx = self.Kx
         Ky = self.Ky
         invKsq = self.invKsq
+        '''
         # ------------------
         np.random.seed(SEED)
         # ------------------
@@ -633,6 +635,7 @@ class turb:
         psi_hat         = -w1_hat*invKsq
         psiPrevious_hat = psi_hat.astype(np.complex128)
         psiCurrent_hat  = psi_hat.astype(np.complex128)
+        '''
         # Forcing
         if self.case=='1':
             n = 4
@@ -666,29 +669,29 @@ class turb:
         spec_type = self.spec_type
         if self.case =='4':
             spec_type =='xy'
-            ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
+            ref_tke = nnp.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
+            ref_ens = nnp.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
         if self.case == '2':
         #    spec_type = self.spec_type
             print('Loading spectra, spectra type: ',spec_type)
             if spec_type == 'both':
-                refx_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_x.dat")
-                refx_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_x.dat")
-                refy_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_y.dat")
-                refy_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_y.dat")
+                refx_tke = nnp.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_x.dat")
+                refx_ens = nnp.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_x.dat")
+                refy_tke = nnp.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_y.dat")
+                refy_ens = nnp.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_y.dat")
                 self.refx_tke=refx_tke
                 self.refx_ens=refx_ens
                 self.refy_tke=refy_tke
                 self.refy_ens=refy_ens
             #else:
             print('..., averaged in x-y directions')
-            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
-            ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
+            ref_tke = nnp.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
+            ref_ens = nnp.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
 
         if self.case == '1':
             spec_type =='xy'
-            ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
-            ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
+            ref_tke = nnp.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
+            ref_ens = nnp.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
 
         '''
         if spec_type =='x':
@@ -707,7 +710,7 @@ class turb:
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
-    
+        psi_hat         = -w1_hat*invKsq
         # ... and save to self
         self.w1_hat = w1_hat
         self.psi_hat = psi_hat
@@ -718,7 +721,9 @@ class turb:
         self.ioutnum = 0 # [0] is the initial condition
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
         # 
-        convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        #convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
+        convec0_hat = convection_conserved(psiCurrent_hat, w1_hat, Kx, Ky)
+        
         self.convec0_hat = convec0_hat
         self.convec1_hat = convec0_hat
         # 
@@ -777,14 +782,22 @@ class turb:
         kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
                                                 np.arange((-NX/2+1),0,dtype=np.float64)
                                                 ))   
-        [Y,X]    = np.meshgrid(x,x)
-        [Ky,Kx]  = np.meshgrid(kx,kx)
+        [Y,X]    = nnp.meshgrid(x,x)
+        [Ky,Kx]  = nnp.meshgrid(kx,kx)
         Ksq      = (Kx**2 + Ky**2)
         Kabs     = np.sqrt(Ksq)
+        
         Ksq[0,0] = 1e12
         invKsq   = 1/Ksq
         Ksq[0,0] = 0
         invKsq[0,0] = 0
+        
+        Kx = np.array(Kx)
+        Ky = np.array(Ky)
+        Ksq = np.array(Ksq)
+        Kabs = np.array(Kabs)
+        invKsq = np.array(invKsq)
+        
         kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
@@ -800,6 +813,7 @@ class turb:
     #-----------------------------------------
     # ============= SGS Models ===============
     #-----------------------------------------
+    @jit
     def leith_cs(self, action=None):
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
@@ -825,6 +839,7 @@ class turb:
         ve = CL3*delta3*abs_grad_omega
         return ve
 
+    @jit
     def smag_cs(self, action=None):
         Kx = self.Kx
         Ky = self.Ky
@@ -994,8 +1009,8 @@ class turb:
 #        print(Kplot[0:kmax,0].shape)
 #        print( energy[0:kmax].shape)
 #        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
-        np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
-        np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
+        nnp.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
+        nnp.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
 
     #-----------------------------------------
     def myplotforcing(self, append_str='', prepend_str=''):
@@ -1090,7 +1105,7 @@ class turb:
     #-----------------------------------------
     def invariant(self, A):
         S, R = self.decompose_sym(A)
-        lambda1 = np.trace(S)
-        lambda2 = np.trace(S@S)
-        lambda3 = np.trace(R@R)
+        lambda1 = nnp.trace(S)
+        lambda2 = nnp.trace(S@S)
+        lambda3 = nnp.trace(R@R)
         return [lambda1, lambda2, lambda3]

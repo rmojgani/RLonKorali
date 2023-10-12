@@ -130,7 +130,8 @@ def Psi2UV_2DFHIT(Psi, Kx, Ky, spectral = False):
         return U_hat, V_hat
 
 @jit
-def Tau2PiOmega_2DFHIT(Tau11, Tau12, Tau22, Kx, Ky, spectral=False):
+def Tau2PiOmega_2DFHIT(Tau11, Tau12, Tau22, Kx, Ky):#, spectral=False):
+    spectral=True#False
     """
     Calculate PiOmega, the curl of the divergence of Tau, where Tau is a 2D symmetric tensor.
 
