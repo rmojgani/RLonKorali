@@ -2,7 +2,7 @@ from turb import *
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-plt.rcParams['image.cmap'] = 'bwr_r'
+plt.rcParams['image.cmap'] = 'bwr'
 import numpy as np
 import os
 
@@ -102,7 +102,7 @@ def environment( args, initSim, s ):
     except:# Exception as err:
     #    print(f'Exception: {err}')
         print('s["Termination"]: Truncated')
-    #    s["Termination"] = "Truncated"
+        s["Termination"] = "Truncated"
         pass
 
     endSim = time.time()

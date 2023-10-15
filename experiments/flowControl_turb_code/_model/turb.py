@@ -813,7 +813,6 @@ class turb:
     #-----------------------------------------
     # ============= SGS Models ===============
     #-----------------------------------------
-    @jit
     def leith_cs(self, action=None):
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
@@ -839,7 +838,6 @@ class turb:
         ve = CL3*delta3*abs_grad_omega
         return ve
 
-    @jit
     def smag_cs(self, action=None):
         Kx = self.Kx
         Ky = self.Ky
@@ -887,9 +885,9 @@ class turb:
         Ksq = self.Ksq
         w1_hat = self.w1_hat
     
-        Ksq[0,0]=1
+        #Ksq[0,0]=1
         w_hat = np.power(np.abs(w1_hat),2)/NX/NY/Ksq
-        w_hat[0,0]=0;
+        #w_hat[0,0]=0;
         spec_x = np.mean(np.abs(w_hat),axis=0)
         spec_y = np.mean(np.abs(w_hat),axis=1)
         spec = (dir_x*spec_x + dir_y*spec_y)/2

@@ -1,4 +1,4 @@
-NLES=192
+NLES=256 #192
 case=4
 rewardtype=z1 # [k1,k2,k3,log,]
 statetype=invariantlocalandglobalgradgrad #eps #psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomegalocal,omegalocal,invariantlocalandglobalgradgrad,invariantlocalandglobalgradgradeps] 

@@ -2,8 +2,16 @@ from turb import *
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-plt.rcParams['image.cmap'] = 'bwr_r'
-import numpy as np
+plt.rcParams['image.cmap'] = 'bwr'
+#----------------------------------
+#import numpy as np
+import numpy as nnp
+import jax.numpy as np
+from jax import grad, jit, vmap, pmap
+from jax.lib import xla_bridge
+import jax
+jax.config.update("jax_enable_x64", True)
+#----------------------------------
 import os
 
 import copy
