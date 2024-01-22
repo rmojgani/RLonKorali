@@ -167,7 +167,7 @@ for i in range(action_size): # size of action
 	e["Variables"][state_size+i]["Type"] = "Action"
 	e["Variables"][state_size+i]["Lower Bound"] = -0.5**3
 	e["Variables"][state_size+i]["Upper Bound"] = 0.5**3
-	e["Variables"][state_size+i]["Initial Exploration Noise"] = 0.3**3 #0.15**3
+	e["Variables"][state_size+i]["Initial Exploration Noise"] = 0.25**3 #0.15**3
 
 ### Setting Experience Replay and REFER settings
 e["Solver"]["Experience Replay"]["Off Policy"]["Annealing Rate"] = 5.0e-8
