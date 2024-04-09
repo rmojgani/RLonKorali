@@ -1,7 +1,7 @@
 # Verbose Repo Template Name
 
-#### [[project website]](http://pedram.rice.edu/team/)
-<img src="docs/repo_template.png" width="250">
+#### [[project website]](https://github.com/rmojgani/)
+<img src="docs/MARL.png" width="250">
 
 ## Table of contents
 * [Introduction](#Introduction)
@@ -15,20 +15,20 @@
 <!-- An abstract length introduction 
 	to the project -->
 The checklist for refactor progress
-- [ ] Optinal CPU-GPU backend
+- [ ] Optional CPU-GPU backend
 - [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
-- [ ] Options to save a list of parameters (action, $'\nu_e'$, $'c_{model}'$, $'\Pi'$, $'\omega'$, $'\psi'$)
+- [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)
+- [ ] 
 
 ## Requirements
 <!-- These are examples,
 	add or remove as appropriate -->
 
-- Matlab R2016+
 - python 3.6
 	- [scipy](https://pypi.org/project/scipy/)
 	- [numpy](https://pypi.org/project/numpy/)
-- [TensorFlow 2](https://www.tensorflow.org/install)
-- [Keras 2.3.1](https://pypi.org/project/Keras/)
+- JAX
+
 
 ## Experiments
 ### Case 1
