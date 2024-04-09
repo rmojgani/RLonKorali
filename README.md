@@ -24,9 +24,9 @@ The checklist for refactor progress
 - [ ] local: $`\nabla u`$
 - [ ] local: $`\nabla \nabla u`$
 - [ ] Update initial condition for cases
--[ ] Case 1: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
--[ ] Case 2: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
--[ ] Case 3: $`\kappa_f=25`$ , Re$=20\times10^3`$, $`\beta=20`$
+- [ ] Case 1: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
+- [ ] Case 2: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
+- [ ] Case 3: $`\kappa_f=25`$ , Re$=20\times10^3`$, $`\beta=20`$
 - [ ] Check consistency of IC with the solver
 - [ ]
 
