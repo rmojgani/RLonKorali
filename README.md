@@ -1,7 +1,7 @@
 # Verbose Repo Template Name
 
 #### [[project website]](https://github.com/rmojgani/)
-<img src="docs/MARL.png" width="250">
+<img src="docs/MARL.png" width="500">
 
 ## Table of contents
 * [Introduction](#Introduction)
@@ -18,7 +18,11 @@ The checklist for refactor progress
 - [ ] Optional CPU-GPU backend
 - [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
 - [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)
-- [ ] 
+- [ ] Re-organize the state model, maybe have it as a list of options:
+-- [] Global: energy
+-- [] Global: enstrophy
+-- [] local: $`\nabla u`$
+-- [] local: $`\nabla \nabla u`$
 
 ## Requirements
 <!-- These are examples,
