@@ -19,14 +19,14 @@ The checklist for refactor progress
 - [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
 - [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)
 - [ ] Re-organize the state model, maybe have it as a list of options:
--- [ ] Global: energy
--- [ ] Global: enstrophy
--- [ ] local: $`\nabla u`$
--- [ ] local: $`\nabla \nabla u`$
+- [ ] Global: energy
+- [ ] Global: enstrophy
+- [ ] local: $`\nabla u`$
+- [ ] local: $`\nabla \nabla u`$
 - [ ] Update initial condition for cases
---[ ] Case 1: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
---[ ] Case 2: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
---[ ] Case 3: $`\kappa_f=25`$ , Re$=20\times10^3`$, $`\beta=20`$
+-[ ] Case 1: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
+-[ ] Case 2: $`\kappa_f=4`$ , Re$=20\times10^3`$, $`\beta=0`$
+-[ ] Case 3: $`\kappa_f=25`$ , Re$=20\times10^3`$, $`\beta=20`$
 - [ ] Check consistency of IC with the solver
 - [ ]
 
