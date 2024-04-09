@@ -14,13 +14,10 @@
 ## Introduction
 <!-- An abstract length introduction 
 	to the project -->
-This is the introduction. We plan to
-<ul>
-<li>Do the first item,</li>
-<li>Test the second item,</li>
-<li>Investigate the third item,</li>
-<li>Code the fourth item.</li>
-</ul>
+The checklist for refactor progress
+- [ ] Optinal CPU-GPU backend
+- [ ] Consistent model action (c_s^2 / c_l^3)
+ 
 
 ## Requirements
 <!-- These are examples,
@@ -59,45 +56,20 @@ def myfun():
    print('Hello!')
 ```
 
-Latex 
-
-```bibtex
-@article { Lubis_AMS_2021,
-      author = {Sandro W. Lubis and Pedram Hassanzadeh},
-      title = {An Eddy–Zonal Flow Feedback Model for Propagating Annular Modes},
-      journal = {Journal of the Atmospheric Sciences},
-      year = {2021},
-      publisher = {American Meteorological Society},
-      address = {Boston MA, USA},
-      volume = {78},
-      number = {1},
-      doi = {10.1175/JAS-D-20-0214.1},
-      pages= {249 - 267},
-      url = "https://journals.ametsoc.org/view/journals/atsc/78/1/jas-d-20-0214.1.xml"
-}
-```
 
 ## Citation
-- Lubis, Sandro W., and Pedram Hassanzadeh. " An Eddy–Zonal Flow Feedback Model for Propagating Annular Modes", Journal of the Atmospheric Sciences 78, 1 (2021).([url](https://doi.org/10.1175/JAS-D-20-0214.1))<details><summary>BibTeX</summary><pre>
-@article { Lubis_AMS_2021,
-      author = {Sandro W. Lubis and Pedram Hassanzadeh},
-      title = {An Eddy–Zonal Flow Feedback Model for Propagating Annular Modes},
-      journal = {Journal of the Atmospheric Sciences},
-      year = {2021},
-      publisher = {American Meteorological Society},
-      address = {Boston MA, USA},
-      volume = {78},
-      number = {1},
-      doi = {10.1175/JAS-D-20-0214.1},
-      pages= {249 - 267},
-      url = "https://journals.ametsoc.org/view/journals/atsc/78/1/jas-d-20-0214.1.xml"
+- Mojgani, R., Waelchli, D., Guan, Y., Koumoutsakos, P., Hassanzadeh, P.  "Extreme Event Prediction with Multi-agent Reinforcement Learning-based Parametrization of Atmospheric and Oceanic Turbulence", arXiv: 2312.00907, 2023.([url](https://arxiv.org/abs/2312.00907))<details><summary>BibTeX</summary><pre>
+@misc{Mojgani_arxiv_2023,
+      title={Extreme Event Prediction with Multi-agent Reinforcement Learning-based Parametrization of Atmospheric and Oceanic Turbulence}, 
+      author={Rambod Mojgani and Daniel Waelchli and Yifei Guan and Petros Koumoutsakos and Pedram Hassanzadeh},
+      year={2023},
+      eprint={2312.00907},
+      archivePrefix={arXiv},
 }</pre></details>
 
-## References
-For a guide to markdown syntax see  
 
-```
-https://www.markdownguide.org/basic-syntax/
+
+
 ```
 
 
