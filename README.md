@@ -47,28 +47,20 @@ The checklist for refactor progress
 ### Case 1
 Case 1 is disscused here [Case 1 Location](./experiments/case1) 
 
-open matlab
+To run the training
 ```
-matlab -nodisplay -nosplash
-```
-
-Run the main file
-```
-python main_example.py
+bash run.sh
 ```
 
-Post process
+To run post process
 ```
-python post_example.py
-```
-
-Python code
-
-```python
-def myfun():
-   print('Hello!')
+bash runpost.sh
 ```
 
+To delete all data files in the folder
+```
+bash clean.sh
+```
 
 ## Citation
 - Mojgani, R., Waelchli, D., Guan, Y., Koumoutsakos, P., Hassanzadeh, P.  "Extreme Event Prediction with Multi-agent Reinforcement Learning-based Parametrization of Atmospheric and Oceanic Turbulence", arXiv: 2312.00907, 2023.([url](https://arxiv.org/abs/2312.00907))<details><summary>BibTeX</summary><pre>
@@ -79,10 +71,3 @@ def myfun():
       eprint={2312.00907},
       archivePrefix={arXiv},
 }</pre></details>
-
-
-
-
-```
-
-
