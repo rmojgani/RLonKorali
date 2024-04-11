@@ -15,6 +15,9 @@
 <!-- An abstract length introduction 
 	to the project -->
 The checklist for refactor progress
+- [] Check consistency with Py2D
+  - [x] RHS
+  - [x] FK
 - [ ] Optional CPU-GPU backend
 - [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
 - [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)

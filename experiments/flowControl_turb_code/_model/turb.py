@@ -40,10 +40,12 @@ class turb:
     def __init__(self, 
                 Lx=2.0*np.pi, Ly=2.0*np.pi, 
                 NX=128,       NY=128, 
-                dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, beta=0.0, 
-                nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
-                RL=False, 
-                nActions=1, sigma=0.4,
+                dt=5e-4, 
+                nu=1e-4, rho=1.0, alpha=0.1, beta=0.0, 
+                nsteps= None, 
+                tend= 1.5000, 
+                RL= False, 
+                nActions= 1, 
                 case='1', 
                 rewardtype='k1', 
                 statetype='enstrophy',
@@ -74,8 +76,6 @@ class turb:
         self.actiontype= actiontype
         self.nagents= nagents
         self.nActions = nActions
-        
-
         
         # Choose reward type function
         #if rewardtype[0] =='k':
@@ -112,8 +112,6 @@ class turb:
         self.alpha  = 0.1
         self.beta   = beta
         self.nsteps = nsteps
-        self.iout   = iout
-        self.nout   = int(nsteps/iout)
         self.RL     = RL
         # ----------
         self.stepsave = 15000
@@ -130,8 +128,8 @@ class turb:
         # get targets for control:
         if self.RL:
 #            self.nActions = nActions
-            self.sigma = sigma
             self.x = np.arange(self.NX)*self.Lx/(self.NX-1)
+
         self.case = case
         #self.nActions = nActions
 
@@ -252,12 +250,11 @@ class turb:
         forcing  = np.zeros(self.nActions)
         if (action is not None):
             #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
+
             forcing = self.upsample(action)
             self.veRL = forcing#forcing[0]# For test
             #print(self.veRL)
             #stop_veRL
-        #else:
-        #    #self.veRL=0.17**2
 
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
@@ -271,36 +268,17 @@ class turb:
         self.t       += self.dt
    
 
-    def simulate(self, nsteps=None, iout=None, restart=False, correction=[]):
-        nsteps=self.nsteps#int(1e4)
-        #
-        # If not provided explicitly, get internal values
-        if (nsteps is None):
-            nsteps = self.nsteps
-        else:
-            nsteps = int(nsteps)
-            self.nsteps = nsteps
-        if (iout is None):
-            iout = self.iout
-            nout = self.nout
-        else:
-            self.iout = iout
-        if restart:
-            # update nout in case nsteps or iout were changed
-            nout      = int(nsteps/iout)
-            self.nout = nout
-            # reset simulation arrays with possibly updated size
-            self.setup_timeseries(nout=self.nout)
-        #
+    def simulate(self, nsteps=None):
+        nsteps= self.nsteps
         # advance in time for nsteps steps
-        for n in range(1,self.nsteps+1):
+        for n in range(1, nsteps+1):
             self.step()
 
     def state(self):
         NX= int(self.NX)
         kmax= self.kmax
-        statetype=self.statetype
-        nagents=self.nagents
+        statetype= self.statetype
+        nagents= self.nagents
         # --------------------------------------
         STATE_GLOBAL=True
         # --------------------------------------
@@ -497,7 +475,7 @@ class turb:
             myrewardlist.append(myreward.tolist())
         return myrewardlist 
 
-    def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
+    def convection_conserved(self, psiCurrent_hat, w1_hat):
         Kx = self.Kx
         Ky = self.Ky
         
@@ -532,7 +510,7 @@ class turb:
         nu = self.nu
         alpha = self.alpha
         beta = self.beta
-        Fk = self.Fk
+        Fk_hat = self.Fk_hat
         # ---------------
         psiCurrent_hat = self.psiCurrent_hat
         w1_hat = self.w1_hat
@@ -560,11 +538,17 @@ class turb:
         # pass to --------------------#|
         self.PiOmega_hat = PiOmega_hat#| 
         # ----------------------------#|
-        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
+        # AB2 for Jacobian term
+        convec_hat = 1.5*convec1_hat - 0.5*convec0_hat
+        # RHS: + Jacobian term + Forcing + SGS model
+        RHS = w1_hat - dt*convec_hat + dt*0.5*(nu+ve)*diffu_hat - dt*(Fk_hat+PiOmega_hat) #+ dt*beta*V1_hat : Last term moved below
+
+        # β case: Coriolis (Beta case)
         u1_hat = -(1j*Ky)*psiCurrent_hat
+        # RHS + Coriolis
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
-        RHS[0,0] = 0
-    
+        #RHS[0,0] = 0
+
         psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
     
         w0_hat = w1_hat
@@ -602,40 +586,25 @@ class turb:
         # ------------------
         np.random.seed(SEED)
         # ------------------
-        kp = 10.0
-        A  = 4*np.power(kp,(-5))/(3*np.pi)  
-        absK = np.sqrt(Kx*Kx+Ky*Ky)
-        #
-        Ek = A*np.power(absK,4)*np.exp(-np.power(absK/kp,2))
-        coef1 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
-        coef2 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
-        #
-        perturb = np.zeros([NX,NX])
-        perturb[0:NX//2+1, 0:NX//2+1] = coef1[0:NX//2+1, 0:NX//2+1]+coef2[0:NX//2+1, 0:NX//2+1]
-        perturb[NX//2+1:, 0:NX//2+1] = coef2[NX//2-1:0:-1, 0:NX//2+1] - coef1[NX//2-1:0:-1, 0:NX//2+1]
-        perturb[0:NX//2+1, NX//2+1:] = coef1[0:NX//2+1, NX//2-1:0:-1] - coef2[0:NX//2+1, NX//2-1:0:-1]
-        perturb[NX//2+1:, NX//2+1:] = -(coef1[NX//2-1:0:-1, NX//2-1:0:-1] + coef2[NX//2-1:0:-1, NX//2-1:0:-1])
-        perturb = np.exp(1j*perturb)
-        # omega
-        w1_hat = np.sqrt(absK/np.pi*Ek)*perturb*np.power(NX,2)
-        # psi
-        psi_hat         = -w1_hat*invKsq
-        psiPrevious_hat = psi_hat.astype(np.complex128)
-        psiCurrent_hat  = psi_hat.astype(np.complex128)
         # Forcing
         if self.case=='1':
-            n = 4
+            # kappaf = 4
+            fkx, fky = 4, 4
             beta = 0.0
         elif self.case=='2':
-            n = 4
+            # kappaf = 4
+            fkx, fky = 4, 4
             beta = 20.0
         elif self.case=='4':
-            n = 25
+            # kappaf = 
+            fkx, fky = 25, 25
             beta = 0.0
 
-        Xi = 1
-        Fk = -n*Xi*np.cos(n*Y)-n*Xi*np.cos(n*X)
-        Fk = np.fft.fft2(Fk)
+        # Deterministic forcing in Physical space
+        Fk = fky * np.cos(fky * Y) + fkx * np.cos(fkx * X)
+
+        # Deterministic forcing in Fourier space
+        Fk_hat = np.fft.fft2(Fk)
         #
         time = 0.0
         slnW = []
@@ -704,14 +673,13 @@ class turb:
         self.psiPrevious_hat = psiPrevious_hat
         self.t = 0.0
         self.stepnum = 0
-        self.ioutnum = 0 # [0] is the initial condition
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
         # 
         convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
         self.convec0_hat = convec0_hat
         self.convec1_hat = convec0_hat
         # 
-        self.Fk = Fk
+        self.Fk_hat = Fk_hat
         self.Fn = n # Forcing k
         self.beta = beta # Coriolis β
         # Aux reward 
