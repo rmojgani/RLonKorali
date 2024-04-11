@@ -15,9 +15,12 @@
 <!-- An abstract length introduction 
 	to the project -->
 The checklist for refactor progress
-- [] Check consistency with Py2D
+- [ ] Check consistency with Py2D
   - [x] RHS
   - [x] FK
+  - [ ] ```psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)```
+  - [ ] Check operators and grid [ij] vs [xy]
+- [ ] Option for calculation of $`\Pi`$
 - [ ] Optional CPU-GPU backend
 - [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
 - [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)
