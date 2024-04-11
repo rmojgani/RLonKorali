@@ -18,7 +18,7 @@ The checklist for refactor progress
 - [ ] Check consistency with Py2D
   - [x] RHS
   - [x] FK
-  - [ ] ```psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)```
+  - [ ] CN for $`\Pi`$ [formulation](https://github.com/envfluids/py2d/issues/61)  ```psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)```
   - [ ] Check operators and grid [ij] vs [xy]
 - [ ] Option for calculation of $`\Pi`$
 - [ ] Optional CPU-GPU backend
@@ -50,8 +50,6 @@ The checklist for refactor progress
 
 
 ## Experiments
-### Case 1
-Case 1 is disscused here [Case 1 Location](./experiments/case1) 
 
 To run the training
 ```

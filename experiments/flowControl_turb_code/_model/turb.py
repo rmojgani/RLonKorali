@@ -41,7 +41,7 @@ class turb:
                 Lx=2.0*np.pi, Ly=2.0*np.pi, 
                 NX=128,       NY=128, 
                 dt=5e-4, 
-                nu=1e-4, rho=1.0, alpha=0.1, beta=0.0, 
+                Re=20e3, rho=1.0, alpha=0.1, beta=0.0, 
                 nsteps= None, 
                 tend= 1.5000, 
                 RL= False, 
@@ -100,38 +100,32 @@ class turb:
         print('> tend=',tend,', nsteps=', nsteps, 'NxN',str(NX),'x',str(NY))
 
         self.case=case
-        #
+        # -------------------------
         # save to self
+        # -------------------------
+        # Domain size
         self.Lx     = Lx
         self.Ly     = Ly
         self.NX     = NX
         self.NY     = NY
-        # ----------
-        self.dt     = dt
-        self.nu     = 1/(20e3)
-        self.alpha  = 0.1
+        # Case parameters
+        self.nu     = 1/Re
+        self.alpha  = alpha
         self.beta   = beta
+        # Time-stepping parameters
+        self.dt     = dt
         self.nsteps = nsteps
+        # RL Controls
         self.RL     = RL
         # ----------
         self.stepsave = 15000
         print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
         self.operatorgen()
-        #
-        # Grid gen
-        self.v=0
-
         # set initial condition
         self.IC()
 
-        # get targets for control:
-        if self.RL:
-#            self.nActions = nActions
-            self.x = np.arange(self.NX)*self.Lx/(self.NX-1)
-
         self.case = case
-        #self.nActions = nActions
 
 	    # SAVE SIZE
         slnU = np.zeros([NX,NNSAVE])
@@ -139,13 +133,12 @@ class turb:
 	    
         Energy = np.zeros([NNSAVE])
         Enstrophy = np.zeros([NNSAVE])
-        onePython = np.zeros([NNSAVE])
 	
         # precompute Gaussians for control:
         if self.RL:
             self.nActions = nActions
-            self.sigma = sigma
-            self.x = np.arange(self.N)*self.L/(self.N-1)
+            # Action grid
+            # self.x = np.arange(self.N)*self.L/(self.N-1)
             self.veRL = 0
             #print('RL to run:', nActions)
    
@@ -457,11 +450,9 @@ class turb:
                     allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()#+mystateglobaleps.tolist()
                     mystatelist.append(allinvariants)
                     
-                    
         if mystatelist[0][0]>1000: raise Exception("State diverged!")
         return mystatelist
 
-   
     def reward(self):
         nagents=self.nagents
         # --------------------------------------
@@ -476,6 +467,10 @@ class turb:
         return myrewardlist 
 
     def convection_conserved(self, psiCurrent_hat, w1_hat):
+        '''
+        second-order Adams–Bashforth for the nonlinear term
+        J()
+        '''
         Kx = self.Kx
         Ky = self.Ky
         
@@ -1021,7 +1016,7 @@ class turb:
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
         plt.close('all')
     #-----------------------------------------  
-    def multivariat_fit(self,x,y):
+    def multivariat_fit(self, x, y):
         covxy = np.cov(x,y, rowvar=False)
         meanxy=np.mean(x),np.mean(y)
         rv = multivariate_normal(mean=meanxy, cov=covxy, allow_singular=False)
