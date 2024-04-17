@@ -517,10 +517,6 @@ class turb:
         # Calculate SGS diffusion 
         ve = self.mySGS(action)
               
-#        ve = 0
-#        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
-
-
         # ----------------------------#|
         # Calculate the PI term for local: ∇×∇.(-2 ν_e S_{ij} )
         Tau11, Tau12, Tau22 = Tau_eddy_viscosity(ve, psiCurrent_hat, Kx, Ky)
@@ -543,7 +539,6 @@ class turb:
         u1_hat = -(1j*Ky)*psiCurrent_hat
         # RHS + Coriolis
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
-        #RHS[0,0] = 0
 
         #psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
         psiTemp = RHS/(1+dt*alpha+0.5*dt*nu*Ksq)
@@ -670,7 +665,7 @@ class turb:
         self.psiPrevious_hat = psiPrevious_hat
         self.t = 0.0
         self.stepnum = 0
-        self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
+        self.sol = [self.w1_hat, self.psiCurrent_hat, self.psiPrevious_hat]
         # 
         convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
         self.convec0_hat = convec0_hat
@@ -726,19 +721,30 @@ class turb:
         Lx = self.Lx
         NX = self.NX
         dx = Lx/NX
+        # cherry-picked from : envfluids/Py2D: 09e0208
+        INDEXING = 'ij'
+        # Create an array of x-coordinates, ranging from 0 to (Lx - dx)
+        x = np.linspace(0, Lx - dx, num=Nx)
+        y = np.linspace(0, Lx - dx, num=Ny)
+
+        # Create 2D arrays of the x and y-coordinates using a meshgrid.
+        X, Y = np.meshgrid(x, y, indexing=INDEXING)
         #-----------------  
-        x        = np.linspace(0, Lx-dx, num=NX)
-        kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
-                                                np.arange((-NX/2+1),0,dtype=np.float64)
-                                                ))   
-        [Y,X]    = np.meshgrid(x,x)
-        [Ky,Kx]  = np.meshgrid(kx,kx)
-        Ksq      = (Kx**2 + Ky**2)
+        # Create an array of the discrete Fourier Transform sample frequencies in x-direction
+        kx = 2 * np.pi * np.fft.fftfreq(NX, d=dx)
+        # Create an array of the discrete Fourier Transform sample frequencies in y-direction
+        ky = 2 * np.pi * np.fft.fftfreq(NX, d=dx)
+        # Return coordinate grids (2D arrays) for the x and y wavenumbers
+        (Kx, Ky) = np.meshgrid(kx, ky, indexing=INDEXING)
+
+        Ksq      = Kx**2 + Ky**2
         Kabs     = np.sqrt(Ksq)
+
         Ksq[0,0] = 1e12
-        invKsq   = 1/Ksq
+        invKsq   = 1.0/Ksq
         Ksq[0,0] = 0
         invKsq[0,0] = 0
+
         kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
