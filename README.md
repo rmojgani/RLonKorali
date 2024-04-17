@@ -22,7 +22,7 @@ The checklist for refactor progress
   - [ ] Check operators and grid [ij] vs [xy]
     - [x] meshgrid Kx, Ky
     - [x] meshgrid xx, yy
-  - [ ] Change beta*v term to match the Py2D convention
+  - [x] Change beta*v term to match the Py2D convention: changed with 'ij' indexing grid
 - [ ] Option for calculation of $`\Pi`$
   - [ ] From $`\sigma`$
   - [x] From $`\tau`$ 

@@ -1,5 +1,4 @@
 #from numpy import pi
-from scipy.fftpack import fft, ifft
 import numpy as np
 import time as time
 from scipy.io import loadmat,savemat
@@ -536,9 +535,9 @@ class turb:
         RHS = w1_hat - dt*convec_hat + dt*0.5*nu*diffu_hat - dt*(Fk_hat+PiOmega_hat) #+ dt*beta*V1_hat : Last term moved below
 
         # β case: Coriolis (Beta case)
-        u1_hat = -(1j*Ky)*psiCurrent_hat
+        v_hat = -(1j*Kx)*psiCurrent_hat
         # RHS + Coriolis
-        RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
+        RHS = RHS + dt*beta*v_hat # Beta-case: Coriolis
 
         #psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
         psiTemp = RHS/(1+dt*alpha+0.5*dt*nu*Ksq)
