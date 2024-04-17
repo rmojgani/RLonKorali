@@ -1,86 +1,105 @@
 from turb import *
-
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.rcParams['image.cmap'] = 'bwr_r'
 import numpy as np
-def environmentpost( args, s ):
+import os
+
+import copy
+import time
+
+def environmentpost( args, initSim, s ):
+
+    sim = copy.deepcopy(initSim)
+    startSim = time.time()
+    
     L    = 2*np.pi
     N    = args['NLES'] #128# 64
     dt   = 5.0e-4
     case = args["case"]
+    action_size = args["nActions"]
     rewardtype = args["rewardtype"]
-    runFolder = args["runFolder"]
     statetype = args['statetype']
     actiontype = args['actiontype']
-    casestr = '_'+args['case']+args['rewardtype']+args['statetype']+args['actiontype']+str(args['NLES'])+'_'
+    nagents = args['nagents']
+    IF_REWARD_CUM = args['IF_REWARD_CUM']
+    Thorizon = args['Thorizon']
+    Tspinup = args['Tspinup']
+    NumRLSteps = args['NumRLSteps']
+    
+    runFolder = args["runFolder"]
+
+    casestr = '_C'+case+'_N'+str(N)+'_R_'+rewardtype+'_State_'+statetype+'_Action_'+actiontype+'_nAgents_'+str(nagents)
+    casestr = casestr + '_CREWARD'+str( IF_REWARD_CUM )
+
+    print(casestr)
 
     IF_RL = True #False
     # simulate up to T=20
     tInit = 0
-    tEnd = tInit + int(50000/5e4)*dt# 30e-3  #0.025*(2500*4+1000
+    tEnd = tInit + int(Tspinup)*dt# 30e-3  #0.025*(2500*4+1000
     nInitialSteps = int(tEnd/dt)
-    print('Initlize sim.')
-    sim  = turb(RL=IF_RL,
-                NX=N, NY=N,
-                case=case,
-                rewardtype=rewardtype,
-                statetype=statetype,
-                actiontype=actiontype,
-                nsteps=nInitialSteps)
-    print('================================')
-    print('Simulate, nsteps=', nInitialSteps)
-    sim.simulate( nsteps=nInitialSteps )
+    
+    #print('------------------')
+    cmd="(awk \'$3==\"kB\"{$2=$2/1024^2;$3=\"GB\";} 1\' /proc/meminfo | head -n 3 | grep Mem)"#| column -t 
+    SYSMEM = os.system(cmd);
+    SYSDATE = os.system('date')
+    #print('------------------')
+    #sim.myplot(casestr)    
+    #print('PNG file saved')
 
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt 
-    plt.rcParams['image.cmap'] = 'bwr_r'
-    #print('------------------')
-    #print(sim.w1_hat.shape)
-    #print(sim.psiPrevious_hat.shape)
-    #print(sim.psi_hat.shape)
-    #print('------------------')
-    #sim.myplot()    
-    #print('file saved')
-    #print(sim.state())
-    #print(sim.state().tolist())
-    #print('xxxx       \n')
-    #print(s)
     ## get initial state
-    s["State"] = sim.state().tolist()
+    s["State"] = sim.state()#.tolist()
     # print("state:", sim.state())
 
     ## run controlled simulation
-    nContolledSteps = int(1e7) #int(3e6/3e3)
-    print('run controlled simulation with nControlledSteps=', nContolledSteps)
+    nSteps = int(Thorizon) #int((tEnd-tInit)/dt)
+    nControlledSteps = int(NumRLSteps)
+    nIntermediateSteps = int(nSteps / nControlledSteps)
+    nSteps = int(1e7)
+    print(f'run controlled simulation with nSteps {nSteps} and nControlledSteps {nControlledSteps}, updating state every {nIntermediateSteps}')
+        
     mystr = "smagRL"#'smag0d17'
-    step = 0
-    while step < nContolledSteps:
-        if step % int(50e3) == 0 :
-            sim.myplot('_controlled_'+mystr+'_'+str(step), runFolder)
-            savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
-            dict([('psi_hat', sim.psi_hat),('w_hat', sim.w1_hat)]))
 
+    step = 0
+    while step < nSteps:
+        
         # Getting new action
         s.update()
 
         # apply action and advance environment
-        sim.step( s["Action"] )
-        #print("action:", s["Action"])
+        for i in range(nIntermediateSteps):
+            if step % int(5e3) == 1 and step>2:
+                print('Save at time step=', step)
+                sim.myplot('_ctrled_'+mystr+'_'+str(step), runFolder)
+                '''
+                try:
+                    sim.myplotforcing('_ctrled_'+mystr+'_'+str(step), runFolder)
+                except:
+                    print("not plotted")
+                '''
+                savemat(runFolder+'N'+str(sim.NX)+'_t='+str(step)+'_'+mystr+'.mat',
+                     dict([
+                           ('psi_hat', sim.psiCurrent_hat),
+                           ('w_hat', sim.w1_hat),
+                           ('convec1_hat', sim.convec1_hat),
+                           ('veRL', sim.veRL)
+                        ])
+                     )
+
+            sim.step( s["Action"] )
+            step += 1
 
         # get reward
-        s["Reward"] = sim.reward()
-        #print("Reward", s["Reward"])
+        #s["Reward"] = sim.reward()
 
         # get new state
-        s["State"] = sim.state().tolist()
+        s["State"] = sim.state()#.tolist()
         # print("state:", sim.state())
         
-        # print()
-        #print(sim.veRL)    
-        step += 1
-        #print( "Reward sum", np.sum(np.array(s["Reward"])) )
 
-    np.savetxt(runFolder+'controlled_CL3_'+mystr+'.out', np.array(sim.velist).T, delimiter='\t')
-    #print(sim.velist)
-    stop_post_end
+    #sim.myplot(casestr+'_RL')
+    #sim.myplotforcing(casestr+'_RL_f')
     # TODO?: Termination in case of divergence
     s["Termination"] = "Truncated"

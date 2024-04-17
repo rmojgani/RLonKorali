@@ -1,14 +1,20 @@
 from scipy import stats
-from sklearn.neighbors import KernelDensity
+#from sklearn.neighbors import KernelDensity
+try:
+    from sklearn.neighbors import KernelDensity
+except:
+    import os
+    os.system("pip3 install scikit-learn")
+    from sklearn.neighbors import KernelDensity
 import numpy as np
 
-def myKDE(uM, BANDWIDTH=1, Nx=100):
+def myKDE(uM, BANDWIDTH=1, Nx=100, padding=0):
 
     print('Start: Calculating PDF - KDE ... > ')
 
     Vecvalues=uM.reshape(-1,1)
     print('Vecvalues shape: ', Vecvalues.shape)
-    Vecpoints=np.linspace(Vecvalues.min(),Vecvalues.max(),Nx).reshape(-1,1)
+    Vecpoints=np.linspace(Vecvalues.min()-padding,Vecvalues.max()+padding,Nx).reshape(-1,1)
     print('Vecpoints shape: ', Vecpoints.shape)
     kde = KernelDensity(kernel='gaussian', bandwidth=BANDWIDTH).fit(Vecvalues)
     logkde = kde.score_samples(Vecpoints)
@@ -27,3 +33,11 @@ def mymodelsave(model,filename):
 
     return 1
 
+#from sklearn.model_selection import GridSearchCV
+#from sklearn.model_selection import LeaveOneOut
+
+def mybandwidth_scott(x):
+    # https://docs.scipy.org/doc//scipy-1.4.1/reference/generated/scipy.stats.gaussian_kde.html
+    d = 1
+    n = len(x)
+    return n**(-1./(d+4))

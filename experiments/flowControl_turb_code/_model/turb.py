@@ -3,20 +3,23 @@ from scipy.fftpack import fft, ifft
 import numpy as np
 import time as time
 from scipy.io import loadmat,savemat
+import scipy as sp
+from scipy.interpolate import RectBivariateSpline
+from split2d import split2d
+from split2d import pickcenter
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'bwr'
+from scipy.stats import multivariate_normal
 
 np.seterr(over='raise', invalid='raise')
 
-# ---------------------- Forced turb
-import math
-# ---------------------- QG
+from py2d.eddy_viscosity_models import Tau_eddy_viscosity 
+from py2d.convert import Tau2PiOmega_2DFHIT
 
-#ts = int(SPIN_UP*2) # Total timesteps
-#tot_time = dt*ts    # Length of run
+# ---------------------- Forced turb
 #lim = int(SPIN_UP ) # Start saving
 #st = int( 1. / dt ) # How often to save data
 NNSAVE = 10 
@@ -37,21 +40,43 @@ class turb:
     def __init__(self, 
                 Lx=2.0*np.pi, Ly=2.0*np.pi, 
                 NX=128,       NY=128, 
-                dt=5e-4, nu=1e-4, rho=1.0, alpha=0.1, 
-				nsteps=None, tend=1.5000, iout=1, u0=None, v0=None, 
-                RL=False, 
-                nActions=1, sigma=0.4,
-                case='1', rewardtype='k1', statetype='enstrophy',
-                actiontype='CL'):
+                dt=5e-4, 
+                Re=20e3, rho=1.0, alpha=0.1, beta=0.0, 
+                nsteps= None, 
+                tend= 1.5000, 
+                RL= False, 
+                nActions= 1, 
+                case='1', 
+                rewardtype='k1', 
+                statetype='enstrophy',
+                actiontype='CL',
+                nagents=2,
+                spec_type = 'both'):
         #
         print('__init__')
         print('rewardtype', rewardtype[0:2])
-        print('actionsize=', nActions)
+        print('number of Actions=', nActions)
+        print('number of Agents=', nagents)
+
         self.tic = time.time()
-        self.rewardtype= rewardtype
+        if rewardtype[0]=='z':
+            self.rewardtype ='enstrophy'
+        elif rewardtype[0]=='k':
+            self.rewardtype ='energy'
+        if rewardtype[1]=='1':
+            self.rewardfunc = '1'
+        elif rewardtype[1]=='e':
+            self.rewardfunc = 'e'
+        elif rewardtype[1]=='c':
+            self.rewardfunc = 'c'
+            
+        self.spec_type = spec_type # 'x', 'y', 'xy', 'circle', 'both'
+        
         self.statetype= statetype
         self.actiontype= actiontype
-
+        self.nagents= nagents
+        self.nActions = nActions
+        
         # Choose reward type function
         #if rewardtype[0] =='k':
         #    order = int(rewardtype[1])
@@ -75,45 +100,32 @@ class turb:
         print('> tend=',tend,', nsteps=', nsteps, 'NxN',str(NX),'x',str(NY))
 
         self.case=case
-        #
+        # -------------------------
         # save to self
+        # -------------------------
+        # Domain size
         self.Lx     = Lx
         self.Ly     = Ly
         self.NX     = NX
         self.NY     = NY
-    	# ----------
+        # Case parameters
+        self.nu     = 1/Re
+        self.alpha  = alpha
+        self.beta   = beta
+        # Time-stepping parameters
         self.dt     = dt
-        self.nu     = 1/(20e3)
-        self.alpha  = 0.1
         self.nsteps = nsteps
-        self.iout   = iout
-        self.nout   = int(nsteps/iout)
+        # RL Controls
         self.RL     = RL
         # ----------
-        
-        # 
         self.stepsave = 15000
         print('Init, ---->nsteps=', nsteps)
         # Operators and grid generator
         self.operatorgen()
-	#
-        # Grid gen
-        self.v=0
-
         # set initial condition
-#        if (u0 is None) or (v0 is None):
-#			# turb:
-#			# Initial condition
         self.IC()
 
-
-        # get targets for control:
-        if self.RL:
-#            self.nActions = nActions
-            self.sigma = sigma
-            self.x = np.arange(self.NX)*self.Lx/(self.NX-1)
         self.case = case
-        self.nActions = nActions
 
 	    # SAVE SIZE
         slnU = np.zeros([NX,NNSAVE])
@@ -121,46 +133,121 @@ class turb:
 	    
         Energy = np.zeros([NNSAVE])
         Enstrophy = np.zeros([NNSAVE])
-        onePython = np.zeros([NNSAVE])
 	
         # precompute Gaussians for control:
         if self.RL:
             self.nActions = nActions
-            self.sigma = sigma
-            self.x = np.arange(self.N)*self.L/(self.N-1)
+            # Action grid
+            # self.x = np.arange(self.N)*self.L/(self.N-1)
             self.veRL = 0
             #print('RL to run:', nActions)
    
     def mykrange(self, order):
         NX = int(self.NX)
-        kmax = int(NX/2)#+1
-        krange = 1+np.array(range(0, kmax))
+        kmax = self.kmax
+        krange = np.array(range(0, kmax))
         return krange**order
     
-    def setup_targets(self):
+    def setup_reference(self):
         NX = self.NX
-        kmax = int(NX/2)#+1
-        self.targets = np.zeros((2,kmax))
-        self.targets[0,:] = self.ref_tke[0:kmax,1] #np.loadtxt("_model/tke.dat")[0:kmax,1]
-        self.targets[1,:] = self.ref_ens[0:kmax,1] #np.loadtxt("_model/ens.dat")[0:kmax,1]
-    
+        kmax = self.kmax       
+        rewardtype = self.rewardtype
+        spec_type = self.spec_type
+        
+        if rewardtype == 'enstrophy':
+            #print('Enstrophy as reference')
+            if spec_type != 'both':
+                spec_refx = self.refx_ens[0:kmax,1]
+                spec_refy = self.refy_ens[0:kmax,1]
+            else:
+                spec_ref = self.ref_ens[0:kmax,1]
+
+        elif rewardtype == 'energy':
+            #print('Energy as reference')
+            if spec_type != 'both':
+                spec_refx = self.refx_tke[0:kmax,1]
+                spec_refy = self.refy_tke[0:kmax,1]
+            else:
+                spec_ref = self.ref_tke[0:kmax,1]
+
+        if spec_type != 'both':
+            spec_ref = np.vstack((spec_refx,spec_refy))
+            self.spec_refx = spec_refx
+            self.spec_refy = spec_refy
+
+        self.spec_ref = spec_ref
+
+    def setup_target(self):
+        NX = self.NX
+        kmax = self.kmax
+        rewardtype = self.rewardtype
+        spec_type = self.spec_type
+        
+        if spec_type == 'both':
+            if rewardtype == 'enstrophy':
+                #print('Enstrophy as reference')
+                spec_nowx = self.enstrophy_spectrum(dir_x=2, dir_y=0)
+                spec_nowy = self.enstrophy_spectrum(dir_x=0, dir_y=2)
+            elif rewardtype == 'energy':
+                #print('Energy as reference')
+                spec_nowx = self.energy_spectrum(dir_x=2, dir_y=0)
+                spec_nowy = self.energy_spectrum(dir_x=0, dir_y=2)
+
+            spec_now = np.vstack((spec_nowx,spec_nowy))   
+            self.spec_nowx=spec_nowx
+            self.spec_nowy=spec_nowy
+            
+        elif spec_type == 'xy':
+            if rewardtype == 'enstrophy':
+                #print('Enstrophy as reference')
+                spec_now = self.enstrophy_spectrum(dir_x=1, dir_y=1)
+            elif rewardtype == 'energy':
+                #print('Energy as reference')
+                spec_now = self.energy_spectrum(dir_x=1, dir_y=1)
+
+        self.spec_now=spec_now
+        return spec_now
+
+    def setup_reward(self):
+        rewardtype = self.rewardtype
+        krange = self.krange
+        rewardfunc = self.rewardfunc
+
+        reference  = self.spec_ref
+        target = self.setup_target()
+
+        if rewardfunc == '1' or rewardfunc == '3':
+            myreward = 1/( np.linalg.norm( krange*(target-reference)  )**2 )
+            #print(myreward)
+        elif rewardfunc == 'c':
+            myreward = - np.linalg.norm( (target-reference)  )**2
+        elif rewardfunc == 'e':
+            myreward = - np.linalg.norm( np.exp( (np.log(target)-np.log(reference))**2) )
+
+        return myreward
+
+    def mySGS(self, action):
+        actiontype = self.actiontype
+        if actiontype=='CL':
+            nu = self.leith_cs(action)
+        elif actiontype=='CS':
+            nu = self.smag_cs(action)
+        return nu
+
     def step( self, action=None ):
         '''
         2D Turbulence: One time step simulation of 2D Turbulence
         '''
+        NX=self.NX
+
         forcing  = np.zeros(self.nActions)
         if (action is not None):
-            assert len(action) == self.nActions, print("Wrong number of actions. provided {}/{}".format(len(action), self.nActions))
-            for i, a in enumerate(action):
-                forcing += a #*self.gaussians[i,:]
-        # Action
-        if (action is not None):
-            #print(forcing.shape)
-            self.veRL = forcing[0]
+            #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
+
+            forcing = self.upsample(action)
+            self.veRL = forcing#forcing[0]# For test
             #print(self.veRL)
             #stop_veRL
-        else:
-            self.veRL=0.17**2
 
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
@@ -174,54 +261,19 @@ class turb:
         self.t       += self.dt
    
 
-    def simulate(self, nsteps=None, iout=None, restart=False, correction=[]):
-        nsteps=self.nsteps#int(1e4)
-        #
-        # If not provided explicitly, get internal values
-        if (nsteps is None):
-            nsteps = self.nsteps
-        else:
-            nsteps = int(nsteps)
-            self.nsteps = nsteps
-        if (iout is None):
-            iout = self.iout
-            nout = self.nout
-        else:
-            self.iout = iout
-        if restart:
-            # update nout in case nsteps or iout were changed
-            nout      = int(nsteps/iout)
-            self.nout = nout
-            # reset simulation arrays with possibly updated size
-            self.setup_timeseries(nout=self.nout)
-        #
+    def simulate(self, nsteps=None):
+        nsteps= self.nsteps
         # advance in time for nsteps steps
-        if (correction==[]):
-            for n in range(1,self.nsteps+1):
-                self.step()
-        else:
-            # lots of code duplication here, but should improve speed instead of having the 'if correction' at every time step
-            for n in range(1,self.nsteps+1):
-                try:
-                     self.step()
-                     self.v += correction
-                except FloatingPointError:
-                    #
-                    # something exploded
-                    # cut time series to last saved solution and return
-                    self.nout = self.ioutnum
-                    self.vv.resize((self.nout+1,self.N)) # nout+1 because the IC is in [0]
-                    self.tt.resize(self.nout+1)      # nout+1 because the IC is in [0]
-                    return -1
-            if ( (self.iout>0) and (n%self.iout==0) ):
-                self.ioutnum += 1
-                self.vv[self.ioutnum,:] = self.v
-                self.tt[self.ioutnum]   = self.t
+        for n in range(1, nsteps+1):
+            self.step()
 
     def state(self):
         NX= int(self.NX)
-        kmax= int(NX/2)#+1
-        statetype=self.statetype
+        kmax= self.kmax
+        statetype= self.statetype
+        nagents= self.nagents
+        # --------------------------------------
+        STATE_GLOBAL=True
         # --------------------------------------
         if statetype=='psiomegadiag':
             s1= np.diag(np.real(np.fft.ifft2(self.w1_hat))).reshape(-1,)
@@ -235,66 +287,190 @@ class turb:
         elif statetype=='energy':
             energy= self.energy_spectrum()
             mystate= np.log(energy[0:kmax])
-        return mystate
-   
-    def rewardk(self, krange, rewardtype):
-        # use some self.variable to calculate the reward
-        NX = int(self.NX)
-        kmax = int(NX/2)#+1
-        #print('ezzzzzzzzzzz',rewardtype) 
-        if rewardtype == 'z':
-            #print('enssssssssssssssssssss')
-            spec_now = self.enstrophy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
-        elif rewardtype == 'e':
-            #print('energyyyyyyyyyyyyyyyy')
-            spec_now = self.energy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
+        # --------------------------
+        elif statetype=='psiomega':
+           '''
+           self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
 
-        myreward = 1/( np.linalg.norm( krange*(spec_now - spec_ref)  )**2 )
-        return myreward
+           '''
+           STATE_GLOBAL=False
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+        # --------------------------
+        elif statetype=='omega':
+           '''
+           self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
 
-    def rewardratio(self,rewardtype):
-        # use some self.variable to calculate the reward
-        NX = int(self.NX)
-        kmax = int(NX/2)#+1
+           '''
+           STATE_GLOBAL=False
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+        # --------------------------
+        elif statetype=='psiomegalocal':
+           STATE_GLOBAL=False
+           s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+        # --------------------------
+        elif statetype=='invariantlocal':
+           STATE_GLOBAL=False
+           #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+        # --------------------------
+        elif statetype=='invariantlocalandglobalgradgrad': #eps':
+           STATE_GLOBAL=False
+           #s1 = np.real(np.fft.ifft2(self.sol[0])) #w1
+           s2 = np.real(np.fft.ifft2(self.sol[1])) #psi
+           enstrophy= self.enstrophy_spectrum()
+           mystateglobal = np.log(enstrophy[0:kmax])
 
-        if rewardtype == 'z':
-            #print('enssssssssssssssssssss')
-            spec_now = self.enstrophy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
-        elif rewardtype == 'e':
-            #print('energyyyyyyyyyyyyyyyy')
-            spec_now = self.energy_spectrum()[0:kmax]
-            spec_ref = self.ref_ens[0:kmax,1]
+        if STATE_GLOBAL:
+            mystatelist = [mystate.tolist()]
+            for _ in range(nagents-1):
+                mystatelist.append(mystate.tolist())
 
-        myreward = -np.linalg.norm( (spec_now - spec_ref)  / np.linalg.norm( spec_ref)  )
-        return myreward
-    
-    def rewardreserve(self):
-        rewardtype = self.rewardtype
-        # Choose reward type function
-        #if rewardtype[0] =='k':
-        order = int(rewardtype[1])
-        reward = self.rewardk(self.mykrange(order), 'z')# rewardtype[0] )
-        #elif rewardtype[0:2] == 'ratio':
-        #    reward = self.rewardratio()
-        if reward==np.infty or reward==-np.infty:
-            reward = np.sign(reward)*1e24
-        return reward
+        elif not STATE_GLOBAL:
+            if statetype=='psiomega':
+                mystatelist1 =  split2d(s1, self.nActiongrid)
+                mystatelist2 =  split2d(s2, self.nActiongrid)
+                mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
+            elif statetype=='omega':
+                mystatelist =  split2d(s1, self.nActiongrid)
+            elif statetype=='psiomegalocal':
+                NX = self.NX
+                NY = self.NY
+                mystatelist1 =  pickcenter(s1, NX, NY, self.nActiongrid)
+                mystatelist2 =  pickcenter(s2, NY, NY, self.nActiongrid)
+                mystatelist = [x+y for x,y in zip(mystatelist1, mystatelist2)]
+            elif statetype=='invariantlocal':
+                NX = self.NX
+                NY = self.NY
+                Kx = self.Kx
+                Ky = self.Ky
+
+                psi_hat = self.sol[1]
+
+                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
+                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+
+                dudx_hat = self.D_dir(u1_hat,Kx)
+                dudy_hat = self.D_dir(u1_hat,Ky)
+
+                dvdx_hat = self.D_dir(v1_hat,Kx)
+                dvdy_hat = self.D_dir(v1_hat,Ky)
+                
+                dudxx_hat = self.D_dir(dudx_hat,Kx)
+                dudxy_hat = self.D_dir(dudx_hat,Ky)
+
+                dvdyx_hat = self.D_dir(dvdy_hat,Kx)
+                dvdyy_hat = self.D_dir(dvdy_hat,Ky)
+
+
+                dudx = np.fft.ifft2(dudx_hat).real
+                dudy = np.fft.ifft2(dudy_hat).real
+                dvdx = np.fft.ifft2(dvdx_hat).real
+                dvdy = np.fft.ifft2(dvdy_hat).real
+
+                dudxx = np.fft.ifft2(dudxx_hat).real
+                dudxy = np.fft.ifft2(dudxy_hat).real
+                dvdyx = np.fft.ifft2(dvdyx_hat).real
+                dvdyy = np.fft.ifft2(dvdyy_hat).real
+
+
+                list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
+                list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
+                list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
+                list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
+                
+                list5 =  pickcenter(dudxx, NX, NY, self.nActiongrid)
+                list6 =  pickcenter(dudxy, NX, NY, self.nActiongrid)
+                list7 =  pickcenter(dvdyx, NX, NY, self.nActiongrid)
+                list8 =  pickcenter(dvdyy, NX, NY, self.nActiongrid)
+
+                mystatelist = []
+                for dudx,dudy,dvdx,dvdy,dudxx,dudxy,dvdyx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
+                    gradV = np.array([[dudx[0], dudy[0]],
+                                      [dvdx[0], dvdy[0]]])
+                    hessV = np.array([[dudxx[0], dudxy[0]],
+                                      [dvdyx[0], dvdyy[0]]])
+                    allinvariants = self.invariant(gradV)+self.invariant(hessV)
+                    mystatelist.append(allinvariants)
+                    
+            elif statetype=='invariantlocalandglobalgradgrad':#eps':
+                NX = self.NX
+                NY = self.NY
+                Kx = self.Kx
+                Ky = self.Ky
+
+                psi_hat = self.sol[1]
+
+                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
+                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+                
+                dudx_hat = self.D_dir(u1_hat,Kx)
+                dudy_hat = self.D_dir(u1_hat,Ky)
+
+                dvdx_hat = self.D_dir(v1_hat,Kx)
+                dvdy_hat = self.D_dir(v1_hat,Ky)
+                
+                dudxx_hat = self.D_dir(dudx_hat,Kx)
+                dudyy_hat = self.D_dir(dudy_hat,Ky)
+
+                dvdxx_hat = self.D_dir(dvdx_hat,Kx)
+                dvdyy_hat = self.D_dir(dvdy_hat,Ky)
+
+
+                dudx = np.fft.ifft2(dudx_hat).real
+                dudy = np.fft.ifft2(dudy_hat).real
+                dvdx = np.fft.ifft2(dvdx_hat).real
+                dvdy = np.fft.ifft2(dvdy_hat).real
+
+                dudxx = np.fft.ifft2(dudxx_hat).real
+                dudyy = np.fft.ifft2(dudyy_hat).real
+                dvdxx = np.fft.ifft2(dvdxx_hat).real
+                dvdyy = np.fft.ifft2(dvdyy_hat).real
+
+                #mystateglobaleps = np.sum(np.sum( np.power(dudx,2)+np.power(dvdy,2)))
+
+                list1 =  pickcenter(dudx, NX, NY, self.nActiongrid)
+                list2 =  pickcenter(dudy, NX, NY, self.nActiongrid)
+                list3 =  pickcenter(dvdx, NX, NY, self.nActiongrid)
+                list4 =  pickcenter(dvdy, NX, NY, self.nActiongrid)
+                
+                list5 =  pickcenter(dudxx, NX, NY, self.nActiongrid)
+                list6 =  pickcenter(dudyy, NX, NY, self.nActiongrid)
+                list7 =  pickcenter(dvdxx, NX, NY, self.nActiongrid)
+                list8 =  pickcenter(dvdyy, NX, NY, self.nActiongrid)
+
+                mystatelist = []
+                for dudx,dudy,dvdx,dvdy, dudxx,dudyy,dvdxx,dvdyy in zip(list1, list2, list3, list4, list5, list6, list7, list8):
+                    gradV = np.array([[dudx[0], dudy[0]],
+                                      [dvdx[0], dvdy[0]]])
+                    gradgradV = np.array([[dudxx[0], dvdxx[0]],
+                                         [dudyy[0], dvdyy[0]]])
+                    
+                    allinvariants = self.invariant(gradV)+self.invariant(gradgradV)+mystateglobal.tolist()#+mystateglobaleps.tolist()
+                    mystatelist.append(allinvariants)
+                    
+        if mystatelist[0][0]>1000: raise Exception("State diverged!")
+        return mystatelist
 
     def reward(self):
-        # use some self.variable to calculate the reward
-        NX = int(self.NX)
-        kmax = int(NX/2)#+1
-        
-        krange = np.array(range(0, kmax))
-        enstrophy = self.enstrophy_spectrum()
-        enstrophy_ref = self.ref_ens[0:kmax,1]
-        myreward = 1/( np.linalg.norm( krange*(enstrophy[0:kmax] - enstrophy_ref)  )**2 )
-        return myreward
+        nagents=self.nagents
+        # --------------------------------------
+        try:
+            myreward=self.setup_reward()
+        except:
+            myreward=-10000
+        # --------------------------
+        myrewardlist = [myreward.tolist()]
+        for _ in range(nagents-1):
+            myrewardlist.append(myreward.tolist())
+        return myrewardlist 
 
-    def convection_conserved(self, psiCurrent_hat, w1_hat):#, Kx, Ky):
+    def convection_conserved(self, psiCurrent_hat, w1_hat):
+        '''
+        second-order Adams–Bashforth for the nonlinear term
+        J()
+        '''
         Kx = self.Kx
         Ky = self.Ky
         
@@ -321,29 +497,54 @@ class turb:
     def stepturb(self, action):
         #psiCurrent_hat = self.psiCurrent_hat
         #w1_hat = self.w1_hat
-       	Ksq = self.Ksq
+        Ksq = self.Ksq
+        Kx = self.Kx
+        Ky = self.Ky
         invKsq = self.invKsq
         dt = self.dt
         nu = self.nu
         alpha = self.alpha
-        Fk = self.Fk
+        beta = self.beta
+        Fk_hat = self.Fk_hat
         # ---------------
         psiCurrent_hat = self.psiCurrent_hat
         w1_hat = self.w1_hat
         convec0_hat = self.convec1_hat
         # 2 Adam bash forth Crank Nicolson
         convec1_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
-       	diffu_hat = -Ksq*w1_hat
+        diffu_hat = -Ksq*w1_hat
        
         # Calculate SGS diffusion 
-#        ve = self.leith_cs(w1_hat, action)
-        ve = self.smag_cs(w1_hat, action)
-#        print(ve1, ve2)
+        ve = self.mySGS(action)
+              
 #        ve = 0
-        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk
-       	RHS[0,0] = 0
-    
-       	psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
+#        RHS = w1_hat + dt*(-1.5*convec1_hat+0.5*convec0_hat) + dt*0.5*(nu+ve)*diffu_hat+dt*Fk-dt*PiOmega_hat
+
+
+        # ----------------------------#|
+        # Calculate the PI term for local: ∇×∇.(-2 ν_e S_{ij} )
+        Tau11, Tau12, Tau22 = Tau_eddy_viscosity(ve, psiCurrent_hat, Kx, Ky)
+        
+        Tau11_hat = np.fft.fft2(Tau11)
+        Tau12_hat = np.fft.fft2(Tau12)
+        Tau22_hat = np.fft.fft2(Tau22)
+        
+        PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky, spectral=True)
+        # pass to --------------------#|
+        self.PiOmega_hat = PiOmega_hat#| 
+        # ----------------------------#|
+        # AB2 for Jacobian term
+        convec_hat = 1.5*convec1_hat - 0.5*convec0_hat
+        # RHS: + Jacobian term + Forcing + SGS model
+        RHS = w1_hat - dt*convec_hat + dt*0.5*(nu+ve)*diffu_hat - dt*(Fk_hat+PiOmega_hat) #+ dt*beta*V1_hat : Last term moved below
+
+        # β case: Coriolis (Beta case)
+        u1_hat = -(1j*Ky)*psiCurrent_hat
+        # RHS + Coriolis
+        RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
+        #RHS[0,0] = 0
+
+        psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
     
         w0_hat = w1_hat
         w1_hat = psiTemp
@@ -356,18 +557,18 @@ class turb:
         # Update this step
         self.update(w0_hat, w1_hat, convec0_hat, convec1_hat, psiPrevious_hat, psiCurrent_hat, ve )
 
-        
-    
     def update(self, w0_hat, w1_hat, convec0_hat, convec1_hat, psiPrevious_hat, psiCurrent_hat, ve):
         # write to self
         self.w0_hat = w0_hat
         self.w1_hat = w1_hat
         self.convec0_hat = convec0_hat
-        self.convec1_hat = convec1_hat
+        self.convec1_hat = convec1_hat # it is never used, consider deleting 
         self.psiPrevious_hat = psiPrevious_hat
         self.psiCurrent_hat = psiCurrent_hat
         self.ve = ve
-        self.velist.append(self.veRL)
+        #self.velist.append(self.veRL)
+        self.myrewardlist=[]
+        self.mystatelist=[]
 
     def IC(self, u0=None, v0=None, SEED=42):
         X = self.X
@@ -380,55 +581,82 @@ class turb:
         # ------------------
         np.random.seed(SEED)
         # ------------------
-        kp = 10.0
-        A  = 4*np.power(kp,(-5))/(3*np.pi)  
-        absK = np.sqrt(Kx*Kx+Ky*Ky)
-        #
-        Ek = A*np.power(absK,4)*np.exp(-np.power(absK/kp,2))
-        coef1 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
-        coef2 = np.random.uniform(0,1,[NX//2+1,NX//2+1])*np.pi*2
-        #
-        perturb = np.zeros([NX,NX])
-        perturb[0:NX//2+1, 0:NX//2+1] = coef1[0:NX//2+1, 0:NX//2+1]+coef2[0:NX//2+1, 0:NX//2+1]
-        perturb[NX//2+1:, 0:NX//2+1] = coef2[NX//2-1:0:-1, 0:NX//2+1] - coef1[NX//2-1:0:-1, 0:NX//2+1]
-        perturb[0:NX//2+1, NX//2+1:] = coef1[0:NX//2+1, NX//2-1:0:-1] - coef2[0:NX//2+1, NX//2-1:0:-1]
-        perturb[NX//2+1:, NX//2+1:] = -(coef1[NX//2-1:0:-1, NX//2-1:0:-1] + coef2[NX//2-1:0:-1, NX//2-1:0:-1])
-        perturb = np.exp(1j*perturb)
-	    # omega
-        w1_hat = np.sqrt(absK/np.pi*Ek)*perturb*np.power(NX,2)
-        # psi
-        psi_hat         = -w1_hat*invKsq
-        psiPrevious_hat = psi_hat.astype(np.complex128)
-        psiCurrent_hat  = psi_hat.astype(np.complex128)
         # Forcing
         if self.case=='1':
-            n = 4
+            # kappaf = 4
+            fkx, fky = 4, 4
+            beta = 0.0
+        elif self.case=='2':
+            # kappaf = 4
+            fkx, fky = 4, 4
+            beta = 20.0
         elif self.case=='4':
-            n = 25
+            # kappaf = 
+            fkx, fky = 25, 25
+            beta = 0.0
 
-        Xi = 1
-        Fk = -n*Xi*np.cos(n*Y)-n*Xi*np.cos(n*X)
-        Fk = np.fft.fft2(Fk)
+        # Deterministic forcing in Physical space
+        Fk = fky * np.cos(fky * Y) + fkx * np.cos(fkx * X)
+
+        # Deterministic forcing in Fourier space
+        Fk_hat = np.fft.fft2(Fk)
         #
         time = 0.0
         slnW = []
         
         if self.case =='1':
             folder_path = '_init/Re20kf4/iniWor_Re20kf4_'
-        elif self.case == '4':
+        elif self.case =='2':
+            folder_path = '_init/Re20kf4beta20/iniWor_Re20kf4beta20_'
+        elif self.case =='4':
             folder_path = '_init/Re20kf25/iniWor_Re20kf25_'
 
-        data_Poi = loadmat(folder_path+str(NX)+'_1.mat')
+        filenum_str=str(1)
+        data_Poi = loadmat(folder_path+str(NX)+'_'+filenum_str+'.mat')
         w1 = data_Poi['w1']
         
+
+        spec_type = self.spec_type
         if self.case =='4':
+            spec_type =='xy'
             ref_tke = np.loadtxt("_init/Re20kf25/energy_spectrum_Re20kf25_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf25/enstrophy_spectrum_Re20kf25_DNS1024_xy.dat")
+        if self.case == '2':
+        #    spec_type = self.spec_type
+            print('Loading spectra, spectra type: ',spec_type)
+            if spec_type == 'both':
+                refx_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_x.dat")
+                refx_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_x.dat")
+                refy_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_y.dat")
+                refy_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_y.dat")
+                self.refx_tke=refx_tke
+                self.refx_ens=refx_ens
+                self.refy_tke=refy_tke
+                self.refy_ens=refy_ens
+            #else:
+            print('..., averaged in x-y directions')
+            ref_tke = np.loadtxt("_init/Re20kf4beta20/energy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
+            ref_ens = np.loadtxt("_init/Re20kf4beta20/enstrophy_spectrum_Re20kf4beta20_DNS1024_xy"+".dat")
 
         if self.case == '1':
+            spec_type =='xy'
             ref_tke = np.loadtxt("_init/Re20kf4/energy_spectrum_DNS1024_xy.dat")
             ref_ens = np.loadtxt("_init/Re20kf4/enstrophy_spectrum_DNS1024_xy.dat")
- 
+
+        '''
+        if spec_type =='x':
+            DIR_X, DIR_Y = 2, 0
+        elif spec_type =='y':
+            DIR_X, DIR_Y = 0, 2
+        elif spec_type =='xy':
+            DIR_X, DIR_Y = 1, 1
+        else:
+            print(spec_type, ' not implemented')
+
+        self.DIR_X, self.DIR_Y = DIR_X, DIR_Y
+        '''
+        self.spec_type = spec_type
+        
         w1_hat = np.fft.fft2(w1)
         psiCurrent_hat = -invKsq*w1_hat
         psiPrevious_hat = psiCurrent_hat
@@ -440,28 +668,57 @@ class turb:
         self.psiPrevious_hat = psiPrevious_hat
         self.t = 0.0
         self.stepnum = 0
-        self.ioutnum = 0 # [0] is the initial condition
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
         # 
         convec0_hat = self.convection_conserved(psiCurrent_hat, w1_hat)
         self.convec0_hat = convec0_hat
         self.convec1_hat = convec0_hat
         # 
-        self.Fk = Fk
+        self.Fk_hat = Fk_hat
         self.Fn = n # Forcing k
+        self.beta = beta # Coriolis β
+        # Aux reward 
+        kmax = self.kmax
+        krange = np.array(range(0, kmax))
+        self.krange = krange
         # SGS Model
         self.ve = 0
-        self.velist = []
+        #self.velist = []
         # Reference files 
         self.ref_tke = ref_tke
         self.ref_ens = ref_ens
-        #print('init: omega, psi')
-        #print(w1_hat.shape)
-        #print(psi_hat.shape)
-
         # temporary
         self.N = NX
         self.L = 2*np.pi
+        # 
+        self.setup_reference()
+        self.setup_MAagents()
+
+    def setup_MAagents(self):
+        # Copied from:   f36df60 on main  
+        # temporary
+        nActiongrid = int((self.nActions*self.nagents)**0.5)
+        self.nActiongrid = nActiongrid
+        # Initlize action
+        # endpoints are repeated left column and bottow row, using np.pad(A, 1, mode='wrap')[1:,1:]
+        X = np.linspace(0,self.L,nActiongrid+1, endpoint=True)
+        Y = np.linspace(0,self.L,nActiongrid+1, endpoint=True)
+        self.xaction = X
+        self.yaction = Y
+
+    def upsample(self, action, degree=2): 
+        action_flat = [item for sublist in action for item in sublist]
+        arr_action = np.array(action_flat).reshape(self.nActiongrid, self.nActiongrid)
+        # repeating left column on right, and bottom row on top
+        arr_action = np.pad(arr_action, 1, mode='wrap')[1:,1:]
+        upsample_action = RectBivariateSpline(self.xaction, self.yaction, arr_action, kx=degree, ky=degree)
+
+        # Initlize action
+        upsamplesize = self.NX # 1 for testing, will be changed to grid size eventually
+        x2 = np.linspace(0,self.L, upsamplesize, endpoint=True)
+        y2 = np.linspace(0,self.L,  upsamplesize, endpoint=True)
+        forcing = upsample_action(x2, y2)
+        return forcing
 
     def operatorgen(self):
         Lx = self.Lx
@@ -469,7 +726,9 @@ class turb:
         dx = Lx/NX
         #-----------------  
         x        = np.linspace(0, Lx-dx, num=NX)
-        kx       = (2*math.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),np.arange((-NX/2+1),0,dtype=np.float64)))   
+        kx       = (2*np.pi/Lx)*np.concatenate((np.arange(0,NX/2+1,dtype=np.float64),
+                                                np.arange((-NX/2+1),0,dtype=np.float64)
+                                                ))   
         [Y,X]    = np.meshgrid(x,x)
         [Ky,Kx]  = np.meshgrid(kx,kx)
         Ksq      = (Kx**2 + Ky**2)
@@ -478,7 +737,7 @@ class turb:
         invKsq   = 1/Ksq
         Ksq[0,0] = 0
         invKsq[0,0] = 0
-
+        kmax = int(NX/2)
 	    # .... and save to self
         self.X = X
         self.Y = Y
@@ -489,50 +748,48 @@ class turb:
         self.Ksq = Ksq
         self.Kabs = Kabs
         self.invKsq = invKsq
-    
-    def leith_cs(self, w1_hat, action=None):
+        self.kmax = kmax
+    #-----------------------------------------
+    # ============= SGS Models ===============
+    #-----------------------------------------
+    def leith_cs(self, action=None):
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
         '''
         #print('action is:', action_leith)
         if action != None:
-            if self.veRL !=0:
-                CL3 = self.veRL#action_leith[0]
-        #       print('CL3', self.veRL, action_leith)
-        #     with open("test.txt", "a") as myfile:
-        #        myfile.write(str(CL3)+"\n")
+        #    if self.veRL !=0:
+            CL3 = self.veRL#action_leith[0]
         else:
-            CL3 = 0.17**3# (EKI)
+            CL3 = 0.17**3# (Lit)
         #else:
         Kx = self.Kx
         Ky = self.Ky
-  
+        w1_hat = self.w1_hat
+
         w1x_hat = -(1j*Kx)*w1_hat
         w1y_hat = (1j*Ky)*w1_hat
         w1x = np.real(np.fft.ifft2(w1x_hat))
         w1y = np.real(np.fft.ifft2(w1y_hat))
         abs_grad_omega = np.mean(np.sqrt( w1x**2+w1y**2  ))
         # 
-        #LAPL_omega = np.real(np.fft.ifft2(diffu_hat))
-        #LAPL_omega = np.abs(LAPL_omega)**(0.5)
-        
-        delta3 = (2*math.pi/self.NX)**3
+        delta3 = (2*np.pi/self.NX)**3
         ve = CL3*delta3*abs_grad_omega
         return ve
 
-    def smag_cs(self, w1_hat, action=None):
+    def smag_cs(self, action=None):
         Kx = self.Kx
         Ky = self.Ky
         NX = self.NX
         psiCurrent_hat = self.psiCurrent_hat
+        w1_hat = self.w1_hat
 
         if action != None:
             cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
         else:
             #self.veRL = 0.17 * 2
-            cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
-            #cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
-
+            #cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+            cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
 
         S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
@@ -540,27 +797,28 @@ class turb:
 #        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
         S = (np.mean(S**2.0))**0.5;
         ve = cs*S
-#        print(cs, ve)
-#        stop
         return ve
     #-----------------------------------------
-    def enstrophy_spectrum(self):
+    def enstrophy_spectrum(self, dir_x=1, dir_y=1):
         NX = self.NX
         NY = self.NY # Square for now
         w1_hat = self.w1_hat
         #-----------------------------------
         signal = np.power(abs(w1_hat),2)/2;
-    
+
         spec_x = np.mean(np.abs(signal),axis=0)
         spec_y = np.mean(np.abs(signal),axis=1)
-        spec = (spec_x + spec_y)/2
+        spec = (dir_x*spec_x + dir_y*spec_y)/2
         spec = spec/ (NX**2)/NX
         spec = spec[0:int(NX/2)]
+
+        arr_len = int(NX/2)
+        kplot = np.array(range(arr_len))
     
         self.enstrophy_spec = spec
         return spec
     #-----------------------------------------
-    def energy_spectrum(self):
+    def energy_spectrum(self, dir_x=1, dir_y=1):
         NX = self.NX
         NY = self.NY # Square for now
         Ksq = self.Ksq
@@ -571,65 +829,15 @@ class turb:
         w_hat[0,0]=0;
         spec_x = np.mean(np.abs(w_hat),axis=0)
         spec_y = np.mean(np.abs(w_hat),axis=1)
-        spec = (spec_x + spec_y)/2
+        spec = (dir_x*spec_x + dir_y*spec_y)/2
         spec = spec /NX
         
         spec=spec[0:int(NX/2)]
         return  spec
-    #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    '''
-    def enstrophy_spectrum(self):
-        omega=np.real(np.fft.ifft2(self.w1_hat))
-        NX = self.NX
-        NY = self.NY # Square for now
-#        enstrophy_spectrum = self.myspectrum(np.power(omega,2))
-        enstrophy_spectrum = self.myspectrum2(omega)
-        self.enstrophy_spec = enstrophy_spectrum#/NX/NY
-        error_ens_spec
-        return  enstrophy_spectrum#/NX/NY
-
-    def energy_spectrum(self):
-        omega=np.real(np.fft.ifft2(self.w1_hat))
-        psi=np.real(np.fft.ifft2(self.psi_hat))
-        NX = self.NX
-        NY = self.NY # Square for now
-        Ksq = self.Ksq
-        #energy_spectrum = self.myspectrum(psi*omega)
-        #self.energy_spec = energy_spectrum/NX/NY
-        #np.power(np.abs(np.fft.fft2(a)),2)/NX/NY/Ksq
-        Ksq[0,0]=1
-        w_hat = np.power(np.abs(np.fft.fft2(omega)),2)/NX/NY/Ksq 
-        w_hat[0,0]=0;
-        spec_x = np.mean(np.abs(w_hat),axis=0)
-        spec_y = np.mean(np.abs(w_hat),axis=1)
-        tke = (spec_x + spec_y)/2
-        if NX==32:
-            tke=tke/2
-        error_ens_spec
-        return  tke
-
-    def myspectrum(self, a):
-        stop_myspec
-
-        return np.mean(np.abs(np.fft.fft(a,axis=0)),axis=1)
-        
-    def myspectrum2(self, a):
-        stop_myspec2
-        NX = self.NX
-        NY = self.NY
-        a_hat = np.fft.fft2(a)/NX/NY
-        a_hat_sq = np.power(a_hat,2)
-        spec_x = np.mean(np.abs(a_hat_sq),axis=0)
-        spec_y = np.mean(np.abs(a_hat_sq),axis=1)
-        tke = (spec_x + spec_y)/2
-        if NX==32:
-            tke=tke/2
-        return tke
-    '''
-
+    #-----------------------------------------
     def myplot(self, append_str='', prepend_str=''):
         NX = int(self.NX)
-        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = int(NX/2)#+1
+        Kplot = self.Kx; kplot_str = '\kappa_{x}'; kmax = self.kmax
         #Kplot = self.Kabs; kplot_str = '\kappa_{sq}'; kmax = int(np.sqrt(2)*NX/2)+1
         #kplot_str = '\kappa_{sq}'
         stepnum = self.stepnum
@@ -637,21 +845,38 @@ class turb:
         Fn = self.Fn
         dt = self.dt
         # --------------
+        energy = self.energy_spectrum()
+        enstrophy = self.enstrophy_spectrum()
+        #
+        #spec_nowx = self.spec_nowx
+        #spec_refx = self.spec_refx
+        #spec_nowy = self.spec_nowy
+        #spec_refy = self.spec_refy
+        #
         plt.figure(figsize=(8,14))
-        levels = np.linspace(-30,30,100)
  
-        plt.subplot(3,2,1)
-        plt.contourf(np.real(np.fft.ifft2(self.sol[0])),levels, vmin=-30,vmax=30)
-        plt.colorbar()
+        omega = np.real(np.fft.ifft2(self.sol[0]))
+        VMAX, VMIN = np.max(omega), np.min(omega)
+        VMAX = max(np.abs(VMIN), np.abs(VMAX))
+        VMIN = -VMAX
+        levels = np.linspace(VMIN,VMAX,100)
+
+        ax = plt.subplot(3,2,1)
+        plt.contourf(omega, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\omega$')
+        ax.set_aspect('equal', adjustable='box')
 
-
-        levels = np.linspace(-30,3,100)
+        psi = np.real(np.fft.ifft2(self.sol[1]))
+        VMAX, VMIN = np.max(psi), np.min(psi)
+        VMAX = max(np.abs(VMIN), np.abs(VMAX))
+        VMIN = -VMAX
+        levels = np.linspace(VMIN,VMAX,100)
  
-        plt.subplot(3,2,2)
-        plt.contourf(np.real(np.fft.ifft2(self.sol[1])),levels);plt.colorbar()
+        ax = plt.subplot(3,2,2)
+        plt.contourf(psi, levels, vmin=VMIN, vmax=VMAX); plt.colorbar()
         plt.title(r'$\psi$')
-        
+        ax.set_aspect('equal', adjustable='box')
+
         ref_tke = self.ref_tke#np.loadtxt("tke.dat")
         # Energy 
         plt.subplot(3,2,3)
@@ -659,10 +884,11 @@ class turb:
         plt.loglog(Kplot[0:kmax,0], energy[0:kmax],'k')
         plt.plot([self.Fn,self.Fn],[1e-6,1e6],':k', alpha=0.5, linewidth=2)
         plt.plot(ref_tke[:,0],ref_tke[:,1],':k', alpha=0.25, linewidth=4)
+               
         plt.title(r'$\hat{E}$'+rf'$({kplot_str})$')
         plt.xlabel(rf'${kplot_str}$')
         plt.xlim([1,1e3])
-        plt.ylim([1e-6,1e0])
+        plt.ylim([1e-6,1e1])#plt.ylim([1e-6,1e0])
         
         ref_ens = self.ref_ens#np.loadtxt("ens.dat")
         # Enstrophy
@@ -678,6 +904,16 @@ class turb:
         plt.ylim([1e-3,1e1])
         #plt.pcolor(np.real(sim.w1_hat));plt.colorbar()
         
+        if self.rewardtype=='energy':
+            plt.subplot(3,2,3)
+        else:
+            plt.subplot(3,2,4)
+        '''   
+        plt.loglog(Kplot[0:kmax,0], spec_nowx,'-.r')
+        plt.loglog(Kplot[0:kmax,0], spec_refx,'-r', alpha=0.5)
+        plt.loglog(Kplot[0:kmax,0], spec_nowy,'-.c')
+        plt.loglog(Kplot[0:kmax,0], spec_refy,'-c', alpha=0.5)
+        '''
         #plt.subplot(3,2,5)
         #omega = np.real(np.fft.ifft2(self.w1_hat))
         #Vecpoints, exp_log_kde, log_kde, kde = self.KDEof(omega)
@@ -699,23 +935,114 @@ class turb:
         plt.pcolor(u)
         plt.subplot(3,2,6)
         plt.pcolor(v)
+        plt.title('v')
+        plt.colorbar()
         #plt.subplot(3,2,6)
         #plt.semilogy(Vecpoints,log_kde) 
-
-        filename = prepend_str+'2Dturb_N'+str(NX)+'_'+str(stepnum)+append_str
+        filename = prepend_str+'2Dturb_'+str(stepnum)+append_str
         plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
-        
+        plt.close('all')
 #        print(filename)
 #        print(Kplot[0:kmax,0].shape)
 #        print( energy[0:kmax].shape)
 #        print( np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T.shape   )
-        
         np.savetxt(filename+'_tke.out', np.stack((Kplot[0:kmax,0], energy[0:kmax]),axis=0).T, delimiter='\t')
         np.savetxt(filename+'_ens.out', np.stack((Kplot[0:kmax,0], enstrophy[0:kmax]),axis=0).T, delimiter='\t')
 
- 
+    #-----------------------------------------
+    def myplotforcing(self, append_str='', prepend_str=''):
+        NX = int(self.NX)
+        Kx = self.Kx
+        Ky = self.Ky
+        w1_hat = self.w1_hat
+        omega = np.real(np.fft.ifft2(self.sol[0]))
+        w1x_hat = -(1j*Kx)*w1_hat
+        w1y_hat = (1j*Ky)*w1_hat
+        w1x = np.real(np.fft.ifft2(w1x_hat))
+        w1y = np.real(np.fft.ifft2(w1y_hat))
+        grad_omega = np.sqrt( w1x**2+w1y**2)
+
+        veRL=self.veRL
+        stepnum = self.stepnum
+
+        plt.figure(figsize=(8,14))
+        levels = np.linspace(-30,30,100)
+
+        plt.subplot(3,2,1)
+        plt.contourf(veRL)
+        plt.colorbar()
+        plt.title(r'forcing')
+
+        plt.subplot(3,2,3)
+        plt.contourf(grad_omega)
+        plt.colorbar()
+        plt.title(r'$\nabla \omega$')
+
+        plt.subplot(3,2,2)
+        xplot = veRL.reshape(-1,1)
+        yplot = omega.reshape(-1,1)
+
+        xv, yv, rv, pos, meanxy = self.multivariat_fit(xplot,yplot)
+        plt.plot(xplot, yplot,'.k',alpha=0.5)
+        plt.scatter(meanxy[0],meanxy[1], marker="+", color='red',s=100)
+        plt.contour(xv, yv, rv.pdf(pos))
+
+        plt.xlabel(r'$forcing$')
+        plt.ylabel(r'$\omega$')
+        plt.grid(color='gray', linestyle='dashed')
+
+        plt.subplot(3,2,4)
+        xplot = veRL.reshape(-1,1)
+        yplot = grad_omega.reshape(-1,1)
+        xv, yv, rv, pos, meanxy = self.multivariat_fit(xplot,yplot)
+        plt.plot(xplot, yplot,'.k',alpha=0.5)
+        plt.scatter(meanxy[0],meanxy[1], marker="+", color='red',s=100)
+        plt.contour(xv, yv, rv.pdf(pos))
+
+        plt.xlabel(r'$forcing$')
+        plt.ylabel(r'$\nabla \omega$')
+        plt.grid(color='gray', linestyle='dashed')
+
+        PiOmega_hat = self.PiOmega_hat#| 
+        PiOmega = np.fft.ifft2(PiOmega_hat).real
+        VMIN = np.min(np.min(PiOmega))
+        VMAX = np.max(np.max(PiOmega))
+        plt.subplot(3,2,5)
+        plt.contourf(PiOmega,levels=21)#, vmin=VMIN, vmax=VMAX) 
+        plt.colorbar()
+        plt.title(r'$\Pi = \nabla .( \nu \nabla \omega)$')
+
+        filename = prepend_str+'2Dturb_'+str(stepnum)+'forcing'+append_str
+        plt.savefig(filename+'.png', bbox_inches='tight', dpi=450)
+        plt.close('all')
+    #-----------------------------------------  
+    def multivariat_fit(self, x, y):
+        covxy = np.cov(x,y, rowvar=False)
+        meanxy=np.mean(x),np.mean(y)
+        rv = multivariate_normal(mean=meanxy, cov=covxy, allow_singular=False)
+        xv, yv = np.meshgrid(np.linspace(x.min(),x.max(),50), 
+                             np.linspace(y.min(),y.max(),50), indexing='ij')
+        pos = np.dstack((xv, yv))
+
+        return xv, yv, rv, pos, meanxy 
+    #-----------------------------------------
     def KDEof(self, u):
         from PDE_KDE import myKDE
         Vecpoints, exp_log_kde, logkde, kde = myKDE(u)
         return Vecpoints, exp_log_kde, logkde, kde
-
+    #-----------------------------------------
+    def D_dir(self, u_hat, K_dir):
+        Du_Ddir = 1j*K_dir*u_hat
+        return Du_Ddir  
+    #-----------------------------------------
+    def decompose_sym(self, A):
+        S = 0.5*(A+A.T)
+        R = 0.5*(A-A.T)
+        return S, R
+    #-----------------------------------------
+    def invariant(self, A):
+        S, R = self.decompose_sym(A)
+        lambda1 = np.trace(S)
+        lambda2 = np.trace(S@S)
+        lambda3 = np.trace(R@R)
+        return [lambda1, lambda2, lambda3]
