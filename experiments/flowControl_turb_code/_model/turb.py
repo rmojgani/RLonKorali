@@ -50,7 +50,7 @@ class turb:
                 rewardtype='k1', 
                 statetype='enstrophy',
                 actiontype='CL',
-                nagents=2,
+                nagents=16,
                 spec_type = 'both'):
         #
         print('__init__')
@@ -530,13 +530,14 @@ class turb:
         Tau22_hat = np.fft.fft2(Tau22)
         
         PiOmega_hat = Tau2PiOmega_2DFHIT(Tau11_hat, Tau12_hat, Tau22_hat, Kx, Ky, spectral=True)
-        # pass to --------------------#|
+        # pass to self ---------------#|
         self.PiOmega_hat = PiOmega_hat#| 
         # ----------------------------#|
         # AB2 for Jacobian term
         convec_hat = 1.5*convec1_hat - 0.5*convec0_hat
         # RHS: + Jacobian term + Forcing + SGS model
-        RHS = w1_hat - dt*convec_hat + dt*0.5*(nu+ve)*diffu_hat - dt*(Fk_hat+PiOmega_hat) #+ dt*beta*V1_hat : Last term moved below
+        # --- Euler for SGS term (Π)
+        RHS = w1_hat - dt*convec_hat + dt*0.5*nu*diffu_hat - dt*(Fk_hat+PiOmega_hat) #+ dt*beta*V1_hat : Last term moved below
 
         # β case: Coriolis (Beta case)
         u1_hat = -(1j*Ky)*psiCurrent_hat
@@ -544,7 +545,8 @@ class turb:
         RHS = RHS + dt*beta*u1_hat # Beta-case: Coriolis
         #RHS[0,0] = 0
 
-        psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
+        #psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)
+        psiTemp = RHS/(1+dt*alpha+0.5*dt*nu*Ksq)
     
         w0_hat = w1_hat
         w1_hat = psiTemp
