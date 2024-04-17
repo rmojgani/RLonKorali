@@ -17,10 +17,13 @@
 The checklist for refactor progress
 - [ ] Check consistency with Py2D
   - [x] RHS
-  - [x] FK
+  - [x] Forcing: FK
   - [ ] CN for $`\Pi`$ [formulation](https://github.com/envfluids/py2d/issues/61)  ```psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)```
   - [ ] Check operators and grid [ij] vs [xy]
+  - [ ] Change beta*v term to match the Py2D convention
 - [ ] Option for calculation of $`\Pi`$
+  - [ ] From $`\sigma`$
+  - [x] From $`\tau`$ 
 - [ ] Optional CPU-GPU backend
 - [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
 - [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)
