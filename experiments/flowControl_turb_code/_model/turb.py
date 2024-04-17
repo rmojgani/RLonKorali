@@ -233,7 +233,7 @@ class turb:
             nu = self.smag_cs(action)
         return nu
 
-    def step( self, action=None ):
+    def step(self, action=None ):
         '''
         2D Turbulence: One time step simulation of 2D Turbulence
         '''
@@ -255,7 +255,7 @@ class turb:
             print('time:', np.round((time.time()-self.tic)/60.0,4),' min.')
 
         self.stepturb(action)
-        self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
+        self.sol = [self.w1_hat, self.psiCurrent_hat, self.psiPrevious_hat]
         self.stepnum += 1
         self.t       += self.dt
    
@@ -347,8 +347,7 @@ class turb:
 
                 psi_hat = self.sol[1]
 
-                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
-                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+                u1_hat, v1_hat = self.psi_2_uv(psi_hat, Kx, Ky)
 
                 dudx_hat = self.D_dir(u1_hat,Kx)
                 dudy_hat = self.D_dir(u1_hat,Ky)
@@ -401,8 +400,7 @@ class turb:
 
                 psi_hat = self.sol[1]
 
-                u1_hat = self.D_dir(psi_hat,Ky) # u_hat = (1j*Ky)*psi_hat
-                v1_hat = -self.D_dir(psi_hat,Kx) # v_hat = -(1j*Kx)*psi_hat
+                u1_hat, v1_hat = self.psi_2_uv(psi_hat, Kx, Ky)
                 
                 dudx_hat = self.D_dir(u1_hat,Kx)
                 dudy_hat = self.D_dir(u1_hat,Ky)
@@ -474,24 +472,27 @@ class turb:
         Ky = self.Ky
         
         # Velocity
-        u1_hat = -(1j*Ky)*psiCurrent_hat
-        v1_hat = (1j*Kx)*psiCurrent_hat
-        
+        u_hat, v_hat = psi_2_uv(psiCurrent_hat, Kx, Ky)
         # Convservative form
         w1 = np.real(np.fft.ifft2(w1_hat))
-        conu1 = 1j*Kx*np.fft.fft2((np.real(np.fft.ifft2(u1_hat))*w1))
-        conv1 = 1j*Ky*np.fft.fft2((np.real(np.fft.ifft2(v1_hat))*w1))
+        conu1 = 1j*Kx*np.fft.fft2((np.real(np.fft.ifft2(u_hat))*w1))
+        conv1 = 1j*Ky*np.fft.fft2((np.real(np.fft.ifft2(v_hat))*w1))
         convec_hat = conu1 + conv1
      
         # Non-conservative form
         w1x_hat = 1j*Kx*w1_hat
         w1y_hat = 1j*Ky*w1_hat
-        conu1 = np.fft.fft2(np.real(np.fft.ifft2(u1_hat))*np.real(np.fft.ifft2(w1x_hat)))
-        conv1 = np.fft.fft2(np.real(np.fft.ifft2(v1_hat))*np.real(np.fft.ifft2(w1y_hat)))
+        conu1 = np.fft.fft2(np.real(np.fft.ifft2(u_hat))*np.real(np.fft.ifft2(w1x_hat)))
+        conv1 = np.fft.fft2(np.real(np.fft.ifft2(v_hat))*np.real(np.fft.ifft2(w1y_hat)))
         convecN_hat = conu1 + conv1
   
         convec_hat = 0.5*(convec_hat + convecN_hat)
         return convec_hat
+
+    def psi_2_uv(self, psi_hat, Kx, Ky)
+        u_hat = 1j* Ky * psi_hat
+        v_hat = -1j * Kx * psi_hat
+        return u_hat, v_hat
 
     def stepturb(self, action):
         #psiCurrent_hat = self.psiCurrent_hat
@@ -534,7 +535,7 @@ class turb:
         # --- Euler for SGS term (Π)
         RHS = w1_hat - dt*convec_hat + dt*0.5*nu*diffu_hat - dt*(Fk_hat+PiOmega_hat) #+ dt*beta*V1_hat : Last term moved below
 
-        # β case: Coriolis (Beta case)
+        # --- β case: Coriolis (Beta case)
         v_hat = -(1j*Kx)*psiCurrent_hat
         # RHS + Coriolis
         RHS = RHS + dt*beta*v_hat # Beta-case: Coriolis
