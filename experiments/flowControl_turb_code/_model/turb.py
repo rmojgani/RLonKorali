@@ -472,7 +472,7 @@ class turb:
         Ky = self.Ky
         
         # Velocity
-        u_hat, v_hat = psi_2_uv(psiCurrent_hat, Kx, Ky)
+        u_hat, v_hat = self.psi_2_uv(psiCurrent_hat, Kx, Ky)
         # Convservative form
         w1 = np.real(np.fft.ifft2(w1_hat))
         conu1 = 1j*Kx*np.fft.fft2((np.real(np.fft.ifft2(u_hat))*w1))
@@ -489,7 +489,7 @@ class turb:
         convec_hat = 0.5*(convec_hat + convecN_hat)
         return convec_hat
 
-    def psi_2_uv(self, psi_hat, Kx, Ky)
+    def psi_2_uv(self, psi_hat, Kx, Ky):
         u_hat = 1j* Ky * psi_hat
         v_hat = -1j * Kx * psi_hat
         return u_hat, v_hat
@@ -660,9 +660,10 @@ class turb:
     
         # ... and save to self
         self.w1_hat = w1_hat
-        self.psi_hat = psi_hat
         self.psiCurrent_hat = psiCurrent_hat
         self.psiPrevious_hat = psiPrevious_hat
+        self.psi_hat = psiCurrent_hat
+
         self.t = 0.0
         self.stepnum = 0
         self.sol = [self.w1_hat, self.psiCurrent_hat, self.psiPrevious_hat]
@@ -672,7 +673,7 @@ class turb:
         self.convec1_hat = convec0_hat
         # 
         self.Fk_hat = Fk_hat
-        self.Fn = n # Forcing k
+        self.Fn = fkx # Forcing k: used in plotting, for x/y-dirc spectrum use fkx, fky, for radially averaged power spectral: (fkx**2+fky**2)**0.5
         self.beta = beta # Coriolis β
         # Aux reward 
         kmax = self.kmax
@@ -718,14 +719,15 @@ class turb:
         return forcing
 
     def operatorgen(self):
-        Lx = self.Lx
-        NX = self.NX
-        dx = Lx/NX
+        Lx, Ly = self.Lx, self.Ly
+        NX, NY = self.NX, self.NY
+        dx, dy = Lx/NX, Ly/NY
+
         # cherry-picked from : envfluids/Py2D: 09e0208
         INDEXING = 'ij'
         # Create an array of x-coordinates, ranging from 0 to (Lx - dx)
-        x = np.linspace(0, Lx - dx, num=Nx)
-        y = np.linspace(0, Lx - dx, num=Ny)
+        x = np.linspace(0, Lx - dx, num=NX)
+        y = np.linspace(0, Lx - dx, num=NY)
 
         # Create 2D arrays of the x and y-coordinates using a meshgrid.
         X, Y = np.meshgrid(x, y, indexing=INDEXING)
