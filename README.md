@@ -19,10 +19,11 @@ The checklist for refactor progress
   - [x] RHS
   - [x] Forcing: FK
   - [ ] CN for $`\Pi`$ [formulation](https://github.com/envfluids/py2d/issues/61)  ```psiTemp = RHS/(1+dt*alpha+0.5*dt*(nu+ve)*Ksq)```
-  - [ ] Check operators and grid [ij] vs [xy]
+  - [ ] Check operators and grid `[ij]` vs `[xy]` (all in `[ij]`)
     - [x] meshgrid Kx, Ky
     - [x] meshgrid xx, yy
-  - [x] Change beta*v term to match the Py2D convention: changed with 'ij' indexing grid
+    - [x] Checked $`u,v`$ calculations, and added a function: `psi_2_uv`
+  - [x] Change $`\beta*v`$ term to match the Py2D convention: changed with 'ij' indexing grid
 - [ ] Option for calculation of $`\Pi`$
   - [ ] From $`\sigma`$
   - [x] From $`\tau`$ 

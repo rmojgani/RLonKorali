@@ -289,7 +289,7 @@ class turb:
         # --------------------------
         elif statetype=='psiomega':
            '''
-           self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
+           self.sol = [self.w1_hat, self.psiCurrent_hat, self.psiPrevious_hat]
 
            '''
            STATE_GLOBAL=False
@@ -298,7 +298,7 @@ class turb:
         # --------------------------
         elif statetype=='omega':
            '''
-           self.sol = [self.w1_hat, self.psiCurrent_hat, self.w1_hat, self.psiPrevious_hat]
+           self.sol = [self.w1_hat, self.psiCurrent_hat, self.psiPrevious_hat]
 
            '''
            STATE_GLOBAL=False
