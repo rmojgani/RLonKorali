@@ -138,7 +138,7 @@ class turb:
             self.nActions = nActions
             # Action grid
             # self.x = np.arange(self.N)*self.L/(self.N-1)
-            self.veRL = 0
+            self.c_dynamic = 0
             #print('RL to run:', nActions)
    
     def mykrange(self, order):
@@ -244,9 +244,9 @@ class turb:
             #assert len(action) == self.nActions, print("Wrong number of actions. provided: {}, expected:{}".format(len(action), self.nActions))
 
             forcing = self.upsample(action)
-            self.veRL = forcing#forcing[0]# For test
-            #print(self.veRL)
-            #stop_veRL
+            self.c_dynamic = forcing#forcing[0]# For test
+            #print(self.c_dynamic)
+            #stop_c_dynamic
 
         if self.stepnum % self.stepsave == 0:
             print(self.stepnum)
@@ -563,7 +563,7 @@ class turb:
         self.psiPrevious_hat = psiPrevious_hat
         self.psiCurrent_hat = psiCurrent_hat
         self.ve = ve
-        #self.velist.append(self.veRL)
+        #self.velist.append(self.c_dynamic)
         self.myrewardlist=[]
         self.mystatelist=[]
 
@@ -766,16 +766,16 @@ class turb:
         '''
         ve =(Cl * \delta )**3 |Grad omega|  LAPL omega ; LAPL := Grad*Grad
         '''
-        #print('action is:', action_leith)
-        if action != None:
-        #    if self.veRL !=0:
-            CL3 = self.veRL#action_leith[0]
-        else:
-            CL3 = 0.17**3# (Lit)
-        #else:
         Kx = self.Kx
         Ky = self.Ky
         w1_hat = self.w1_hat
+        c_dynamic = self.c_dynamic
+
+        #print('action is:', action_leith)
+        if action != None:
+            CL3 = c_dynamic
+        else:
+            CL3 = 0.17**3# (Lit)
 
         w1x_hat = -(1j*Kx)*w1_hat
         w1y_hat = (1j*Ky)*w1_hat
@@ -784,6 +784,7 @@ class turb:
         abs_grad_omega = np.mean(np.sqrt( w1x**2+w1y**2  ))
         # 
         delta3 = (2*np.pi/self.NX)**3
+        #
         ve = CL3*delta3*abs_grad_omega
         return ve
 
@@ -793,20 +794,21 @@ class turb:
         NX = self.NX
         psiCurrent_hat = self.psiCurrent_hat
         w1_hat = self.w1_hat
-
+        c_dynamic = self.c_dynamic
+        
         if action != None:
-            cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
+            cs = c_dynamic
         else:
-            #self.veRL = 0.17 * 2
-            #cs = (self.veRL) * ((2*np.pi/NX )**2)  # for LX = 2 pi
-            cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
+            cs = 0.11**2
 
-        S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat)) # make sure .* 
+        S1 = np.real(np.fft.ifft2(-Ky*Kx*psiCurrent_hat))
         S2 = 0.5*np.real(np.fft.ifft2(-(Kx*Kx - Ky*Ky)*psiCurrent_hat))
         S  = 2.0*(S1*S1 + S2*S2)**0.5
-#        cs = (0.17 * 2*np.pi/NX )**2  # for LX = 2 pi
         S = (np.mean(S**2.0))**0.5;
-        ve = cs*S
+        #
+        delta2 = (2*np.pi/NX )**2
+        #
+        ve = cs*delta2*S
         return ve
     #-----------------------------------------
     def enstrophy_spectrum(self, dir_x=1, dir_y=1):
@@ -972,14 +974,14 @@ class turb:
         w1y = np.real(np.fft.ifft2(w1y_hat))
         grad_omega = np.sqrt( w1x**2+w1y**2)
 
-        veRL=self.veRL
+        c_dynamic = self.c_dynamic
         stepnum = self.stepnum
 
         plt.figure(figsize=(8,14))
         levels = np.linspace(-30,30,100)
 
         plt.subplot(3,2,1)
-        plt.contourf(veRL)
+        plt.contourf(c_dynamic)
         plt.colorbar()
         plt.title(r'forcing')
 
@@ -989,7 +991,7 @@ class turb:
         plt.title(r'$\nabla \omega$')
 
         plt.subplot(3,2,2)
-        xplot = veRL.reshape(-1,1)
+        xplot = c_dynamic.reshape(-1,1)
         yplot = omega.reshape(-1,1)
 
         xv, yv, rv, pos, meanxy = self.multivariat_fit(xplot,yplot)
@@ -1002,7 +1004,7 @@ class turb:
         plt.grid(color='gray', linestyle='dashed')
 
         plt.subplot(3,2,4)
-        xplot = veRL.reshape(-1,1)
+        xplot = c_dynamic.reshape(-1,1)
         yplot = grad_omega.reshape(-1,1)
         xv, yv, rv, pos, meanxy = self.multivariat_fit(xplot,yplot)
         plt.plot(xplot, yplot,'.k',alpha=0.5)
