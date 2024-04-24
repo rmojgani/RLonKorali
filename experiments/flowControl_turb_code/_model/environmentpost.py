@@ -84,7 +84,8 @@ def environmentpost( args, initSim, s ):
                            ('psi_hat', sim.psiCurrent_hat),
                            ('w_hat', sim.w1_hat),
                            ('convec1_hat', sim.convec1_hat),
-                           ('veRL', sim.veRL)
+                           ('c_dynamic', sim.c_dynamic),
+                           ('ve', sim.ve)
                         ])
                      )
 

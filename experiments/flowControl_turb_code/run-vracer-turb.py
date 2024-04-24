@@ -18,6 +18,8 @@ parser.add_argument('--case', help='Reinforcement learning case considered. Choo
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
 parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal] ', type=str, default='psiomega')
 parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
+parser.add_argument('--action0', help='initial noise for the action', type=float, default=0.25**3)
+
 parser.add_argument('--NLES', help='', type=int, default=32)
 parser.add_argument('--EPERU', help='Number of experiences per policy update', type=float, default=1.0) # This can be eg. 0.1, to have a policy update for every 10 experiences
 parser.add_argument('--gensize', help='', type=int, default=10)
@@ -88,6 +90,7 @@ statetype = args['statetype']
 actiontype = args['actiontype']
 nagents = args['nagents']
 Tspinup = args['Tspinup']
+action0 = args['action0']
 
 dt   = 5.0e-4
 tInit = 0
@@ -167,7 +170,7 @@ for i in range(action_size): # size of action
 	e["Variables"][state_size+i]["Type"] = "Action"
 	e["Variables"][state_size+i]["Lower Bound"] = -0.5**3
 	e["Variables"][state_size+i]["Upper Bound"] = 0.5**3
-	e["Variables"][state_size+i]["Initial Exploration Noise"] = 0.25**3 #0.15**3
+	e["Variables"][state_size+i]["Initial Exploration Noise"] = action0 #0.25**3 #0.15**3
 
 ### Setting Experience Replay and REFER settings
 e["Solver"]["Experience Replay"]["Off Policy"]["Annealing Rate"] = 5.0e-8
@@ -240,3 +243,4 @@ bestReward = e["Solver"]["Training"]["Best Reward"]
 if (bestReward < 1000.0):
  print("Flow Control example did not reach minimum training performance.")
  exit(-1)
+
