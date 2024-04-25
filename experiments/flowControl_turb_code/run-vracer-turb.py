@@ -13,14 +13,16 @@ from turb import *
 
 ### Parsing arguments
 parser = argparse.ArgumentParser()
-
+# LES
 parser.add_argument('--case', help='Reinforcement learning case considered. Choose one from the following list: "1", or "4"', type=str, default='4')
+parser.add_argument('--NLES', help='', type=int, default=32)
+
+# RL
 parser.add_argument('--rewardtype', help='Reward type [k1,k2,k3,log,] ', type=str, default='k1')
 parser.add_argument('--statetype', help='State type [enstrophy, energy, psidiag, psiomegadiag, psiomega, psiomegalocal] ', type=str, default='psiomega')
 parser.add_argument('--actiontype', help='Action type [CS,CL,CLxyt,nuxyt,] ', type=str, default='CL')
 parser.add_argument('--action0', help='initial noise for the action', type=float, default=0.25**3)
 
-parser.add_argument('--NLES', help='', type=int, default=32)
 parser.add_argument('--EPERU', help='Number of experiences per policy update', type=float, default=1.0) # This can be eg. 0.1, to have a policy update for every 10 experiences
 parser.add_argument('--gensize', help='', type=int, default=10)
 parser.add_argument('--solver', help='training/postprocess ', type=str, default='training')

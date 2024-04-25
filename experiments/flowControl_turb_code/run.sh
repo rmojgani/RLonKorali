@@ -1,9 +1,9 @@
-NLES=128 #64 #32
+NLES=64 #64 #32
 case=1
 rewardtype=z1 # [k1,k2,k3,log,]
 statetype=invariantlocalandglobalgradgrad #eps #psiomega # [enstrophy,energy,psidiag,psiomegadiag,psiomegalocal,omegalocal,invariantlocalandglobalgradgrad,invariantlocalandglobalgradgradeps] 
 actiontype=CL #S
-action0=0.11
+action0=0.05 #0.11
 gensize=10
 solver=training #postproces
 nagents=16

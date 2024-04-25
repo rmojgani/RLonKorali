@@ -28,13 +28,14 @@ The checklist for refactor progress
   - [ ] From $`\sigma`$
   - [x] From $`\tau`$ 
 - [ ] Optional CPU-GPU backend
-- [ ] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
+- [x] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
 - [ ] Options to save a list of parameters ($`\omega`$, $`\psi`$, $`\nu_e`$, $`c_{model}`$, $`\Pi`$, action list)
 - [ ] Re-organize the state model, maybe have it as a list of options (accumalative):
   - [ ] Global: energy spectra
   - [ ] Global: enstrophy spectra
   - [ ] local: $`\nabla u`$
   - [ ] local: $`\nabla \nabla u`$
+  - [ ] choice of invariants $`\lambda_i`$
 - [ ] Update initial condition for cases (and the corresponding spectra)
   - [ ] Case 1: $`\kappa_f=4`$ , Re$`=20\times10^3`$, $`\beta=0`$
   - [ ] Case 2: $`\kappa_f=4`$ , Re$`=20\times10^3`$, $`\beta=0`$
