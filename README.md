@@ -58,10 +58,10 @@ The checklist for refactor progress
 - [Korali](https://www.cse-lab.ethz.ch/korali/)
 
 - For GPU support:
-	- JAX
+	- [jax 0.4.5](https://jax.readthedocs.io/en/latest/installation.html)
 	- [Korali + JAX docker](https://hub.docker.com/repository/docker/rmojgani/koraligpu/general)
 		- jax=0.4.5
-	        - jaxlib=0.4.4+cuda11.cudnn86
+                - jaxlib=0.4.4+cuda11.cudnn86
 
 
 
