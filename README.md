@@ -45,6 +45,7 @@ The checklist for refactor progress
 - [ ] bring options to sh file: 
   - [ ] ["Policy"]["Distribution"] choice 
 - [ ] **Retrain with a [super-]gaussian spectra (to have a better behaving interscale transfers )**
+- [ ] Code to track interscale variation while training 
 - [ ] Double check the naming of time steps: n_init, ...  
 
 ## Requirements
