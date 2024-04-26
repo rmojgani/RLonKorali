@@ -53,10 +53,13 @@ The checklist for refactor progress
 	add or remove as appropriate -->
 
 - python 3.6
-	- [scipy](https://pypi.org/project/scipy/)
-	- [numpy](https://pypi.org/project/numpy/)
-- JAX
+- [scipy](https://pypi.org/project/scipy/)
+- [numpy](https://pypi.org/project/numpy/)
 - [Korali](https://www.cse-lab.ethz.ch/korali/)
+
+- For GPU support:
+	- JAX
+	- [Koralii + JAX docker](https://hub.docker.com/repository/docker/rmojgani/koraligpu/general)
 
 
 ## Experiments
