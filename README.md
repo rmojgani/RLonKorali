@@ -1,4 +1,4 @@
-# Verbose Repo Template Name
+# Scientific Reinforcement Learning for sub-grid scale modeling of 2D turbulence
 
 #### [[project website]](https://github.com/rmojgani/)
 <img src="docs/MARL.png" width="500">
