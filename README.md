@@ -25,7 +25,7 @@ The checklist for refactor progress
     - [x] Checked $`u,v`$ calculations, and added a function: `psi_2_uv`
   - [x] Change $`\beta*v`$ term to match the Py2D convention: changed with 'ij' indexing grid
 - [ ] Option for calculation of $`\Pi`$
-  - [ ] From $`\sigma`$
+  - [ ] **From $`\sigma`$**
   - [x] From $`\tau`$ 
 - [ ] Optional CPU-GPU backend
 - [x] Consistent model action ($`c_l^3`$ and $`c_s^2`$)
@@ -44,6 +44,7 @@ The checklist for refactor progress
 - [ ] Case management system: Copy config file in the folder
 - [ ] bring options to sh file: 
   - [ ] ["Policy"]["Distribution"] choice 
+- [ ] **Retrain with a [super-]gaussian spectra (to have a better behaving interscale transfers )**
 - [ ] Double check the naming of time steps: n_init, ...  
 
 ## Requirements
