@@ -56,6 +56,7 @@ The checklist for refactor progress
 	- [scipy](https://pypi.org/project/scipy/)
 	- [numpy](https://pypi.org/project/numpy/)
 - JAX
+- [Korali](https://www.cse-lab.ethz.ch/korali/)
 
 
 ## Experiments
